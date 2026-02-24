@@ -9,7 +9,7 @@ import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
 } from '../types';
-import { DEFAULT_STORES, DEFAULT_CATEGORIES } from '../config/constants';
+import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
 import { useAuth } from './AuthContext';
 import { loadUserData, saveUserData, type UserAppData } from '../services/firestore';
@@ -94,7 +94,7 @@ function loadState(): AppState {
       return {
         stores: parsed.stores || DEFAULT_STORES,
         categories: migrateCategories(parsed.categories || DEFAULT_CATEGORIES),
-        items: parsed.items || [],
+        items: parsed.items?.length ? parsed.items : DEFAULT_ITEMS,
         prices: parsed.prices || [],
         trips: parsed.trips || [],
         budgets: parsed.budgets || [],
@@ -107,7 +107,7 @@ function loadState(): AppState {
   return {
     stores: DEFAULT_STORES,
     categories: DEFAULT_CATEGORIES,
-    items: [],
+    items: DEFAULT_ITEMS,
     prices: [],
     trips: [],
     budgets: [],
@@ -157,7 +157,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             categories: migrateCategories(
               cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
             ),
-            items: cloudData.items || [],
+            items: cloudData.items?.length ? cloudData.items : DEFAULT_ITEMS,
             prices: cloudData.prices || [],
             trips: cloudData.trips || [],
             budgets: cloudData.budgets || [],

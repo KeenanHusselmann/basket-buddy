@@ -2,7 +2,7 @@
 // BasketBuddy - Constants & Default Data
 // ==========================================
 
-import { Store, Category } from '../types';
+import { Store, Category, GroceryItem } from '../types';
 
 export const CURRENCY = 'N$';
 export const CURRENCY_CODE = 'NAD';
@@ -39,6 +39,52 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'canned', name: 'Canned Goods', icon: '🥫', color: '#EF6C00', isCustom: false },
   { id: 'spices', name: 'Spices & Condiments', icon: '🧂', color: '#D84315', isCustom: false },
   { id: 'grains-pasta', name: 'Grains & Pasta', icon: '🍝', color: '#FFA726', isCustom: false },
+];
+
+const T = Date.now();
+// ── Default Items ────────────────────────────────────────────
+export const DEFAULT_ITEMS: GroceryItem[] = [
+  // Fruits
+  { id: 'di-apples',      name: 'Apples',           categoryId: 'fruits',       unit: 'kg',    createdAt: T },
+  { id: 'di-bananas',     name: 'Bananas',           categoryId: 'fruits',       unit: 'bunch', createdAt: T },
+  { id: 'di-oranges',     name: 'Oranges',           categoryId: 'fruits',       unit: 'kg',    createdAt: T },
+  { id: 'di-grapes',      name: 'Grapes',            categoryId: 'fruits',       unit: 'kg',    createdAt: T },
+  // Vegetables
+  { id: 'di-tomatoes',    name: 'Tomatoes',          categoryId: 'vegetables',   unit: 'kg',    createdAt: T },
+  { id: 'di-onions',      name: 'Onions',            categoryId: 'vegetables',   unit: 'kg',    createdAt: T },
+  { id: 'di-potatoes',    name: 'Potatoes',          categoryId: 'vegetables',   unit: 'kg',    createdAt: T },
+  { id: 'di-spinach',     name: 'Spinach',           categoryId: 'vegetables',   unit: 'bunch', createdAt: T },
+  // Meat & Poultry
+  { id: 'di-chicken-brs', name: 'Chicken Breasts',   categoryId: 'meat-poultry', unit: 'kg',    createdAt: T },
+  { id: 'di-mince',       name: 'Beef Mince',        categoryId: 'meat-poultry', unit: 'kg',    createdAt: T },
+  { id: 'di-livers',      name: 'Chicken Livers',    categoryId: 'meat-poultry', unit: 'kg',    createdAt: T },
+  // Dairy
+  { id: 'di-milk',        name: 'Full Cream Milk',   categoryId: 'dairy',        unit: 'litre', brand: 'Parmalat', createdAt: T },
+  { id: 'di-eggs',        name: 'Eggs',              categoryId: 'dairy',        unit: 'dozen', createdAt: T },
+  { id: 'di-butter',      name: 'Butter',            categoryId: 'dairy',        unit: 'brick', brand: 'Lurpak',   createdAt: T },
+  { id: 'di-yoghurt',     name: 'Yoghurt',           categoryId: 'dairy',        unit: 'each',  createdAt: T },
+  // Bakery
+  { id: 'di-bread',       name: 'White Bread',       categoryId: 'bakery',       unit: 'loaf',  createdAt: T },
+  { id: 'di-brown-bread', name: 'Brown Bread',       categoryId: 'bakery',       unit: 'loaf',  createdAt: T },
+  // Beverages
+  { id: 'di-coke2l',      name: 'Coca-Cola',         categoryId: 'beverages',    unit: 'each',  brand: 'Coca-Cola', notes: '2L', createdAt: T },
+  { id: 'di-juice',       name: 'Orange Juice',      categoryId: 'beverages',    unit: 'litre', createdAt: T },
+  { id: 'di-water',       name: 'Still Water',       categoryId: 'beverages',    unit: 'each',  notes: '500ml', createdAt: T },
+  // Grains & Pasta
+  { id: 'di-rice',        name: 'Long Grain Rice',   categoryId: 'grains-pasta', unit: 'kg',    createdAt: T },
+  { id: 'di-pasta',       name: 'Spaghetti',         categoryId: 'grains-pasta', unit: 'pack',  createdAt: T },
+  { id: 'di-maize-meal',  name: 'Maize Meal',        categoryId: 'grains-pasta', unit: 'kg',    brand: 'Tafel', createdAt: T },
+  // Canned Goods
+  { id: 'di-baked-beans', name: 'Baked Beans',       categoryId: 'canned',       unit: 'tin',   brand: 'Koo',  createdAt: T },
+  { id: 'di-tuna',        name: 'Tuna Chunks',       categoryId: 'canned',       unit: 'tin',   brand: 'Lucky Star', createdAt: T },
+  // Spices & Condiments
+  { id: 'di-braai-salt',  name: 'Braai Salt',        categoryId: 'spices',       unit: 'each',  brand: 'Aromat', createdAt: T },
+  { id: 'di-sunflower-oil', name: 'Sunflower Oil',   categoryId: 'spices',       unit: 'litre', createdAt: T },
+  // Cleaning
+  { id: 'di-dishwash',    name: 'Dishwashing Liquid',categoryId: 'cleaning',     unit: 'each',  brand: 'Sunlight', createdAt: T },
+  { id: 'di-toilet-paper',name: 'Toilet Paper',      categoryId: 'toiletries',   unit: '6-pack', brand: 'Twinsaver', createdAt: T },
+  // Snacks
+  { id: 'di-chips',       name: 'Potato Chips',      categoryId: 'snacks',       unit: 'each',  brand: 'Lays', createdAt: T },
 ];
 
 // ── Unit Options ─────────────────────────────────────────────
