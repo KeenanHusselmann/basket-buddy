@@ -24,7 +24,7 @@ const Items: React.FC = () => {
   const {
     items, categories, stores, prices,
     addItem, updateItem, deleteItem,
-    setPrice, deletePrice,
+    setPrice, updatePrice, deletePrice,
     addCategory,
   } = useApp();
 
@@ -33,6 +33,7 @@ const Items: React.FC = () => {
   const [filterStore, setFilterStore] = useState('all');
   const [itemModal, setItemModal] = useState(false);
   const [priceModal, setPriceModal] = useState(false);
+  const [editPriceId, setEditPriceId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   // Start with all categories expanded so items are immediately visible
@@ -132,10 +133,27 @@ const Items: React.FC = () => {
     setItemModal(true);
   };
 
-  // Open set price
+  // Open set price (new)
   const openSetPrice = (itemId: string) => {
     setSelectedItem(itemId);
+    setEditPriceId(null);
     setPriceForm({ storeId: stores[0]?.id || '', normalPrice: '', specialPrice: '', isOnSpecial: false, specialEndDate: '' });
+    setPriceModal(true);
+  };
+
+  // Open edit price (existing)
+  const openEditPrice = (price: PriceEntry) => {
+    setSelectedItem(price.itemId);
+    setEditPriceId(price.id);
+    setPriceForm({
+      storeId: price.storeId,
+      normalPrice: String(price.normalPrice),
+      specialPrice: price.specialPrice != null ? String(price.specialPrice) : '',
+      isOnSpecial: price.isOnSpecial,
+      specialEndDate: price.specialEndDate
+        ? new Date(price.specialEndDate).toISOString().split('T')[0]
+        : '',
+    });
     setPriceModal(true);
   };
 
@@ -155,14 +173,19 @@ const Items: React.FC = () => {
   const submitPrice = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem || !priceForm.storeId || !priceForm.normalPrice) return;
-    setPrice({
+    const payload = {
       itemId: selectedItem,
       storeId: priceForm.storeId,
       normalPrice: parseFloat(priceForm.normalPrice),
       specialPrice: priceForm.specialPrice ? parseFloat(priceForm.specialPrice) : undefined,
       isOnSpecial: priceForm.isOnSpecial,
       specialEndDate: priceForm.specialEndDate ? new Date(priceForm.specialEndDate).getTime() : undefined,
-    });
+    };
+    if (editPriceId) {
+      updatePrice(editPriceId, payload);
+    } else {
+      setPrice(payload);
+    }
     setPriceModal(false);
   };
 
@@ -334,13 +357,13 @@ const Items: React.FC = () => {
                                     <div
                                       key={p.id}
                                       className={cn(
-                                        'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
+                                        'group flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
                                         active
                                           ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30'
                                           : 'bg-gray-50 dark:bg-gray-800'
                                       )}
                                     >
-                                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: store?.color }} />
+                                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: store?.color }} />
                                       <span className="text-gray-500 dark:text-gray-400">{store?.name}:</span>
                                       {active ? (
                                         <>
@@ -350,6 +373,25 @@ const Items: React.FC = () => {
                                       ) : (
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{formatPrice(p.normalPrice)}</span>
                                       )}
+                                      {/* Edit / Delete buttons — visible on hover */}
+                                      <span className="hidden group-hover:flex items-center gap-0.5 ml-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => openEditPrice(p)}
+                                          className="p-0.5 rounded hover:bg-brand-100 dark:hover:bg-brand-900/30 text-gray-400 hover:text-brand-500 transition-colors"
+                                          title="Edit price"
+                                        >
+                                          <Edit3 size={10} />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => deletePrice(p.id)}
+                                          className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
+                                          title="Remove price"
+                                        >
+                                          <Trash2 size={10} />
+                                        </button>
+                                      </span>
                                     </div>
                                   );
                                 })}
@@ -489,7 +531,7 @@ const Items: React.FC = () => {
       </Modal>
 
       {/* Set Price Modal */}
-      <Modal isOpen={priceModal} onClose={() => setPriceModal(false)} title="Set Price">
+      <Modal isOpen={priceModal} onClose={() => setPriceModal(false)} title={editPriceId ? 'Edit Price' : 'Add Price'}>
         <form onSubmit={submitPrice} className="space-y-4">
           {selectedItem && (
             <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
@@ -580,7 +622,7 @@ const Items: React.FC = () => {
               type="submit"
               className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"
             >
-              Set Price
+              {editPriceId ? 'Update Price' : 'Set Price'}
             </button>
           </div>
         </form>
