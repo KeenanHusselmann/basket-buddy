@@ -478,15 +478,18 @@ const Items: React.FC = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit</label>
-              <select
+              <input
+                type="text"
+                list="units-list"
                 value={itemForm.unit}
                 onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
-              >
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
+                placeholder="e.g. 5kg, 2L, each…"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              />
+              <datalist id="units-list">
+                {UNITS.map((u) => <option key={u} value={u} />)}
+              </datalist>
+              <p className="text-xs text-gray-400 mt-1">Pick a common unit or type your own (e.g. 5kg, 750ml)</p>
             </div>
           </div>
 
