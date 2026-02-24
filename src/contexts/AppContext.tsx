@@ -87,15 +87,25 @@ function migrateCategories(categories: typeof DEFAULT_CATEGORIES): typeof DEFAUL
   ];
 }
 
+/** Migrate item categoryIds — replace old 'fruits-veg' with 'fruits' */
+function migrateItems(items: GroceryItem[]): GroceryItem[] {
+  return items.map((item) =>
+    item.categoryId === 'fruits-veg' ? { ...item, categoryId: 'fruits' } : item
+  );
+}
+
 function loadState(): AppState {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
+      const rawItems: GroceryItem[] = Array.isArray(parsed.items) ? parsed.items : [];
+      const migratedItems = migrateItems(rawItems);
       return {
-        stores: parsed.stores || DEFAULT_STORES,
-        categories: migrateCategories(parsed.categories || DEFAULT_CATEGORIES),
-        items: parsed.items?.length ? parsed.items : DEFAULT_ITEMS,
+        stores: parsed.stores?.length ? parsed.stores : DEFAULT_STORES,
+        categories: migrateCategories(parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES),
+        // Always guarantee at least DEFAULT_ITEMS
+        items: migratedItems.length > 0 ? migratedItems : DEFAULT_ITEMS,
         prices: parsed.prices || [],
         trips: parsed.trips || [],
         budgets: parsed.budgets || [],
@@ -119,7 +129,9 @@ function loadState(): AppState {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isDemo } = useAuth();
   const [state, setState] = useState<AppState>(loadState);
-  const [ready, setReady] = useState(false);
+  // ready starts true — items render immediately from local/default state.
+  // Firestore syncs in the background and updates state when done.
+  const [ready, setReady] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
@@ -157,7 +169,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const migratedCats = migrateCategories(
             cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
           );
-          const resolvedItems = cloudData.items?.length ? cloudData.items : DEFAULT_ITEMS;
+          const resolvedItems = cloudData.items?.length
+            ? migrateItems(cloudData.items)
+            : DEFAULT_ITEMS;
           const loaded: AppState = {
             stores: cloudData.stores?.length ? cloudData.stores : DEFAULT_STORES,
             categories: migratedCats,
@@ -205,15 +219,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Safety net: if items are still empty after Firestore load finishes, restore defaults
+  // Safety net: whenever items are empty, restore defaults immediately
   useEffect(() => {
-    if (!ready) return;
     if (state.items.length === 0) {
-      console.warn('[AppContext] items empty after load — restoring DEFAULT_ITEMS');
+      console.warn('[AppContext] items empty — restoring DEFAULT_ITEMS');
       setDirtyState((s) => ({ ...s, items: DEFAULT_ITEMS }));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, [state.items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Force-save current state to Firestore immediately, bypassing the dirty flag */
   const syncNow = useCallback(async () => {

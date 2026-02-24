@@ -2,7 +2,7 @@
 // BasketBuddy - Items & Prices Management
 // ==========================================
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
@@ -26,7 +26,6 @@ const Items: React.FC = () => {
     addItem, updateItem, deleteItem,
     setPrice, deletePrice,
     addCategory,
-    ready,
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -36,7 +35,19 @@ const Items: React.FC = () => {
   const [priceModal, setPriceModal] = useState(false);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  // Start with all categories expanded so items are immediately visible
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(
+    () => new Set(categories.map((c) => c.id))
+  );
+
+  // Expand any newly arrived categories (e.g. after Firestore sync)
+  useEffect(() => {
+    setExpandedCats((prev) => {
+      const next = new Set(prev);
+      categories.forEach((c) => next.add(c.id));
+      return next;
+    });
+  }, [categories]);
   const [catModal, setCatModal] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6366f1' });
 
@@ -217,15 +228,7 @@ const Items: React.FC = () => {
 
       {/* Items Grouped by Category */}
       <div className="space-y-4">
-        {!ready ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
-            <div className="relative w-12 h-12 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-full border-4 border-brand-200 dark:border-brand-900" />
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-brand-500 animate-spin" />
-            </div>
-            <p className="text-gray-500 font-medium">Loading items…</p>
-          </div>
-        ) : filteredItems.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
             <Package className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
             <p className="text-gray-500 font-medium mb-1">No items yet</p>
