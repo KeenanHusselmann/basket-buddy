@@ -148,24 +148,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     let cancelled = false;
     (async () => {
+      let needsDefaultsSaved = false;
       try {
         const cloudData = await loadUserData(user.uid);
         if (cancelled) return;
         if (cloudData) {
+          const migratedCats = migrateCategories(
+            cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
+          );
+          const resolvedItems = cloudData.items?.length ? cloudData.items : DEFAULT_ITEMS;
           const loaded: AppState = {
             stores: cloudData.stores?.length ? cloudData.stores : DEFAULT_STORES,
-            categories: migrateCategories(
-              cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
-            ),
-            items: cloudData.items?.length ? cloudData.items : DEFAULT_ITEMS,
+            categories: migratedCats,
+            items: resolvedItems,
             prices: cloudData.prices || [],
             trips: cloudData.trips || [],
             budgets: cloudData.budgets || [],
             reminders: cloudData.reminders || [],
           };
+          // Track whether defaults were injected so we save them back
+          needsDefaultsSaved = !cloudData.items?.length;
           setState(loaded);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
-          console.log('[AppContext] Loaded data from Firestore');
+          console.log('[AppContext] Loaded data from Firestore, items:', resolvedItems.length, needsDefaultsSaved ? '(defaults injected — will save)' : '');
         } else {
           // First-time user — save current local data to Firestore immediately
           const current = loadState();
@@ -184,7 +189,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('[AppContext] Firestore load failed, using local:', e);
       } finally {
         if (!cancelled) {
-          isDirtyRef.current = false; // fresh load — nothing to save yet
+          // Only clear dirty flag when no defaults need to be saved back
+          isDirtyRef.current = needsDefaultsSaved;
           setReady(true);
         }
       }
