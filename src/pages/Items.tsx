@@ -6,13 +6,13 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
-  ChevronDown, ChevronRight, Star, AlertCircle, Package, FolderPlus,
+  ChevronDown, ChevronRight, Star, AlertCircle, Package, FolderPlus, Gift,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
 import { UNITS, CURRENCY } from '../config/constants';
 import { cn, formatPrice, isSpecialActive, generateId } from '../utils/helpers';
-import { GroceryItem, PriceEntry } from '../types';
+import { GroceryItem, PriceEntry, ComboDeal } from '../types';
 
 const CATEGORY_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -59,6 +59,10 @@ const Items: React.FC = () => {
   const [priceForm, setPriceForm] = useState({
     storeId: '', normalPrice: '', specialPrice: '', isOnSpecial: false,
     specialEndDate: '',
+    comboDealType: 'none' as 'none' | ComboDeal['type'],
+    comboDealQty: '',
+    comboDealForPrice: '',
+    comboDealDesc: '',
   });
 
   // Filtered items
@@ -137,7 +141,10 @@ const Items: React.FC = () => {
   const openSetPrice = (itemId: string) => {
     setSelectedItem(itemId);
     setEditPriceId(null);
-    setPriceForm({ storeId: stores[0]?.id || '', normalPrice: '', specialPrice: '', isOnSpecial: false, specialEndDate: '' });
+    setPriceForm({
+      storeId: stores[0]?.id || '', normalPrice: '', specialPrice: '', isOnSpecial: false,
+      specialEndDate: '', comboDealType: 'none', comboDealQty: '', comboDealForPrice: '', comboDealDesc: '',
+    });
     setPriceModal(true);
   };
 
@@ -145,6 +152,7 @@ const Items: React.FC = () => {
   const openEditPrice = (price: PriceEntry) => {
     setSelectedItem(price.itemId);
     setEditPriceId(price.id);
+    const cd = price.comboDeal;
     setPriceForm({
       storeId: price.storeId,
       normalPrice: String(price.normalPrice),
@@ -153,6 +161,10 @@ const Items: React.FC = () => {
       specialEndDate: price.specialEndDate
         ? new Date(price.specialEndDate).toISOString().split('T')[0]
         : '',
+      comboDealType: cd?.type ?? 'none',
+      comboDealQty: cd?.quantity != null ? String(cd.quantity) : '',
+      comboDealForPrice: cd?.forPrice != null ? String(cd.forPrice) : '',
+      comboDealDesc: cd?.description ?? '',
     });
     setPriceModal(true);
   };
@@ -173,6 +185,16 @@ const Items: React.FC = () => {
   const submitPrice = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedItem || !priceForm.storeId || !priceForm.normalPrice) return;
+    let comboDeal: ComboDeal | undefined;
+    if (priceForm.comboDealType !== 'none') {
+      comboDeal = { type: priceForm.comboDealType };
+      if (priceForm.comboDealType === 'multi-buy') {
+        if (priceForm.comboDealQty) comboDeal.quantity = parseFloat(priceForm.comboDealQty);
+        if (priceForm.comboDealForPrice) comboDeal.forPrice = parseFloat(priceForm.comboDealForPrice);
+      } else if (priceForm.comboDealType === 'custom') {
+        comboDeal.description = priceForm.comboDealDesc;
+      }
+    }
     const payload = {
       itemId: selectedItem,
       storeId: priceForm.storeId,
@@ -180,6 +202,7 @@ const Items: React.FC = () => {
       specialPrice: priceForm.specialPrice ? parseFloat(priceForm.specialPrice) : undefined,
       isOnSpecial: priceForm.isOnSpecial,
       specialEndDate: priceForm.specialEndDate ? new Date(priceForm.specialEndDate).getTime() : undefined,
+      comboDeal,
     };
     if (editPriceId) {
       updatePrice(editPriceId, payload);
@@ -372,6 +395,17 @@ const Items: React.FC = () => {
                                         </>
                                       ) : (
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{formatPrice(p.normalPrice)}</span>
+                                      )}
+                                      {/* Combo deal badge */}
+                                      {p.comboDeal && (
+                                        <span className="ml-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap">
+                                          <Gift size={9} />
+                                          {p.comboDeal.type === 'multi-buy' && p.comboDeal.quantity && p.comboDeal.forPrice
+                                            ? `${p.comboDeal.quantity} for ${formatPrice(p.comboDeal.forPrice)}`
+                                            : p.comboDeal.type === 'bogo'
+                                            ? 'B1G1'
+                                            : p.comboDeal.description || 'Deal'}
+                                        </span>
                                       )}
                                       {/* Edit / Delete buttons — always visible */}
                                       <span className="flex items-center gap-0.5 ml-1">
@@ -598,9 +632,78 @@ const Items: React.FC = () => {
                   onChange={(e) => setPriceForm({ ...priceForm, specialPrice: e.target.value })}
                   placeholder="0.00"
                   className="w-full px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500 transition-colors"
-                  required={priceForm.isOnSpecial}
+                  required={priceForm.isOnSpecial && priceForm.comboDealType === 'none'}
                 />
               </div>
+
+              {/* Combo Deal */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
+                  <Gift size={14} className="text-purple-500" /> Combo Deal (optional)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['none', 'multi-buy', 'bogo', 'custom'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setPriceForm({ ...priceForm, comboDealType: t })}
+                      className={cn(
+                        'py-2 px-3 rounded-xl text-xs font-medium border transition-colors',
+                        priceForm.comboDealType === t
+                          ? 'bg-purple-500 border-purple-500 text-white'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                      )}
+                    >
+                      {t === 'none' ? 'None' : t === 'multi-buy' ? 'Multi-buy' : t === 'bogo' ? 'Buy 1 Get 1' : 'Custom'}
+                    </button>
+                  ))}
+                </div>
+
+                {priceForm.comboDealType === 'multi-buy' && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                      <input
+                        type="number" min="2" step="1"
+                        value={priceForm.comboDealQty}
+                        onChange={(e) => setPriceForm({ ...priceForm, comboDealQty: e.target.value })}
+                        placeholder="2"
+                        className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                      />
+                    </div>
+                    <span className="text-gray-400 text-sm mt-4">for</span>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Price ({CURRENCY})</label>
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={priceForm.comboDealForPrice}
+                        onChange={(e) => setPriceForm({ ...priceForm, comboDealForPrice: e.target.value })}
+                        placeholder="30.00"
+                        className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {priceForm.comboDealType === 'bogo' && (
+                  <p className="mt-2 text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-lg">
+                    Buy 1 Get 1 Free will be shown as a badge on this item.
+                  </p>
+                )}
+
+                {priceForm.comboDealType === 'custom' && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      value={priceForm.comboDealDesc}
+                      onChange={(e) => setPriceForm({ ...priceForm, comboDealDesc: e.target.value })}
+                      placeholder="e.g. 3 for 2, Free gift with purchase…"
+                      className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Special Ends (optional)</label>
                 <input

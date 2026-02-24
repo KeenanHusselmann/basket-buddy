@@ -32,6 +32,13 @@ export interface GroceryItem {
   createdAt: number;
 }
 
+export interface ComboDeal {
+  type: 'multi-buy' | 'bogo' | 'custom';
+  quantity?: number;     // e.g. 2 in "2 for N$30"
+  forPrice?: number;     // e.g. 30 in "2 for N$30"
+  description?: string;  // custom label
+}
+
 export interface PriceEntry {
   id: string;
   itemId: string;
@@ -41,6 +48,7 @@ export interface PriceEntry {
   isOnSpecial: boolean;
   specialStartDate?: number;
   specialEndDate?: number;
+  comboDeal?: ComboDeal;
   updatedAt: number;
   updatedBy?: string;
 }
