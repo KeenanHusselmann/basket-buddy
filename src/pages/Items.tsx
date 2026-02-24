@@ -26,6 +26,7 @@ const Items: React.FC = () => {
     addItem, updateItem, deleteItem,
     setPrice, deletePrice,
     addCategory,
+    ready,
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -216,7 +217,15 @@ const Items: React.FC = () => {
 
       {/* Items Grouped by Category */}
       <div className="space-y-4">
-        {filteredItems.length === 0 ? (
+        {!ready ? (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
+            <div className="relative w-12 h-12 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-brand-200 dark:border-brand-900" />
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-brand-500 animate-spin" />
+            </div>
+            <p className="text-gray-500 font-medium">Loading items…</p>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
             <Package className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
             <p className="text-gray-500 font-medium mb-1">No items yet</p>

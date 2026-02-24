@@ -67,6 +67,7 @@ interface AppContextType extends AppState {
   // Sync
   syncNow: () => Promise<void>;
   syncStatus: 'idle' | 'saving' | 'saved' | 'error';
+  ready: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -203,6 +204,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  // Safety net: if items are still empty after Firestore load finishes, restore defaults
+  useEffect(() => {
+    if (!ready) return;
+    if (state.items.length === 0) {
+      console.warn('[AppContext] items empty after load — restoring DEFAULT_ITEMS');
+      setDirtyState((s) => ({ ...s, items: DEFAULT_ITEMS }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   /** Force-save current state to Firestore immediately, bypassing the dirty flag */
   const syncNow = useCallback(async () => {
@@ -503,7 +514,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBudget, updateBudget,
         addReminder, updateReminder, deleteReminder,
         getStore, getCategory, getItem,
-        syncNow, syncStatus,
+        syncNow, syncStatus, ready,
       }}
     >
       {children}
