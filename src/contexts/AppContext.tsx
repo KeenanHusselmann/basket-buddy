@@ -4,6 +4,7 @@
 // ==========================================
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
 import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
@@ -63,11 +64,27 @@ interface AppContextType extends AppState {
   getStore: (id: string) => Store | undefined;
   getCategory: (id: string) => Category | undefined;
   getItem: (id: string) => GroceryItem | undefined;
+  // Sync
+  syncNow: () => Promise<void>;
+  syncStatus: 'idle' | 'saving' | 'saved' | 'error';
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'bb-app-data';
+
+/** One-time migration: split old 'fruits-veg' into separate Fruits + Vegetables */
+function migrateCategories(categories: typeof DEFAULT_CATEGORIES): typeof DEFAULT_CATEGORIES {
+  const hasFruitsVeg = categories.some((c) => c.id === 'fruits-veg');
+  const hasFruits = categories.some((c) => c.id === 'fruits');
+  const hasVegetables = categories.some((c) => c.id === 'vegetables');
+  if (!hasFruitsVeg) return categories; // already migrated
+  return [
+    ...categories.filter((c) => c.id !== 'fruits-veg'),
+    ...(hasFruits ? [] : [{ id: 'fruits', name: 'Fruits', icon: '🍎', color: '#f97316', isCustom: false } as const]),
+    ...(hasVegetables ? [] : [{ id: 'vegetables', name: 'Vegetables', icon: '🥬', color: '#4CAF50', isCustom: false } as const]),
+  ];
+}
 
 function loadState(): AppState {
   try {
@@ -76,7 +93,7 @@ function loadState(): AppState {
       const parsed = JSON.parse(stored);
       return {
         stores: parsed.stores || DEFAULT_STORES,
-        categories: parsed.categories || DEFAULT_CATEGORIES,
+        categories: migrateCategories(parsed.categories || DEFAULT_CATEGORIES),
         items: parsed.items || [],
         prices: parsed.prices || [],
         trips: parsed.trips || [],
@@ -101,15 +118,31 @@ function loadState(): AppState {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isDemo } = useAuth();
   const [state, setState] = useState<AppState>(loadState);
-  const [firestoreLoaded, setFirestoreLoaded] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isInitialLoad = useRef(true);
+  const isDirtyRef = useRef(false);
+
+  /** Wraps setState and marks data as needing a Firestore save */
+  const setDirtyState: typeof setState = useCallback((value) => {
+    isDirtyRef.current = true;
+    setState(value);
+  }, []);
 
   // Load data from Firestore when user logs in
   useEffect(() => {
+    // ── DIAGNOSTICS ─────────────────────────────────────────
+    console.group('%c[BasketBuddy] Auth & Firebase status', 'color:#6366f1;font-weight:bold');
+    console.log('user:', user ? `✅ ${user.email} (uid: ${user.uid})` : '❌ null');
+    console.log('isDemo:', isDemo);
+    console.log('isFirebaseConfigured:', isFirebaseConfigured);
+    console.log('VITE_FIREBASE_PROJECT_ID:', import.meta.env.VITE_FIREBASE_PROJECT_ID || '❌ undefined — restart dev server!');
+    console.groupEnd();
+    // ────────────────────────────────────────────────────────
+
     if (!user) return;
     if (isDemo || !isFirebaseConfigured) {
-      setFirestoreLoaded(true);
+      setReady(true);
       return;
     }
 
@@ -121,7 +154,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (cloudData) {
           const loaded: AppState = {
             stores: cloudData.stores?.length ? cloudData.stores : DEFAULT_STORES,
-            categories: cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES,
+            categories: migrateCategories(
+              cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
+            ),
             items: cloudData.items || [],
             prices: cloudData.prices || [],
             trips: cloudData.trips || [],
@@ -132,18 +167,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
           console.log('[AppContext] Loaded data from Firestore');
         } else {
-          // First-time user — save current local state to Firestore
+          // First-time user — save current local data to Firestore immediately
           const current = loadState();
           setState(current);
-          await saveUserData(user.uid, current);
-          console.log('[AppContext] Initialized Firestore with default data');
+          try {
+            await saveUserData(user.uid, current);
+            console.log('[AppContext] Initialized Firestore with default data');
+          } catch (saveErr: any) {
+            console.error('[AppContext] Failed to init Firestore:', saveErr);
+            if (saveErr?.code === 'permission-denied') {
+              toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
+            }
+          }
         }
       } catch (e) {
         console.error('[AppContext] Firestore load failed, using local:', e);
       } finally {
         if (!cancelled) {
-          setFirestoreLoaded(true);
-          isInitialLoad.current = false;
+          isDirtyRef.current = false; // fresh load — nothing to save yet
+          setReady(true);
         }
       }
     })();
@@ -156,92 +198,146 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Debounced save to Firestore on state changes
+  /** Force-save current state to Firestore immediately, bypassing the dirty flag */
+  const syncNow = useCallback(async () => {
+    console.group('%c[BasketBuddy] syncNow', 'color:#22c55e;font-weight:bold');
+    console.log('user:', user ? `✅ ${user.email}` : '❌ not signed in');
+    console.log('isDemo:', isDemo);
+    console.log('isFirebaseConfigured:', isFirebaseConfigured);
+    console.log('items count:', state.items.length);
+    console.log('stores count:', state.stores.length);
+    console.groupEnd();
+
+    if (!user || isDemo || !isFirebaseConfigured) {
+      toast.error(!user ? 'Not signed in.' : isDemo ? 'Demo mode — no cloud sync.' : 'Firebase not configured — check .env and restart dev server.');
+      return;
+    }
+    setSyncStatus('saving');
+    try {
+      await saveUserData(user.uid, state);
+      isDirtyRef.current = false;
+      setSyncStatus('saved');
+      toast.success('Data synced to cloud ✓');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (err: any) {
+      setSyncStatus('error');
+      console.error('[AppContext] syncNow FAILED:', err);
+      if (err?.code === 'permission-denied') {
+        toast.error(
+          '⚠️ Permission denied — update Firestore security rules in Firebase Console.',
+          { duration: 10000, id: 'fs-perm' }
+        );
+      } else {
+        toast.error('Sync failed: ' + (err?.message || 'unknown error'), { id: 'fs-err' });
+      }
+    }
+  }, [user, isDemo, state]);
+
+  // Debounced auto-save to Firestore — only fires when isDirtyRef is true
   useEffect(() => {
-    if (!user || isDemo || !isFirebaseConfigured || !firestoreLoaded) return;
-    if (isInitialLoad.current) return;
+    if (!user || isDemo || !isFirebaseConfigured || !ready) return;
+    if (!isDirtyRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      saveUserData(user.uid, state);
-    }, 1500); // debounce 1.5s
+    saveTimerRef.current = setTimeout(async () => {
+      console.log('[AppContext] Auto-saving to Firestore…');
+      setSyncStatus('saving');
+      try {
+        await saveUserData(user.uid, state);
+        isDirtyRef.current = false;
+        setSyncStatus('saved');
+        console.log('[AppContext] Saved to Firestore ✓');
+        setTimeout(() => setSyncStatus('idle'), 3000);
+      } catch (err: any) {
+        setSyncStatus('error');
+        console.error('[AppContext] Firestore save FAILED:', err);
+        if (err?.code === 'permission-denied') {
+          toast.error(
+            '⚠️ Firestore permission denied — update your security rules.',
+            { duration: 10000, id: 'fs-perm' }
+          );
+        } else {
+          toast.error('Cloud sync failed: ' + (err?.message || 'unknown error'), { id: 'fs-err' });
+        }
+      }
+    }, 1000);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [state, user, isDemo, firestoreLoaded]);
+  }, [state, user, isDemo, ready]);
 
   // ── Store CRUD ─────────────────────────────────────────────
   const addStore = useCallback((store: Omit<Store, 'id' | 'createdAt'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       stores: [...s.stores, { ...store, id: generateId(), createdAt: Date.now() }],
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateStore = useCallback((id: string, updates: Partial<Store>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       stores: s.stores.map((st) => (st.id === id ? { ...st, ...updates } : st)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deleteStore = useCallback((id: string) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       stores: s.stores.filter((st) => st.id !== id),
       prices: s.prices.filter((p) => p.storeId !== id),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   // ── Category CRUD ──────────────────────────────────────────
   const addCategory = useCallback((cat: Omit<Category, 'id'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       categories: [...s.categories, { ...cat, id: generateId() }],
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateCategory = useCallback((id: string, updates: Partial<Category>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       categories: s.categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deleteCategory = useCallback((id: string) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       categories: s.categories.filter((c) => c.id !== id),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   // ── Item CRUD ──────────────────────────────────────────────
   const addItem = useCallback((item: Omit<GroceryItem, 'id' | 'createdAt'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       items: [...s.items, { ...item, id: generateId(), createdAt: Date.now() }],
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateItem = useCallback((id: string, updates: Partial<GroceryItem>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       items: s.items.map((i) => (i.id === id ? { ...i, ...updates } : i)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deleteItem = useCallback((id: string) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       items: s.items.filter((i) => i.id !== id),
       prices: s.prices.filter((p) => p.itemId !== id),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   // ── Price CRUD ─────────────────────────────────────────────
   const setPrice = useCallback((entry: Omit<PriceEntry, 'id' | 'updatedAt'>) => {
-    setState((s) => {
+    setDirtyState((s) => {
       const existing = s.prices.find(
         (p) => p.itemId === entry.itemId && p.storeId === entry.storeId
       );
@@ -258,18 +354,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prices: [...s.prices, { ...entry, id: generateId(), updatedAt: Date.now() }],
       };
     });
-  }, []);
+  }, [setDirtyState]);
 
   const updatePrice = useCallback((id: string, updates: Partial<PriceEntry>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       prices: s.prices.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deletePrice = useCallback((id: string) => {
-    setState((s) => ({ ...s, prices: s.prices.filter((p) => p.id !== id) }));
-  }, []);
+    setDirtyState((s) => ({ ...s, prices: s.prices.filter((p) => p.id !== id) }));
+  }, [setDirtyState]);
 
   const getPricesForItem = useCallback(
     (itemId: string) => state.prices.filter((p) => p.itemId === itemId),
@@ -283,25 +379,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Trip CRUD ──────────────────────────────────────────────
   const addTrip = useCallback((trip: Omit<ShoppingTrip, 'id' | 'createdAt'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       trips: [...s.trips, { ...trip, id: generateId(), createdAt: Date.now() }],
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateTrip = useCallback((id: string, updates: Partial<ShoppingTrip>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) => (t.id === id ? { ...t, ...updates } : t)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deleteTrip = useCallback((id: string) => {
-    setState((s) => ({ ...s, trips: s.trips.filter((t) => t.id !== id) }));
-  }, []);
+    setDirtyState((s) => ({ ...s, trips: s.trips.filter((t) => t.id !== id) }));
+  }, [setDirtyState]);
 
   const addTripItem = useCallback((tripId: string, item: Omit<ShoppingTripItem, 'id'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) =>
         t.id === tripId
@@ -309,11 +405,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : t
       ),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateTripItem = useCallback(
     (tripId: string, itemId: string, updates: Partial<ShoppingTripItem>) => {
-      setState((s) => ({
+      setDirtyState((s) => ({
         ...s,
         trips: s.trips.map((t) =>
           t.id === tripId
@@ -325,21 +421,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ),
       }));
     },
-    []
+    [setDirtyState]
   );
 
   const removeTripItem = useCallback((tripId: string, itemId: string) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) =>
         t.id === tripId ? { ...t, items: t.items.filter((i) => i.id !== itemId) } : t
       ),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   // ── Budget CRUD ────────────────────────────────────────────
   const setBudget = useCallback((budget: Omit<MonthlyBudget, 'id' | 'createdAt'>) => {
-    setState((s) => {
+    setDirtyState((s) => {
       const existing = s.budgets.find(
         (b) => b.month === budget.month && b.year === budget.year
       );
@@ -356,33 +452,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         budgets: [...s.budgets, { ...budget, id: generateId(), createdAt: Date.now() }],
       };
     });
-  }, []);
+  }, [setDirtyState]);
 
   const updateBudget = useCallback((id: string, updates: Partial<MonthlyBudget>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       budgets: s.budgets.map((b) => (b.id === id ? { ...b, ...updates } : b)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   // ── Reminder CRUD ──────────────────────────────────────────
   const addReminder = useCallback((reminder: Omit<RestockReminder, 'id'>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       reminders: [...s.reminders, { ...reminder, id: generateId() }],
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const updateReminder = useCallback((id: string, updates: Partial<RestockReminder>) => {
-    setState((s) => ({
+    setDirtyState((s) => ({
       ...s,
       reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...updates } : r)),
     }));
-  }, []);
+  }, [setDirtyState]);
 
   const deleteReminder = useCallback((id: string) => {
-    setState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
-  }, []);
+    setDirtyState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
+  }, [setDirtyState]);
 
   // ── Lookup Helpers ─────────────────────────────────────────
   const getStore = useCallback((id: string) => state.stores.find((s) => s.id === id), [state.stores]);
@@ -401,6 +497,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setBudget, updateBudget,
         addReminder, updateReminder, deleteReminder,
         getStore, getCategory, getItem,
+        syncNow, syncStatus,
       }}
     >
       {children}

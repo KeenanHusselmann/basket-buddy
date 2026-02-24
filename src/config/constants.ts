@@ -23,7 +23,8 @@ export const DEFAULT_STORES: Store[] = [
 
 // ── Default Categories ──────────────────────────────────────
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'fruits-veg', name: 'Fruits & Vegetables', icon: '🥬', color: '#4CAF50', isCustom: false },
+  { id: 'fruits', name: 'Fruits', icon: '🍎', color: '#f97316', isCustom: false },
+  { id: 'vegetables', name: 'Vegetables', icon: '🥬', color: '#4CAF50', isCustom: false },
   { id: 'meat-poultry', name: 'Meat & Poultry', icon: '🥩', color: '#E53935', isCustom: false },
   { id: 'dairy', name: 'Dairy', icon: '🧀', color: '#FDD835', isCustom: false },
   { id: 'bakery', name: 'Bakery', icon: '🍞', color: '#8D6E63', isCustom: false },
@@ -44,7 +45,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
 export const UNITS = [
   'each', 'kg', 'g', '100g', 'litre', 'ml', '500ml',
   'pack', '6-pack', '12-pack', 'box', 'bag', 'tin',
-  'bottle', 'roll', 'dozen', 'bunch', 'tray',
+  'bottle', 'roll', 'dozen', 'bunch', 'tray', 'loaf', 'brick',
 ];
 
 // ── Store Colors for Custom Stores ──────────────────────────

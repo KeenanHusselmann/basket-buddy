@@ -78,7 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       enableDemoMode();
       return;
     }
-    await signInWithPopup(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (e: any) {
+      if (e?.code === 'auth/popup-closed-by-user') return;
+      console.error('Google sign-in error:', e);
+      throw e;
+    }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
@@ -86,7 +92,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       enableDemoMode();
       return;
     }
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      console.error('Email sign-in error:', e);
+      throw e;
+    }
   };
 
   const signUpWithEmail = async (email: string, password: string, name: string) => {
@@ -94,8 +105,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       enableDemoMode();
       return;
     }
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(cred.user, { displayName: name });
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+    } catch (e) {
+      console.error('Email sign-up error:', e);
+      throw e;
+    }
   };
 
   const logout = async () => {

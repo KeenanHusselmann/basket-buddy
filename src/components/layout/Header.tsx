@@ -3,11 +3,12 @@
 // ==========================================
 
 import React, { useState } from 'react';
-import { Search, Bell, Moon, Sun, Menu } from 'lucide-react';
+import { Search, Bell, Moon, Sun, Menu, CloudUpload, Loader, CheckCircle, XCircle } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useApp } from '../../contexts/AppContext';
 import { cn, daysUntilRestock, formatPrice } from '../../utils/helpers';
 import { CURRENCY } from '../../config/constants';
+import { isFirebaseConfigured } from '../../config/firebase';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -15,7 +16,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const { theme, toggleTheme, isDark } = useTheme();
-  const { reminders, trips, items } = useApp();
+  const { reminders, trips, items, syncNow, syncStatus } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -129,6 +130,30 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           </>
         )}
       </div>
+
+      {/* Cloud Sync Button */}
+      {isFirebaseConfigured && (
+        <button
+          onClick={syncNow}
+          disabled={syncStatus === 'saving'}
+          title="Sync all data to cloud now"
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200',
+            syncStatus === 'saving' && 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 cursor-wait',
+            syncStatus === 'saved' && 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+            syncStatus === 'error' && 'bg-red-50 dark:bg-red-900/20 text-red-500',
+            syncStatus === 'idle' && 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20',
+          )}
+        >
+          {syncStatus === 'saving' && <Loader size={14} className="animate-spin" />}
+          {syncStatus === 'saved' && <CheckCircle size={14} />}
+          {syncStatus === 'error' && <XCircle size={14} />}
+          {syncStatus === 'idle' && <CloudUpload size={14} />}
+          <span className="hidden sm:inline">
+            {syncStatus === 'saving' ? 'Saving…' : syncStatus === 'saved' ? 'Saved' : syncStatus === 'error' ? 'Failed' : 'Sync'}
+          </span>
+        </button>
+      )}
 
       {/* Theme Toggle */}
       <button
