@@ -357,7 +357,7 @@ const Items: React.FC = () => {
                                     <div
                                       key={p.id}
                                       className={cn(
-                                        'group flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
+                                        'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
                                         active
                                           ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30'
                                           : 'bg-gray-50 dark:bg-gray-800'
@@ -373,8 +373,8 @@ const Items: React.FC = () => {
                                       ) : (
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{formatPrice(p.normalPrice)}</span>
                                       )}
-                                      {/* Edit / Delete buttons — visible on hover */}
-                                      <span className="hidden group-hover:flex items-center gap-0.5 ml-1">
+                                      {/* Edit / Delete buttons — always visible */}
+                                      <span className="flex items-center gap-0.5 ml-1">
                                         <button
                                           type="button"
                                           onClick={() => openEditPrice(p)}
