@@ -407,9 +407,25 @@ const Finance: React.FC = () => {
             {formatPrice(Math.abs(netSavings))}
           </p>
           {currentPlan?.savingsGoal ? (
-            <p className="text-xs text-gray-400 mt-1">
-              Goal: {formatPrice(currentPlan.savingsGoal)}
-            </p>
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-400">Goal: {formatPrice(currentPlan.savingsGoal)}</span>
+                <span className={netSavings >= currentPlan.savingsGoal ? 'text-green-500 font-semibold' : 'text-orange-500'}>
+                  {netSavings >= currentPlan.savingsGoal
+                    ? '✓ On track'
+                    : `${formatPrice(Math.max(0, currentPlan.savingsGoal - netSavings))} short`}
+                </span>
+              </div>
+              <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${Math.min(Math.round((Math.max(0, netSavings) / currentPlan.savingsGoal) * 100), 100)}%`,
+                    backgroundColor: netSavings >= currentPlan.savingsGoal ? '#22c55e' : '#a855f7',
+                  }}
+                />
+              </div>
+            </div>
           ) : null}
         </motion.div>
       </div>
@@ -940,20 +956,28 @@ const OverviewTab: React.FC<OverviewProps> = ({
               isExpense
             />
 
-            {/* Savings rate */}
+            {/* Savings bar */}
+            <CashFlowBar
+              label="Savings"
+              actual={Math.max(0, netSavings)}
+              goal={currentPlan?.savingsGoal || undefined}
+              color="#a855f7"
+            />
+
+            {/* Savings rate footer */}
             {totalIncome > 0 && (
-              <div className="flex items-center justify-between py-2 border-t border-gray-100 dark:border-gray-800 mt-2">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Savings Rate</span>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-800 mt-1">
+                <span className="text-xs text-gray-400">Savings Rate</span>
+                <div className="flex items-center gap-1.5">
                   <span className={cn(
-                    'text-sm font-bold',
+                    'text-xs font-semibold',
                     savingsRate >= 20 ? 'text-green-600' : savingsRate >= 10 ? 'text-yellow-600' : 'text-red-500'
                   )}>
                     {savingsRate}%
                   </span>
                   {savingsRate >= 20
-                    ? <TrendingUp size={14} className="text-green-500" />
-                    : <TrendingDown size={14} className="text-red-500" />}
+                    ? <TrendingUp size={12} className="text-green-500" />
+                    : <TrendingDown size={12} className="text-red-500" />}
                 </div>
               </div>
             )}
@@ -1381,15 +1405,26 @@ const PlanTab: React.FC<PlanTabProps> = ({
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
           <p className="text-xs text-gray-500 mb-1">Savings Goal</p>
           <p className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{formatPrice(currentPlan.savingsGoal)}</p>
-          <p className={cn(
-            'text-xs mt-1',
-            netSavings >= currentPlan.savingsGoal ? 'text-green-500' : 'text-orange-500'
-          )}>
-            Actual: {formatPrice(Math.max(0, netSavings))}
-            {netSavings >= currentPlan.savingsGoal
-              ? ' ✓ On track'
-              : ` (${formatPrice(currentPlan.savingsGoal - netSavings)} short)`}
-          </p>
+          {(() => {
+            const actual = Math.max(0, netSavings);
+            const goal = currentPlan.savingsGoal;
+            const p = goal > 0 ? Math.min(Math.round((actual / goal) * 100), 100) : 0;
+            const onTrack = actual >= goal;
+            return (
+              <div className="mt-2 space-y-1">
+                <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${p}%`, backgroundColor: onTrack ? '#22c55e' : '#a855f7' }}
+                  />
+                </div>
+                <p className={cn('text-xs', onTrack ? 'text-green-500' : 'text-orange-500')}>
+                  {formatPrice(actual)} saved
+                  {onTrack ? ' ✓ Goal met' : ` — ${formatPrice(goal - actual)} short`}
+                </p>
+              </div>
+            );
+          })()}
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-between">
           <div>
@@ -1406,6 +1441,71 @@ const PlanTab: React.FC<PlanTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Savings Progress section */}
+      {currentPlan.savingsGoal > 0 && (() => {
+        const actual = Math.max(0, netSavings);
+        const goal = currentPlan.savingsGoal;
+        const p = Math.min(Math.round((actual / goal) * 100), 100);
+        const onTrack = actual >= goal;
+        const savR = totalIncome > 0 ? Math.round((actual / totalIncome) * 100) : 0;
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+              <PiggyBank size={15} className="text-purple-500" />
+              <h2 className="font-semibold text-gray-800 dark:text-gray-200">Savings Progress</h2>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* Main progress bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
+                  <span className={cn('text-sm font-bold', onTrack ? 'text-green-600' : 'text-purple-600 dark:text-purple-400')}>
+                    {formatPrice(actual)} <span className="text-xs font-normal text-gray-400">/ {formatPrice(goal)}</span>
+                  </span>
+                </div>
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${p}%` }}
+                    transition={{ duration: 0.7 }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: onTrack ? '#22c55e' : '#a855f7' }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>{p}% of goal</span>
+                  <span className={onTrack ? 'text-green-500 font-semibold' : 'text-orange-500'}>
+                    {onTrack ? '✓ Goal reached!' : `${formatPrice(goal - actual)} remaining`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-3 pt-1">
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-0.5">Savings Rate</p>
+                  <p className={cn('text-base font-bold', savR >= 20 ? 'text-green-600' : savR >= 10 ? 'text-yellow-600' : 'text-red-500')}>
+                    {savR}%
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-0.5">Surplus</p>
+                  <p className={cn('text-base font-bold', netSavings >= 0 ? 'text-green-600' : 'text-red-500')}>
+                    {formatPrice(netSavings)}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-0.5">Status</p>
+                  <p className={cn('text-sm font-bold', onTrack ? 'text-green-600' : 'text-orange-500')}>
+                    {onTrack ? '✓ Met' : 'In progress'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Category targets breakdown */}
       {(currentPlan.categoryTargets.length > 0 || groceryBudget > 0) && (
