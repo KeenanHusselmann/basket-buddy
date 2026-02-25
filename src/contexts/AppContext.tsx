@@ -159,6 +159,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
+  // When Firestore quota is exhausted, pause auto-saves until this timestamp.
+  const quotaPausedUntilRef = useRef<number>(0);
   // Gate auto-save until the initial Firestore load is complete.
   // Must be real state (not a ref) so flipping it triggers the auto-save
   // effect to re-run and notice any dirty changes queued during load.
@@ -285,6 +287,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ),
     ]);
 
+  /** Centralised error handler for Firestore save failures */
+  const handleSyncError = (err: any, source: 'syncNow' | 'auto') => {
+    setSyncStatus('error');
+    setTimeout(() => setSyncStatus('idle'), 5000);
+    console.error(`[AppContext] ${source} FAILED:`, err);
+    if (err?.code === 'resource-exhausted') {
+      // Pause all auto-saves for 5 minutes to let quota recover
+      quotaPausedUntilRef.current = Date.now() + 5 * 60 * 1000;
+      toast.error(
+        '⚠️ Firestore free-tier quota exceeded. Saves paused for 5 min. Your data is safe in local storage.',
+        { duration: 12000, id: 'fs-quota' }
+      );
+    } else if (err?.code === 'permission-denied') {
+      toast.error(
+        '⚠️ Permission denied — update Firestore security rules in Firebase Console.',
+        { duration: 10000, id: 'fs-perm' }
+      );
+    } else {
+      toast.error(
+        (source === 'syncNow' ? 'Sync' : 'Cloud sync') + ' failed: ' + (err?.message || 'unknown error'),
+        { id: 'fs-err' }
+      );
+    }
+  };
+
   /** Force-save current state to Firestore immediately, bypassing the dirty flag */
   const syncNow = useCallback(async () => {
     console.group('%c[BasketBuddy] syncNow', 'color:#22c55e;font-weight:bold');
@@ -299,6 +326,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(!user ? 'Not signed in.' : isDemo ? 'Demo mode — no cloud sync.' : 'Firebase not configured — check .env and restart dev server.');
       return;
     }
+    if (Date.now() < quotaPausedUntilRef.current) {
+      toast.error('Quota recovery in progress — try again in a few minutes.', { id: 'fs-quota' });
+      return;
+    }
     setSyncStatus('saving');
     try {
       await withSyncTimeout(saveUserData(user.uid, state));
@@ -308,17 +339,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.success('Data synced to cloud ✓');
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err: any) {
-      setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 5000);
-      console.error('[AppContext] syncNow FAILED:', err);
-      if (err?.code === 'permission-denied') {
-        toast.error(
-          '⚠️ Permission denied — update Firestore security rules in Firebase Console.',
-          { duration: 10000, id: 'fs-perm' }
-        );
-      } else {
-        toast.error('Sync failed: ' + (err?.message || 'unknown error'), { id: 'fs-err' });
-      }
+      handleSyncError(err, 'syncNow');
     }
   }, [user, isDemo, state]);  // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -328,7 +349,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!isDirtyRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    // 30 s debounce: batches rapid changes and dramatically reduces Firestore writes
     saveTimerRef.current = setTimeout(async () => {
+      if (Date.now() < quotaPausedUntilRef.current) {
+        console.log('[AppContext] Auto-save skipped — quota pause active');
+        return;
+      }
       console.log('[AppContext] Auto-saving to Firestore…');
       setSyncStatus('saving');
       try {
@@ -339,19 +365,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('[AppContext] Saved to Firestore ✓');
         setTimeout(() => setSyncStatus('idle'), 3000);
       } catch (err: any) {
-        setSyncStatus('error');
-        setTimeout(() => setSyncStatus('idle'), 5000);
-        console.error('[AppContext] Firestore save FAILED:', err);
-        if (err?.code === 'permission-denied') {
-          toast.error(
-            '⚠️ Firestore permission denied — update your security rules.',
-            { duration: 10000, id: 'fs-perm' }
-          );
-        } else {
-          toast.error('Cloud sync failed: ' + (err?.message || 'unknown error'), { id: 'fs-err' });
-        }
+        handleSyncError(err, 'auto');
       }
-    }, 1000);
+    }, 30_000);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
