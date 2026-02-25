@@ -44,7 +44,7 @@ const Layout: React.FC = () => {
         className="min-h-screen flex flex-col max-lg:!ml-0"
       >
         <Header onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 pb-24">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
