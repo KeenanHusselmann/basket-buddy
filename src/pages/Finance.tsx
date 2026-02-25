@@ -113,7 +113,7 @@ function blankTx(
 // ── Component ────────────────────────────────────────────────
 const Finance: React.FC = () => {
   const {
-    transactions, financePlans, trips,
+    transactions, financePlans, trips, budgets,
     addTransaction, updateTransaction, deleteTransaction,
     setFinancePlan,
   } = useApp();
@@ -178,6 +178,12 @@ const Finance: React.FC = () => {
       })
       .reduce((sum, t) => sum + t.totalSpent, 0);
   }, [trips, viewMonth, viewYear]);
+
+  // Grocery budget from the Shopping Budget section — used as target on Finance page
+  const groceryBudget = useMemo(
+    () => budgets.find((b) => b.month === viewMonth && b.year === viewYear)?.totalBudget || 0,
+    [budgets, viewMonth, viewYear]
+  );
 
   const totalAllVariable = totalVariable + grocerySpent;
   const totalExpenses = totalFixed + totalAllVariable;
@@ -445,6 +451,7 @@ const Finance: React.FC = () => {
               totalExpenses={totalExpenses}
               netSavings={netSavings}
               grocerySpent={grocerySpent}
+              groceryBudget={groceryBudget}
               monthTx={monthTx}
               currentPlan={currentPlan}
               onEdit={openEdit}
@@ -488,6 +495,7 @@ const Finance: React.FC = () => {
               txList={varTx}
               totalVariable={totalVariable}
               grocerySpent={grocerySpent}
+              groceryBudget={groceryBudget}
               onAdd={() => openAdd('variable')}
               onEdit={openEdit}
               onDelete={deleteTransaction}
@@ -506,6 +514,7 @@ const Finance: React.FC = () => {
               fixedTx={fixedTx}
               varTx={varTx}
               grocerySpent={grocerySpent}
+              groceryBudget={groceryBudget}
               onOpenPlan={openPlan}
               month={viewMonth}
               year={viewYear}
@@ -823,6 +832,7 @@ interface OverviewProps {
   totalExpenses: number;
   netSavings: number;
   grocerySpent: number;
+  groceryBudget: number;
   monthTx: FinanceTransaction[];
   currentPlan: any;
   onEdit: (tx: FinanceTransaction) => void;
@@ -831,7 +841,7 @@ interface OverviewProps {
 
 const OverviewTab: React.FC<OverviewProps> = ({
   totalIncome, totalFixed, totalAllVariable, totalExpenses,
-  netSavings, grocerySpent, monthTx, currentPlan, onEdit, onDelete,
+  netSavings, grocerySpent, groceryBudget, monthTx, currentPlan, onEdit, onDelete,
 }) => {
   const savingsRate = totalIncome > 0 ? Math.round((Math.max(0, netSavings) / totalIncome) * 100) : 0;
   const recentTx = [...monthTx].sort((a, b) => b.date - a.date).slice(0, 8);
@@ -921,9 +931,13 @@ const OverviewTab: React.FC<OverviewProps> = ({
             <CashFlowBar
               label={`Variable Costs${grocerySpent > 0 ? ` (incl. groceries)` : ''}`}
               actual={totalAllVariable}
-              goal={currentPlan ? (currentPlan.categoryTargets
-                .filter((t: FinanceCategoryTarget) => t.type === 'variable')
-                .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0)) : undefined}
+              goal={(() => {
+                const planVar = currentPlan?.categoryTargets
+                  .filter((t: FinanceCategoryTarget) => t.type === 'variable')
+                  .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) || 0;
+                const total = planVar + groceryBudget;
+                return total > 0 ? total : undefined;
+              })()}
               color="#f97316"
               isExpense
             />
@@ -1150,6 +1164,7 @@ interface VariableTabProps {
   txList: FinanceTransaction[];
   totalVariable: number;
   grocerySpent: number;
+  groceryBudget: number;
   onAdd: () => void;
   onEdit: (tx: FinanceTransaction) => void;
   onDelete: (id: string) => void;
@@ -1157,7 +1172,7 @@ interface VariableTabProps {
 }
 
 const VariableTab: React.FC<VariableTabProps> = ({
-  txList, totalVariable, grocerySpent, onAdd, onEdit, onDelete, currentPlan,
+  txList, totalVariable, grocerySpent, groceryBudget, onAdd, onEdit, onDelete, currentPlan,
 }) => {
   const totalAll = totalVariable + grocerySpent;
   const planTarget = currentPlan?.categoryTargets
@@ -1203,8 +1218,8 @@ const VariableTab: React.FC<VariableTabProps> = ({
         </button>
       </div>
 
-      {/* Grocery auto-row */}
-      {grocerySpent > 0 && (() => {
+      {/* Grocery auto-row — always visible as a category card */}
+      {(() => {
         const groceryOpen = expanded.has('__grocery__');
         return (
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -1225,9 +1240,29 @@ const VariableTab: React.FC<VariableTabProps> = ({
               </span>
             </button>
             {groceryOpen && (
-              <div className="px-4 py-3">
+              <div className="px-4 py-3 space-y-2">
+                {groceryBudget > 0 && (() => {
+                  const p = Math.min(Math.round((grocerySpent / groceryBudget) * 100), 100);
+                  const over = grocerySpent > groceryBudget;
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-gray-500">Budget: {formatPrice(groceryBudget)}</span>
+                        <span className={over ? 'text-red-500 font-semibold' : 'text-gray-500'}>
+                          {over ? `Over by ${formatPrice(grocerySpent - groceryBudget)}` : `${formatPrice(groceryBudget - grocerySpent)} remaining`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${p}%`, backgroundColor: over ? '#ef4444' : '#22c55e' }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
                 <p className="text-xs text-gray-400">
-                  Automatically calculated from your completed shopping trips this month. Manage grocery trips on the Shopping Trips page.
+                  Automatically calculated from your completed shopping trips this month.
                 </p>
               </div>
             )}
@@ -1236,7 +1271,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
       })()}
 
       {/* Grouped manual variable entries */}
-      {groups.length === 0 && grocerySpent === 0 ? (
+      {groups.filter(([catId]) => catId !== 'groceries').length === 0 ? (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center">
           <ClipboardList size={32} className="mx-auto text-gray-300 dark:text-gray-700 mb-2" />
           <p className="text-sm text-gray-400 mb-3">No variable expenses this month</p>
@@ -1249,7 +1284,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map(([catId, { total: catTotal, items }]) => {
+          {groups.filter(([catId]) => catId !== 'groceries').map(([catId, { total: catTotal, items }]) => {
             const isOpen = expanded.has(catId);
             return (
             <div
@@ -1297,6 +1332,7 @@ interface PlanTabProps {
   fixedTx: FinanceTransaction[];
   varTx: FinanceTransaction[];
   grocerySpent: number;
+  groceryBudget: number;
   onOpenPlan: () => void;
   month: number;
   year: number;
@@ -1304,7 +1340,7 @@ interface PlanTabProps {
 
 const PlanTab: React.FC<PlanTabProps> = ({
   currentPlan, totalIncome, totalFixed, totalAllVariable, netSavings,
-  fixedTx, varTx, grocerySpent, onOpenPlan, month, year,
+  fixedTx, varTx, grocerySpent, groceryBudget, onOpenPlan, month, year,
 }) => {
   if (!currentPlan) {
     return (
@@ -1374,7 +1410,7 @@ const PlanTab: React.FC<PlanTabProps> = ({
       </div>
 
       {/* Category targets breakdown */}
-      {currentPlan.categoryTargets.length > 0 && (
+      {(currentPlan.categoryTargets.length > 0 || groceryBudget > 0) && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
             <h2 className="font-semibold text-gray-800 dark:text-gray-200">Actual vs Budget</h2>
@@ -1421,6 +1457,43 @@ const PlanTab: React.FC<PlanTabProps> = ({
                 </div>
               );
             })}
+
+            {/* Groceries row — sourced from Shopping Budget */}
+            {groceryBudget > 0 && (() => {
+              const over = grocerySpent > groceryBudget;
+              const p = pct(grocerySpent, groceryBudget);
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🛒</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Groceries</span>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600">
+                        variable
+                      </span>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-500">
+                        auto
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className={cn('text-sm font-semibold', over ? 'text-red-500' : 'text-gray-800 dark:text-gray-200')}>
+                        {formatPrice(grocerySpent)}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">/ {formatPrice(groceryBudget)}</span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(p, 100)}%` }}
+                      transition={{ duration: 0.6 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: barColor(grocerySpent, groceryBudget) }}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

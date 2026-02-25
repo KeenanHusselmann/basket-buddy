@@ -140,6 +140,7 @@ export const FINANCE_FIXED_CATEGORIES = [
 ];
 
 export const FINANCE_VARIABLE_CATEGORIES = [
+  { id: 'groceries',    label: '🛒 Groceries',          icon: '🛒' },
   { id: 'fuel',         label: '⛽ Fuel',               icon: '⛽' },
   { id: 'utilities',    label: '💡 Utilities',          icon: '💡' },
   { id: 'dining-out',   label: '🍽️ Dining Out',         icon: '🍽️' },
