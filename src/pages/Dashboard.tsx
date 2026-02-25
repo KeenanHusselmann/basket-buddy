@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import {
   ShoppingCart, TrendingDown, TrendingUp, Wallet, Tag,
   AlertTriangle, ArrowRight, Clock, CheckCircle2, Sparkles, Package,
+  Receipt, ArrowDownCircle,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,7 +26,7 @@ const item = {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { trips, items, prices, stores, budgets, reminders, categories } = useApp();
+  const { trips, items, prices, stores, budgets, reminders, categories, transactions } = useApp();
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -43,6 +44,14 @@ const Dashboard: React.FC = () => {
   const currentBudget = budgets.find((b) => b.month === currentMonth + 1 && b.year === currentYear);
   const budgetTotal = currentBudget?.totalBudget || 0;
   const budgetPct = budgetTotal > 0 ? calcPercentage(monthlySpent, budgetTotal) : 0;
+
+  // Personal finance: fixed + variable expenses this month (from Home Budget)
+  const monthTransactions = transactions.filter(
+    (t) => t.month === currentMonth + 1 && t.year === currentYear
+  );
+  const totalFixed    = monthTransactions.filter((t) => t.type === 'fixed').reduce((s, t) => s + t.amount, 0);
+  const totalVariable = monthTransactions.filter((t) => t.type === 'variable').reduce((s, t) => s + t.amount, 0);
+  const totalExpenses = totalFixed + totalVariable + monthlySpent; // incl. grocery trips
 
   // Specials count
   const activeSpecials = prices.filter(
@@ -179,6 +188,57 @@ const Dashboard: React.FC = () => {
           </Link>
         </motion.div>
       </div>
+
+      {/* Total Expenses Card */}
+      <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <Receipt size={16} className="text-rose-500" />
+            Total Monthly Expenses
+          </h2>
+          <Link to="/finance" className="text-xs text-brand-500 font-medium hover:text-brand-600 flex items-center gap-1">
+            Home Budget <ArrowRight size={12} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-gray-800">
+          {/* Fixed */}
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-xs text-gray-500 font-medium">Fixed</span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalFixed)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Rent, insurance…</p>
+          </div>
+          {/* Variable */}
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              <span className="text-xs text-gray-500 font-medium">Variable</span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalVariable)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Fuel, utilities…</p>
+          </div>
+          {/* Groceries */}
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-xs text-gray-500 font-medium">Groceries</span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(monthlySpent)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">From shopping trips</p>
+          </div>
+          {/* Total */}
+          <div className="p-5 bg-rose-50 dark:bg-rose-900/10">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowDownCircle size={12} className="text-rose-500" />
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">Total Out</span>
+            </div>
+            <p className="text-xl font-bold text-rose-600 dark:text-rose-400">{formatPrice(totalExpenses)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">All categories combined</p>
+          </div>
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Trips */}
