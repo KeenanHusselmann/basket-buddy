@@ -1120,7 +1120,6 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
-                    <span className="text-base">{getCategoryIcon(type, catId)}</span>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {getCategoryLabel(type, catId)}
                     </span>
@@ -1263,7 +1262,6 @@ const VariableTab: React.FC<VariableTabProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
-                  <span className="text-base">{getCategoryIcon('variable', catId)}</span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {getCategoryLabel('variable', catId)}
                   </span>
