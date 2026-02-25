@@ -53,16 +53,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      setLoading(false); // unblock the app immediately — don't wait for Firestore
       if (user) {
-        try {
-          await createOrUpdateUserProfile(user);
-        } catch (e) {
+        // fire-and-forget: profile write must not block the loading state
+        createOrUpdateUserProfile(user).catch((e) => {
           console.warn('Failed to create/update user profile:', e);
-        }
+        });
       }
-      setLoading(false);
     });
     return unsubscribe;
   }, []);
