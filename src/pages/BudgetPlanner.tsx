@@ -70,7 +70,10 @@ const BudgetPlanner: React.FC = () => {
 
   const saveBudget = (e: React.FormEvent) => {
     e.preventDefault();
-    const total = parseFloat(totalBudgetInput) || 0;
+    const catTotal = Object.values(catBudgets).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+    const proposed = parseFloat(totalBudgetInput) || 0;
+    const total = proposed > 0 ? proposed : catTotal;
+    if (total <= 0) return;
     const catEntries = Object.entries(catBudgets)
       .filter(([_, v]) => parseFloat(v) > 0)
       .map(([catId, amount]) => ({
@@ -276,23 +279,14 @@ const BudgetPlanner: React.FC = () => {
       {/* Budget Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Budget for ${MONTHS[viewMonth - 1]} ${viewYear}`} size="lg">
         <form onSubmit={saveBudget} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Total Monthly Budget ({CURRENCY}) *</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={totalBudgetInput}
-              onChange={(e) => setTotalBudgetInput(e.target.value)}
-              placeholder="e.g., 5000.00"
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-lg font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
-              required
-            />
-          </div>
 
+          {/* Category Budgets — filled first, drives auto-total */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Category Budgets (optional)</label>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Category Budgets
+              <span className="ml-1 text-xs font-normal text-gray-400">(fill in amounts per category)</span>
+            </label>
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {categories.map((cat) => (
                 <div key={cat.id} className="flex items-center gap-3">
                   <span className="w-8 text-center">{cat.icon}</span>
@@ -314,7 +308,71 @@ const BudgetPlanner: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          {/* Divider + totals */}
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            {/* Auto-calculated row */}
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800">
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                Category total <span className="text-xs font-normal">(auto-calculated)</span>
+              </span>
+              <span className="text-base font-bold text-gray-800 dark:text-gray-100">
+                {CURRENCY} {Object.values(catBudgets).reduce((s, v) => s + (parseFloat(v) || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+
+            {/* Proposed budget row */}
+            <div className="flex items-center gap-3 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 shrink-0">
+                Proposed budget
+              </span>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={totalBudgetInput}
+                  onChange={(e) => setTotalBudgetInput(e.target.value)}
+                  placeholder={Object.values(catBudgets).reduce((s, v) => s + (parseFloat(v) || 0), 0).toFixed(2)}
+                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-right font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Live comparison callout */}
+            {(() => {
+              const catTotal = Object.values(catBudgets).reduce((s, v) => s + (parseFloat(v) || 0), 0);
+              const proposed = parseFloat(totalBudgetInput) || 0;
+              if (catTotal === 0 && proposed === 0) return null;
+              const effectiveBudget = proposed > 0 ? proposed : catTotal;
+              const diff = proposed > 0 ? proposed - catTotal : 0;
+              const fullyAllocated = proposed > 0 && Math.abs(diff) < 0.01;
+              const over = proposed > 0 && diff < 0;
+              const unallocated = proposed > 0 && diff > 0.01;
+              const noCatYet = catTotal === 0 && proposed > 0;
+
+              return (
+                <div className={cn(
+                  'px-4 py-2.5 text-xs font-medium flex items-center justify-between border-t',
+                  over
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'
+                    : fullyAllocated
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400'
+                    : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400'
+                )}>
+                  <span>
+                    {noCatYet && 'No categories filled — proposed budget will be used as total'}
+                    {!noCatYet && fullyAllocated && '✓ Categories perfectly match your proposed budget'}
+                    {!noCatYet && over && `Categories exceed proposed budget by ${CURRENCY}${Math.abs(diff).toFixed(2)}`}
+                    {!noCatYet && unallocated && `${CURRENCY}${diff.toFixed(2)} unallocated (categories cover ${Math.round((catTotal / effectiveBudget) * 100)}%)`}
+                    {proposed === 0 && catTotal > 0 && `Using category total as budget: ${CURRENCY}${catTotal.toFixed(2)}`}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="flex gap-3 pt-1">
             <button type="button" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
             <button type="submit" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Save Budget</button>
           </div>
