@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Wallet, Plus, Edit3, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
-import { cn, formatPrice, calcPercentage, getBudgetColor, getBudgetStatus } from '../utils/helpers';
+import { cn, formatPrice, calcPercentage, getBudgetColor, getBudgetStatus, isSpecialActive } from '../utils/helpers';
 import { CURRENCY } from '../config/constants';
 
 const MONTHS = [
@@ -16,7 +16,7 @@ const MONTHS = [
 ];
 
 const BudgetPlanner: React.FC = () => {
-  const { budgets, trips, categories, setBudget } = useApp();
+  const { budgets, trips, categories, items, prices, setBudget } = useApp();
   const now = new Date();
   const [viewMonth, setViewMonth] = useState(now.getMonth() + 1);
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -35,6 +35,24 @@ const BudgetPlanner: React.FC = () => {
   }, [trips, viewMonth, viewYear]);
 
   const totalSpent = monthTrips.reduce((s, t) => s + t.totalSpent, 0);
+
+  // Real-time item price totals per category (from Items page prices)
+  const categoryItemTotals = useMemo(() => {
+    const map = new Map<string, number>();
+    items.forEach((item) => {
+      const itemPrices = prices.filter((p) => p.itemId === item.id);
+      if (itemPrices.length === 0) return;
+      // Pick the best price: lowest active special, else lowest normal
+      const best = itemPrices.reduce((min, p) => {
+        const effectivePrice = isSpecialActive(p) && p.specialPrice != null ? p.specialPrice : p.normalPrice;
+        const minPrice = isSpecialActive(min) && min.specialPrice != null ? min.specialPrice : min.normalPrice;
+        return effectivePrice < minPrice ? p : min;
+      });
+      const price = isSpecialActive(best) && best.specialPrice != null ? best.specialPrice : best.normalPrice;
+      map.set(item.categoryId, (map.get(item.categoryId) || 0) + price);
+    });
+    return map;
+  }, [items, prices]);
 
   // Category spending
   const categorySpending = useMemo(() => {
@@ -282,15 +300,32 @@ const BudgetPlanner: React.FC = () => {
 
           {/* Category Budgets — filled first, drives auto-total */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Category Budgets
-              <span className="ml-1 text-xs font-normal text-gray-400">(fill in amounts per category)</span>
-            </label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category Budgets
+                <span className="ml-1 text-xs font-normal text-gray-400">(fill in amounts per category)</span>
+              </label>
+              <span className="text-xs text-gray-400">items total · budget</span>
+            </div>
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {categories.map((cat) => (
+              {categories.map((cat) => {
+                const itemTotal = categoryItemTotals.get(cat.id) || 0;
+                const budgetVal = parseFloat(catBudgets[cat.id] || '0') || 0;
+                const diff = budgetVal > 0 ? budgetVal - itemTotal : null;
+                return (
                 <div key={cat.id} className="flex items-center gap-3">
                   <span className="w-8 text-center">{cat.icon}</span>
                   <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{cat.name}</span>
+                  {itemTotal > 0 && (
+                    <div className="flex flex-col items-end shrink-0">
+                      <span className="text-xs text-gray-400">items</span>
+                      <span className={cn(
+                        'text-xs font-semibold',
+                        diff === null ? 'text-gray-400' :
+                        diff < 0 ? 'text-red-500' : 'text-green-500'
+                      )}>{CURRENCY}{itemTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="relative w-32">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
                     <input
@@ -299,12 +334,18 @@ const BudgetPlanner: React.FC = () => {
                       min="0"
                       value={catBudgets[cat.id] || ''}
                       onChange={(e) => setCatBudgets({ ...catBudgets, [cat.id]: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-right text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
+                      placeholder={itemTotal > 0 ? itemTotal.toFixed(2) : '0.00'}
+                      className={cn(
+                        'w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border rounded-lg text-sm text-right text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500',
+                        diff !== null && diff < 0
+                          ? 'border-red-400 dark:border-red-600'
+                          : 'border-gray-200 dark:border-gray-700'
+                      )}
                     />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
