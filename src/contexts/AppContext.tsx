@@ -146,6 +146,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
+  // Guard: do NOT auto-save until the initial Firestore load has finished.
+  // (ready starts true for instant local render, but that also unblocks the
+  //  auto-save effect — this separate ref prevents a race where a save fires
+  //  mid-load and overwrites cloud data with empty/default local state.)
+  const firestoreLoadedRef = useRef(false);
 
   /** Wraps setState and marks data as needing a Firestore save */
   const setDirtyState: typeof setState = useCallback((value) => {
@@ -217,6 +222,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('[AppContext] Firestore load failed, using local:', e);
       } finally {
         if (!cancelled) {
+          firestoreLoadedRef.current = true;
           // Only clear dirty flag when no defaults need to be saved back
           isDirtyRef.current = needsDefaultsSaved;
           setReady(true);
@@ -224,7 +230,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      // Reset on user-change so a new login re-gates the auto-save
+      firestoreLoadedRef.current = false;
+    };
   }, [user, isDemo]);
 
   // Persist to localStorage on every change
@@ -277,7 +287,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Debounced auto-save to Firestore — only fires when isDirtyRef is true
   useEffect(() => {
-    if (!user || isDemo || !isFirebaseConfigured || !ready) return;
+    if (!user || isDemo || !isFirebaseConfigured || !firestoreLoadedRef.current) return;
     if (!isDirtyRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);

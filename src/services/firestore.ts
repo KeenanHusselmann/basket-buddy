@@ -177,7 +177,8 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
 
     const totalDocs =
       storesSnap.size + categoriesSnap.size + itemsSnap.size +
-      pricesSnap.size + tripsSnap.size + budgetsSnap.size + remindersSnap.size;
+      pricesSnap.size + tripsSnap.size + budgetsSnap.size + remindersSnap.size +
+      transactionsSnap.size + financePlansSnap.size;
 
     if (totalDocs === 0) {
       console.log('[Firestore] No app data found for', uid);
@@ -203,7 +204,9 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
     return result;
   } catch (e) {
     console.error('[Firestore] Failed to load app data:', e);
-    return null;
+    // Re-throw so AppContext can distinguish a genuine new user (null) from a
+    // load failure — preventing the "first-time user" branch from wiping cloud data.
+    throw e;
   }
 }
 
