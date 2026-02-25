@@ -1055,6 +1055,11 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
     ?.filter((t: FinanceCategoryTarget) => t.type === type || type === 'income')
     ?.reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) ?? 0;
 
+  // All categories collapsed by default
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+
   // Group by category
   const groups = useMemo(() => {
     const map = new Map<string, { total: number; items: FinanceTransaction[] }>();
@@ -1102,30 +1107,39 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map(([catId, { total: catTotal, items }]) => (
-            <div
-              key={catId}
-              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
-            >
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{getCategoryIcon(type, catId)}</span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {getCategoryLabel(type, catId)}
+          {groups.map(([catId, { total: catTotal, items }]) => {
+            const isOpen = expanded.has(catId);
+            return (
+              <div
+                key={catId}
+                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+              >
+                <button
+                  onClick={() => toggle(catId)}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
+                    <span className="text-base">{getCategoryIcon(type, catId)}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {getCategoryLabel(type, catId)}
+                    </span>
+                    <span className="text-xs text-gray-400">({items.length})</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                    {formatPrice(catTotal)}
                   </span>
-                  <span className="text-xs text-gray-400">({items.length})</span>
-                </div>
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                  {formatPrice(catTotal)}
-                </span>
+                </button>
+                {isOpen && (
+                  <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                    {items.sort((a, b) => b.date - a.date).map((tx) => (
+                      <TxRow key={tx.id} tx={tx} onEdit={onEdit} onDelete={onDelete} compact />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                {items.sort((a, b) => b.date - a.date).map((tx) => (
-                  <TxRow key={tx.id} tx={tx} onEdit={onEdit} onDelete={onDelete} compact />
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1150,6 +1164,11 @@ const VariableTab: React.FC<VariableTabProps> = ({
   const planTarget = currentPlan?.categoryTargets
     ?.filter((t: FinanceCategoryTarget) => t.type === 'variable')
     ?.reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) ?? 0;
+
+  // All categories collapsed by default
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (id: string) =>
+    setExpanded((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
 
   const groups = useMemo(() => {
     const map = new Map<string, { total: number; items: FinanceTransaction[] }>();
@@ -1186,27 +1205,36 @@ const VariableTab: React.FC<VariableTabProps> = ({
       </div>
 
       {/* Grocery auto-row */}
-      {grocerySpent > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-base">🛒</span>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Groceries</span>
-              <span className="text-xs bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-full">
-                Auto from trips
+      {grocerySpent > 0 && (() => {
+        const groceryOpen = expanded.has('__grocery__');
+        return (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <button
+              onClick={() => toggle('__grocery__')}
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', groceryOpen && 'rotate-90')} />
+                <span className="text-base">🛒</span>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Groceries</span>
+                <span className="text-xs bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-1.5 py-0.5 rounded-full">
+                  Auto from trips
+                </span>
+              </div>
+              <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                {formatPrice(grocerySpent)}
               </span>
-            </div>
-            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-              {formatPrice(grocerySpent)}
-            </span>
+            </button>
+            {groceryOpen && (
+              <div className="px-4 py-3">
+                <p className="text-xs text-gray-400">
+                  Automatically calculated from your completed shopping trips this month. Manage grocery trips on the Shopping Trips page.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="px-4 py-3">
-            <p className="text-xs text-gray-400">
-              Automatically calculated from your completed shopping trips this month. Manage grocery trips on the Shopping Trips page.
-            </p>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Grouped manual variable entries */}
       {groups.length === 0 && grocerySpent === 0 ? (
@@ -1222,13 +1250,19 @@ const VariableTab: React.FC<VariableTabProps> = ({
         </div>
       ) : (
         <div className="space-y-3">
-          {groups.map(([catId, { total: catTotal, items }]) => (
+          {groups.map(([catId, { total: catTotal, items }]) => {
+            const isOpen = expanded.has(catId);
+            return (
             <div
               key={catId}
               className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
             >
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between">
+              <button
+                onClick={() => toggle(catId)}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors"
+              >
                 <div className="flex items-center gap-2">
+                  <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
                   <span className="text-base">{getCategoryIcon('variable', catId)}</span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {getCategoryLabel('variable', catId)}
@@ -1238,14 +1272,17 @@ const VariableTab: React.FC<VariableTabProps> = ({
                 <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
                   {formatPrice(catTotal)}
                 </span>
-              </div>
-              <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                {items.sort((a, b) => b.date - a.date).map((tx) => (
-                  <TxRow key={tx.id} tx={tx} onEdit={onEdit} onDelete={onDelete} compact />
-                ))}
-              </div>
+              </button>
+              {isOpen && (
+                <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                  {items.sort((a, b) => b.date - a.date).map((tx) => (
+                    <TxRow key={tx.id} tx={tx} onEdit={onEdit} onDelete={onDelete} compact />
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
