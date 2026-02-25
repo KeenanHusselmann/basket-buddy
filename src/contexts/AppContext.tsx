@@ -276,6 +276,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [state.items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /** Reject a promise after `ms` milliseconds — prevents the spinner sticking on mobile */
+  const withSyncTimeout = <T,>(p: Promise<T>, ms = 15000): Promise<T> =>
+    Promise.race([
+      p,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error('Sync timed out — check your connection')), ms)
+      ),
+    ]);
+
   /** Force-save current state to Firestore immediately, bypassing the dirty flag */
   const syncNow = useCallback(async () => {
     console.group('%c[BasketBuddy] syncNow', 'color:#22c55e;font-weight:bold');
@@ -292,7 +301,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setSyncStatus('saving');
     try {
-      await saveUserData(user.uid, state);
+      await withSyncTimeout(saveUserData(user.uid, state));
       isDirtyRef.current = false;
       localStorage.removeItem(PENDING_KEY);
       setSyncStatus('saved');
@@ -300,6 +309,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err: any) {
       setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 5000);
       console.error('[AppContext] syncNow FAILED:', err);
       if (err?.code === 'permission-denied') {
         toast.error(
@@ -310,7 +320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast.error('Sync failed: ' + (err?.message || 'unknown error'), { id: 'fs-err' });
       }
     }
-  }, [user, isDemo, state]);
+  }, [user, isDemo, state]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced auto-save to Firestore — only fires when isDirtyRef is true
   useEffect(() => {
@@ -322,7 +332,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('[AppContext] Auto-saving to Firestore…');
       setSyncStatus('saving');
       try {
-        await saveUserData(user.uid, state);
+        await withSyncTimeout(saveUserData(user.uid, state));
         isDirtyRef.current = false;
         localStorage.removeItem(PENDING_KEY);
         setSyncStatus('saved');
@@ -330,6 +340,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTimeout(() => setSyncStatus('idle'), 3000);
       } catch (err: any) {
         setSyncStatus('error');
+        setTimeout(() => setSyncStatus('idle'), 5000);
         console.error('[AppContext] Firestore save FAILED:', err);
         if (err?.code === 'permission-denied') {
           toast.error(

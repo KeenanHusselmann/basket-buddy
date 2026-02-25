@@ -10,8 +10,16 @@ registerSW({
     console.log('[PWA] App ready to work offline ✅');
   },
   onNeedRefresh() {
-    // Auto-reload when a new version is deployed
+    // New version detected — reload immediately to apply it
     void window.location.reload();
+  },
+  onRegistered(registration) {
+    if (!registration) return;
+    // Poll for updates every 60 s so mobile home-screen installs pick up
+    // new deployments without waiting for the browser's default 24 h cycle.
+    setInterval(() => {
+      registration.update().catch(() => {});
+    }, 60 * 1000);
   },
 });
 
