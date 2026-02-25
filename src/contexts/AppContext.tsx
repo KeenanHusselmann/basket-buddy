@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
+  FinanceTransaction, FinancePlan,
 } from '../types';
 import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
@@ -23,8 +24,8 @@ interface AppState {
   prices: PriceEntry[];
   trips: ShoppingTrip[];
   budgets: MonthlyBudget[];
-  reminders: RestockReminder[];
-}
+  reminders: RestockReminder[];  transactions: FinanceTransaction[];
+  financePlans: FinancePlan[];}
 
 // ── Context Interface ────────────────────────────────────────
 interface AppContextType extends AppState {
@@ -60,6 +61,12 @@ interface AppContextType extends AppState {
   addReminder: (reminder: Omit<RestockReminder, 'id'>) => void;
   updateReminder: (id: string, updates: Partial<RestockReminder>) => void;
   deleteReminder: (id: string) => void;
+  // Finance Transactions
+  addTransaction: (tx: Omit<FinanceTransaction, 'id' | 'createdAt'>) => void;
+  updateTransaction: (id: string, updates: Partial<FinanceTransaction>) => void;
+  deleteTransaction: (id: string) => void;
+  // Finance Plans
+  setFinancePlan: (plan: Omit<FinancePlan, 'id' | 'createdAt'>) => void;
   // Helpers
   getStore: (id: string) => Store | undefined;
   getCategory: (id: string) => Category | undefined;
@@ -110,6 +117,8 @@ function loadState(): AppState {
         trips: parsed.trips || [],
         budgets: parsed.budgets || [],
         reminders: parsed.reminders || [],
+        transactions: parsed.transactions || [],
+        financePlans: parsed.financePlans || [],
       };
     }
   } catch (e) {
@@ -123,6 +132,8 @@ function loadState(): AppState {
     trips: [],
     budgets: [],
     reminders: [],
+    transactions: [],
+    financePlans: [],
   };
 }
 
@@ -180,6 +191,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             trips: cloudData.trips || [],
             budgets: cloudData.budgets || [],
             reminders: cloudData.reminders || [],
+            transactions: cloudData.transactions || [],
+            financePlans: cloudData.financePlans || [],
           };
           // Track whether defaults were injected so we save them back
           needsDefaultsSaved = !cloudData.items?.length;
@@ -509,6 +522,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDirtyState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
   }, [setDirtyState]);
 
+  // ── Finance Transaction CRUD ───────────────────────────────
+  const addTransaction = useCallback((tx: Omit<FinanceTransaction, 'id' | 'createdAt'>) => {
+    setDirtyState((s) => ({
+      ...s,
+      transactions: [...s.transactions, { ...tx, id: generateId(), createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
+
+  const updateTransaction = useCallback((id: string, updates: Partial<FinanceTransaction>) => {
+    setDirtyState((s) => ({
+      ...s,
+      transactions: s.transactions.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteTransaction = useCallback((id: string) => {
+    setDirtyState((s) => ({ ...s, transactions: s.transactions.filter((t) => t.id !== id) }));
+  }, [setDirtyState]);
+
+  // ── Finance Plan CRUD ──────────────────────────────────────
+  const setFinancePlan = useCallback((plan: Omit<FinancePlan, 'id' | 'createdAt'>) => {
+    setDirtyState((s) => {
+      const existing = s.financePlans.find(
+        (p) => p.month === plan.month && p.year === plan.year
+      );
+      if (existing) {
+        return {
+          ...s,
+          financePlans: s.financePlans.map((p) =>
+            p.id === existing.id ? { ...p, ...plan } : p
+          ),
+        };
+      }
+      return {
+        ...s,
+        financePlans: [...s.financePlans, { ...plan, id: generateId(), createdAt: Date.now() }],
+      };
+    });
+  }, [setDirtyState]);
+
   // ── Lookup Helpers ─────────────────────────────────────────
   const getStore = useCallback((id: string) => state.stores.find((s) => s.id === id), [state.stores]);
   const getCategory = useCallback((id: string) => state.categories.find((c) => c.id === id), [state.categories]);
@@ -525,6 +578,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addTrip, updateTrip, deleteTrip, addTripItem, updateTripItem, removeTripItem,
         setBudget, updateBudget,
         addReminder, updateReminder, deleteReminder,
+        addTransaction, updateTransaction, deleteTransaction,
+        setFinancePlan,
         getStore, getCategory, getItem,
         syncNow, syncStatus, ready,
       }}

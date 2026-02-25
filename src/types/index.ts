@@ -174,3 +174,37 @@ export interface OptimizedCart {
     subtotal: number;
   }[];
 }
+
+// ── Personal Finance Types ───────────────────────────────────
+
+export type FinanceTransactionType = 'income' | 'fixed' | 'variable';
+
+export interface FinanceTransaction {
+  id: string;
+  month: number;
+  year: number;
+  type: FinanceTransactionType;
+  category: string;       // e.g. "Salary", "Rent", "Fuel"
+  description: string;
+  amount: number;
+  date: number;           // epoch ms
+  recurring: boolean;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface FinanceCategoryTarget {
+  category: string;
+  type: 'fixed' | 'variable';
+  targetAmount: number;
+}
+
+export interface FinancePlan {
+  id: string;
+  month: number;
+  year: number;
+  incomeGoal: number;
+  savingsGoal: number;
+  categoryTargets: FinanceCategoryTarget[];
+  createdAt: number;
+}

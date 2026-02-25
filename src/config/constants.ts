@@ -111,5 +111,43 @@ export const NAV_ITEMS = [
   { id: 'compare', label: 'Price Compare', path: '/compare', icon: 'ArrowLeftRight' },
   { id: 'optimizer', label: 'Smart Cart', path: '/optimizer', icon: 'Sparkles' },
   { id: 'budget', label: 'Budget Planner', path: '/budget', icon: 'Wallet' },
+  { id: 'finance', label: 'Home Budget', path: '/finance', icon: 'PiggyBank' },
   { id: 'analytics', label: 'Analytics', path: '/analytics', icon: 'BarChart3' },
+];
+
+// ── Personal Finance Categories ──────────────────────────────
+export const FINANCE_INCOME_CATEGORIES = [
+  { id: 'salary',       label: '💰 Salary',            icon: '💰' },
+  { id: 'freelance',    label: '💼 Freelance / Contract', icon: '💼' },
+  { id: 'rental',       label: '🏠 Rental Income',      icon: '🏠' },
+  { id: 'investment',   label: '📈 Investment Returns',  icon: '📈' },
+  { id: 'business',     label: '🏢 Business Income',     icon: '🏢' },
+  { id: 'other-income', label: '🎁 Other Income',        icon: '🎁' },
+];
+
+export const FINANCE_FIXED_CATEGORIES = [
+  { id: 'rent',        label: '🏠 Rent / Mortgage',    icon: '🏠' },
+  { id: 'car-payment', label: '🚗 Car Payment',         icon: '🚗' },
+  { id: 'insurance',   label: '🛡️ Insurance',           icon: '🛡️' },
+  { id: 'internet',    label: '📶 Internet',            icon: '📶' },
+  { id: 'phone',       label: '📱 Phone Contract',      icon: '📱' },
+  { id: 'medical-aid', label: '💊 Medical Aid',         icon: '💊' },
+  { id: 'school',      label: '🎓 School / Fees',       icon: '🎓' },
+  { id: 'loan',        label: '🏦 Loan Repayment',      icon: '🏦' },
+  { id: 'subscriptions', label: '📺 Subscriptions',     icon: '📺' },
+  { id: 'other-fixed', label: '📌 Other Fixed',         icon: '📌' },
+];
+
+export const FINANCE_VARIABLE_CATEGORIES = [
+  { id: 'fuel',         label: '⛽ Fuel',               icon: '⛽' },
+  { id: 'utilities',    label: '💡 Utilities',          icon: '💡' },
+  { id: 'dining-out',   label: '🍽️ Dining Out',         icon: '🍽️' },
+  { id: 'entertainment',label: '🎬 Entertainment',      icon: '🎬' },
+  { id: 'clothing',     label: '👗 Clothing',           icon: '👗' },
+  { id: 'pharmacy',     label: '💊 Pharmacy / Health',  icon: '💊' },
+  { id: 'transport',    label: '🚌 Transport',          icon: '🚌' },
+  { id: 'personal-care',label: '💇 Personal Care',      icon: '💇' },
+  { id: 'education',    label: '📚 Education',          icon: '📚' },
+  { id: 'savings',      label: '🏦 Savings',            icon: '🏦' },
+  { id: 'miscellaneous',label: '📦 Miscellaneous',      icon: '📦' },
 ];

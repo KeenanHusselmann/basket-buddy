@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, ShoppingCart, Package, Store,
   ArrowLeftRight, Sparkles, Wallet, BarChart3,
-  ChevronLeft, ChevronRight, LogOut, Settings,
+  ChevronLeft, ChevronRight, LogOut, Settings, PiggyBank,
 } from 'lucide-react';
 import { NAV_ITEMS, APP_NAME } from '../../config/constants';
 import { useAuth } from '../../contexts/AuthContext';
@@ -16,7 +16,7 @@ import { cn } from '../../utils/helpers';
 
 const iconMap: Record<string, React.ElementType> = {
   LayoutDashboard, ShoppingCart, Package, Store,
-  ArrowLeftRight, Sparkles, Wallet, BarChart3,
+  ArrowLeftRight, Sparkles, Wallet, BarChart3, PiggyBank,
 };
 
 interface SidebarProps {

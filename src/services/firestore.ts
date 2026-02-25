@@ -30,6 +30,8 @@ import type {
   ShoppingTrip,
   MonthlyBudget,
   RestockReminder,
+  FinanceTransaction,
+  FinancePlan,
 } from '../types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -50,6 +52,8 @@ export interface UserAppData {
   trips: ShoppingTrip[];
   budgets: MonthlyBudget[];
   reminders: RestockReminder[];
+  transactions: FinanceTransaction[];
+  financePlans: FinancePlan[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -65,6 +69,7 @@ function subCol(uid: string, name: string) {
 
 const SUBCOLLECTIONS: Array<keyof UserAppData> = [
   'stores', 'categories', 'items', 'prices', 'trips', 'budgets', 'reminders',
+  'transactions', 'financePlans',
 ];
 
 /** Recursively remove undefined values — Firestore rejects them */
@@ -167,6 +172,7 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
     const [
       storesSnap, categoriesSnap, itemsSnap,
       pricesSnap, tripsSnap, budgetsSnap, remindersSnap,
+      transactionsSnap, financePlansSnap,
     ] = await Promise.all(SUBCOLLECTIONS.map((name) => getDocs(subCol(uid, name))));
 
     const totalDocs =
@@ -179,13 +185,15 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
     }
 
     const result: UserAppData = {
-      stores:     storesSnap.docs.map((d) => d.data() as Store),
-      categories: categoriesSnap.docs.map((d) => d.data() as Category),
-      items:      itemsSnap.docs.map((d) => d.data() as GroceryItem),
-      prices:     pricesSnap.docs.map((d) => d.data() as PriceEntry),
-      trips:      tripsSnap.docs.map((d) => d.data() as ShoppingTrip),
-      budgets:    budgetsSnap.docs.map((d) => d.data() as MonthlyBudget),
-      reminders:  remindersSnap.docs.map((d) => d.data() as RestockReminder),
+      stores:       storesSnap.docs.map((d) => d.data() as Store),
+      categories:   categoriesSnap.docs.map((d) => d.data() as Category),
+      items:        itemsSnap.docs.map((d) => d.data() as GroceryItem),
+      prices:       pricesSnap.docs.map((d) => d.data() as PriceEntry),
+      trips:        tripsSnap.docs.map((d) => d.data() as ShoppingTrip),
+      budgets:      budgetsSnap.docs.map((d) => d.data() as MonthlyBudget),
+      reminders:    remindersSnap.docs.map((d) => d.data() as RestockReminder),
+      transactions: transactionsSnap.docs.map((d) => d.data() as FinanceTransaction),
+      financePlans: financePlansSnap.docs.map((d) => d.data() as FinancePlan),
     };
 
     console.log(
@@ -208,13 +216,15 @@ export async function saveUserData(uid: string, data: UserAppData): Promise<void
 
   try {
     await Promise.all([
-      syncSubcollection(uid, 'stores',     data.stores     as any || []),
-      syncSubcollection(uid, 'categories', data.categories as any || []),
-      syncSubcollection(uid, 'items',      data.items      as any || []),
-      syncSubcollection(uid, 'prices',     data.prices     as any || []),
-      syncSubcollection(uid, 'trips',      data.trips      as any || []),
-      syncSubcollection(uid, 'budgets',    data.budgets    as any || []),
-      syncSubcollection(uid, 'reminders',  data.reminders  as any || []),
+      syncSubcollection(uid, 'stores',        data.stores        as any || []),
+      syncSubcollection(uid, 'categories',    data.categories    as any || []),
+      syncSubcollection(uid, 'items',         data.items         as any || []),
+      syncSubcollection(uid, 'prices',        data.prices        as any || []),
+      syncSubcollection(uid, 'trips',         data.trips         as any || []),
+      syncSubcollection(uid, 'budgets',       data.budgets       as any || []),
+      syncSubcollection(uid, 'reminders',     data.reminders     as any || []),
+      syncSubcollection(uid, 'transactions',  data.transactions  as any || []),
+      syncSubcollection(uid, 'financePlans',  data.financePlans  as any || []),
     ]);
 
     // Stamp last sync time on the profile doc

@@ -17,6 +17,7 @@ import Stores from './pages/Stores';
 import Items from './pages/Items';
 import Trips from './pages/Trips';
 import BudgetPlanner from './pages/BudgetPlanner';
+import Finance from './pages/Finance';
 import PriceComparison from './pages/PriceComparison';
 import StoreOptimizer from './pages/StoreOptimizer';
 import Analytics from './pages/Analytics';
@@ -50,6 +51,7 @@ const ProtectedRoutes: React.FC = () => {
           <Route path="compare" element={<PriceComparison />} />
           <Route path="optimizer" element={<StoreOptimizer />} />
           <Route path="budget" element={<BudgetPlanner />} />
+          <Route path="finance" element={<Finance />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
