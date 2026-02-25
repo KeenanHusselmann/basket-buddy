@@ -36,6 +36,8 @@ const Items: React.FC = () => {
   const [editPriceId, setEditPriceId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  // Remember the last store the user picked so it persists across modal opens
+  const lastUsedStoreId = React.useRef<string>('');
   // Start with all categories collapsed
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [catModal, setCatModal] = useState(false);
@@ -130,8 +132,9 @@ const Items: React.FC = () => {
   const openSetPrice = (itemId: string) => {
     setSelectedItem(itemId);
     setEditPriceId(null);
+    const defaultStore = lastUsedStoreId.current || stores[0]?.id || '';
     setPriceForm({
-      storeId: stores[0]?.id || '', normalPrice: '', specialPrice: '', isOnSpecial: false,
+      storeId: defaultStore, normalPrice: '', specialPrice: '', isOnSpecial: false,
       specialEndDate: '', comboDealType: 'none', comboDealQty: '', comboDealForPrice: '', comboDealDesc: '',
     });
     setPriceModal(true);
@@ -589,7 +592,10 @@ const Items: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Store *</label>
             <select
               value={priceForm.storeId}
-              onChange={(e) => setPriceForm({ ...priceForm, storeId: e.target.value })}
+              onChange={(e) => {
+                lastUsedStoreId.current = e.target.value;
+                setPriceForm({ ...priceForm, storeId: e.target.value });
+              }}
               className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
               required
             >
