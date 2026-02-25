@@ -221,6 +221,7 @@ export interface SavingsGoal {
   name: string;
   emoji: string;
   targetAmount: number;
+  monthlyContribution?: number;
   contributions: SavingsContribution[];
   deadline?: string;
   createdAt: number;

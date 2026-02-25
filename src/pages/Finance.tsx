@@ -1732,8 +1732,9 @@ const SavingsTab: React.FC<{
     name: string;
     emoji: string;
     targetAmount: number;
+    monthlyContribution: number;
     deadline: string;
-  }>({ open: false, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, deadline: '' });
+  }>({ open: false, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, monthlyContribution: 0, deadline: '' });
 
   const [contributeModal, setContributeModal] = useState<{
     open: boolean;
@@ -1753,19 +1754,23 @@ const SavingsTab: React.FC<{
     });
 
   const openAddGoal = () =>
-    setGoalModal({ open: true, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, deadline: '' });
+    setGoalModal({ open: true, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, monthlyContribution: 0, deadline: '' });
   const openEditGoal = (g: SavingsGoal) =>
-    setGoalModal({ open: true, mode: 'edit', id: g.id, name: g.name, emoji: g.emoji, targetAmount: g.targetAmount, deadline: g.deadline ?? '' });
+    setGoalModal({ open: true, mode: 'edit', id: g.id, name: g.name, emoji: g.emoji, targetAmount: g.targetAmount, monthlyContribution: g.monthlyContribution ?? 0, deadline: g.deadline ?? '' });
   const closeGoalModal = () =>
     setGoalModal((s) => ({ ...s, open: false }));
 
   const saveGoal = () => {
-    const { mode, id, name, emoji, targetAmount, deadline } = goalModal;
+    const { mode, id, name, emoji, targetAmount, monthlyContribution, deadline } = goalModal;
     if (!name.trim() || targetAmount <= 0) return;
+    const extras = {
+      ...(deadline ? { deadline } : { deadline: undefined }),
+      ...(monthlyContribution > 0 ? { monthlyContribution } : { monthlyContribution: undefined }),
+    };
     if (mode === 'add') {
-      onAdd({ name: name.trim(), emoji: emoji || '🎯', targetAmount, ...(deadline ? { deadline } : {}) });
+      onAdd({ name: name.trim(), emoji: emoji || '🎯', targetAmount, ...extras });
     } else if (id) {
-      onUpdate(id, { name: name.trim(), emoji: emoji || '🎯', targetAmount, ...(deadline ? { deadline } : { deadline: undefined }) });
+      onUpdate(id, { name: name.trim(), emoji: emoji || '🎯', targetAmount, ...extras });
     }
     closeGoalModal();
   };
@@ -1855,6 +1860,11 @@ const SavingsTab: React.FC<{
                       {isComplete && (
                         <span className="flex items-center gap-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">
                           <CheckCircle2 size={11} /> Achieved!
+                        </span>
+                      )}
+                      {goal.monthlyContribution != null && goal.monthlyContribution > 0 && (
+                        <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full font-medium">
+                          {CURRENCY}{goal.monthlyContribution.toLocaleString()}/mo
                         </span>
                       )}
                       {goal.deadline && (
@@ -1995,15 +2005,75 @@ const SavingsTab: React.FC<{
               className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline (optional)</label>
-            <input
-              type="date"
-              value={goalModal.deadline}
-              onChange={(e) => setGoalModal((s) => ({ ...s, deadline: e.target.value }))}
-              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline (optional)</label>
+              <input
+                type="date"
+                value={goalModal.deadline}
+                onChange={(e) => setGoalModal((s) => ({ ...s, deadline: e.target.value }))}
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Monthly contribution ({CURRENCY})</label>
+              <input
+                type="number"
+                min={0}
+                value={goalModal.monthlyContribution || ''}
+                onChange={(e) => setGoalModal((s) => ({ ...s, monthlyContribution: parseFloat(e.target.value) || 0 }))}
+                placeholder="0.00"
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
           </div>
+          {/* Projection callout */}
+          {(() => {
+            const { deadline, monthlyContribution, targetAmount } = goalModal;
+            if (!deadline || monthlyContribution <= 0) return null;
+            const msLeft = new Date(deadline).getTime() - Date.now();
+            if (msLeft <= 0) return null;
+            const monthsLeft = Math.max(1, Math.round(msLeft / (1000 * 60 * 60 * 24 * 30.44)));
+            const projected = monthlyContribution * monthsLeft;
+            const shortfall = targetAmount - projected;
+            const isOnTrack = projected >= targetAmount;
+            const pct2 = Math.min(100, Math.round((projected / targetAmount) * 100));
+            return (
+              <div className={cn(
+                'rounded-xl px-4 py-3 border text-sm',
+                isOnTrack
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+              )}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={cn('font-semibold', isOnTrack ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400')}>
+                    {isOnTrack ? '✓ On track' : '⚠ Shortfall'}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{monthsLeft} month{monthsLeft !== 1 ? 's' : ''} to deadline</span>
+                </div>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-gray-700 dark:text-gray-300">
+                    Projected: <span className="font-bold">{CURRENCY}{projected.toLocaleString()}</span>
+                  </span>
+                  {!isOnTrack && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                      {CURRENCY}{Math.round(shortfall).toLocaleString()} short
+                    </span>
+                  )}
+                </div>
+                <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={cn('h-full rounded-full', isOnTrack ? 'bg-green-500' : 'bg-amber-400')}
+                    style={{ width: `${pct2}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  {CURRENCY}{monthlyContribution.toLocaleString()}/mo × {monthsLeft} months = {CURRENCY}{projected.toLocaleString()}
+                  {!isOnTrack && ` · Need ${CURRENCY}${Math.ceil(targetAmount / monthsLeft).toLocaleString()}/mo to reach goal`}
+                </p>
+              </div>
+            );
+          })()}
           <div className="flex gap-2 pt-1">
             <button onClick={closeGoalModal} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
             <button
