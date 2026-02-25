@@ -6,7 +6,7 @@ import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeftRight, Search, TrendingDown, Star, AlertCircle } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { cn, formatPrice, isSpecialActive } from '../utils/helpers';
+import { cn, formatPrice, isSpecialActive, getEffectiveUnitPrice } from '../utils/helpers';
 import { StoreComparison } from '../types';
 
 const PriceComparison: React.FC = () => {
@@ -27,7 +27,7 @@ const PriceComparison: React.FC = () => {
         const itemPrices = prices.filter((p) => p.itemId === item.id);
         const priceList = itemPrices.map((p) => {
           const store = stores.find((s) => s.id === p.storeId);
-          const effectivePrice = isSpecialActive(p) && p.specialPrice ? p.specialPrice : p.normalPrice;
+          const effectivePrice = getEffectiveUnitPrice(p);
           return {
             storeId: p.storeId,
             storeName: store?.name || 'Unknown',
@@ -36,6 +36,7 @@ const PriceComparison: React.FC = () => {
             isOnSpecial: isSpecialActive(p),
             isCheapest: false,
             effectivePrice,
+            comboDeal: p.comboDeal,
           };
         });
 
@@ -173,7 +174,8 @@ const PriceComparison: React.FC = () => {
                 <div className="p-4 space-y-2">
                   {comp.prices.map((p) => {
                     const store = stores.find((s) => s.id === p.storeId);
-                    const effectivePrice = p.isOnSpecial && p.specialPrice ? p.specialPrice : p.normalPrice;
+                    const effectivePrice = (p as any).effectivePrice ?? (p.isOnSpecial && p.specialPrice ? p.specialPrice : p.normalPrice);
+                    const hasCombo = !!(p as any).comboDeal;
                     const barWidth = maxPrice > 0 ? (effectivePrice / maxPrice) * 100 : 100;
 
                     return (
@@ -195,6 +197,9 @@ const PriceComparison: React.FC = () => {
                               p.isCheapest ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
                             )}>
                               {formatPrice(effectivePrice)}
+                              {hasCombo && effectivePrice < p.normalPrice && (
+                                <span className="ml-1 text-[9px] font-bold text-purple-500">/unit</span>
+                              )}
                             </span>
                             {p.isCheapest && comp.prices.length > 1 && (
                               <span className="text-[9px] font-bold px-1 py-0.5 bg-green-500 text-white rounded">BEST</span>

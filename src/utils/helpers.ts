@@ -59,7 +59,7 @@ export const findCheapestStore = (
   let cheapestPrice = Infinity;
 
   prices.forEach((p) => {
-    const effectivePrice = p.isOnSpecial && p.specialPrice ? p.specialPrice : p.normalPrice;
+    const effectivePrice = getEffectiveUnitPrice(p);
     if (effectivePrice < cheapestPrice) {
       cheapestPrice = effectivePrice;
       cheapest = p;
@@ -97,7 +97,7 @@ export const optimizeCart = (
     let highestPrice = 0;
 
     itemPrices.forEach((p) => {
-      const effectivePrice = p.isOnSpecial && p.specialPrice ? p.specialPrice : p.normalPrice;
+      const effectivePrice = getEffectiveUnitPrice(p);
       if (effectivePrice < cheapestPrice) {
         cheapestPrice = effectivePrice;
         cheapest = p;
@@ -170,6 +170,33 @@ export const isSpecialActive = (entry: PriceEntry): boolean => {
   if (!entry.isOnSpecial || !entry.specialPrice) return false;
   if (entry.specialEndDate && entry.specialEndDate < Date.now()) return false;
   return true;
+};
+
+/**
+ * Get the true effective per-unit price for a PriceEntry.
+ * Accounts for active specials AND combo deals (e.g. "3 for N$45" → N$15/unit, BOGO → half price).
+ * Returns the lowest of all applicable prices.
+ */
+export const getEffectiveUnitPrice = (entry: PriceEntry): number => {
+  let best = entry.normalPrice;
+
+  // Active special price
+  if (isSpecialActive(entry) && entry.specialPrice != null) {
+    best = Math.min(best, entry.specialPrice);
+  }
+
+  // Combo deal unit price
+  if (entry.comboDeal) {
+    const cd = entry.comboDeal;
+    if (cd.type === 'multi-buy' && cd.quantity != null && cd.forPrice != null && cd.quantity > 0) {
+      best = Math.min(best, cd.forPrice / cd.quantity);
+    } else if (cd.type === 'bogo') {
+      // Buy 1 Get 1 Free = effectively half the normal price per unit
+      best = Math.min(best, entry.normalPrice / 2);
+    }
+  }
+
+  return best;
 };
 
 /** Get days until restock needed */

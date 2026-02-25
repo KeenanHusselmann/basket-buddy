@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Wallet, Plus, Edit3, TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
-import { cn, formatPrice, calcPercentage, getBudgetColor, getBudgetStatus, isSpecialActive } from '../utils/helpers';
+import { cn, formatPrice, calcPercentage, getBudgetColor, getBudgetStatus, isSpecialActive, getEffectiveUnitPrice } from '../utils/helpers';
 import { CURRENCY } from '../config/constants';
 
 const MONTHS = [
@@ -42,14 +42,9 @@ const BudgetPlanner: React.FC = () => {
     items.forEach((item) => {
       const itemPrices = prices.filter((p) => p.itemId === item.id);
       if (itemPrices.length === 0) return;
-      // Pick the best price: lowest active special, else lowest normal
-      const best = itemPrices.reduce((min, p) => {
-        const effectivePrice = isSpecialActive(p) && p.specialPrice != null ? p.specialPrice : p.normalPrice;
-        const minPrice = isSpecialActive(min) && min.specialPrice != null ? min.specialPrice : min.normalPrice;
-        return effectivePrice < minPrice ? p : min;
-      });
-      const price = isSpecialActive(best) && best.specialPrice != null ? best.specialPrice : best.normalPrice;
-      map.set(item.categoryId, (map.get(item.categoryId) || 0) + price);
+      // Pick the best effective unit price across all stores (includes combo deals)
+      const bestPrice = Math.min(...itemPrices.map((p) => getEffectiveUnitPrice(p)));
+      map.set(item.categoryId, (map.get(item.categoryId) || 0) + bestPrice);
     });
     return map;
   }, [items, prices]);

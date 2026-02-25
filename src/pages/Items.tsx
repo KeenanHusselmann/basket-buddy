@@ -11,7 +11,7 @@ import {
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
 import { UNITS, CURRENCY } from '../config/constants';
-import { cn, formatPrice, isSpecialActive, generateId } from '../utils/helpers';
+import { cn, formatPrice, isSpecialActive, getEffectiveUnitPrice, generateId } from '../utils/helpers';
 import { GroceryItem, PriceEntry, ComboDeal } from '../types';
 
 const CATEGORY_COLORS = [
@@ -337,7 +337,7 @@ const Items: React.FC = () => {
                           {group.items.map((item) => {
                     const itemPrices = prices.filter((p) => p.itemId === item.id);
                     const cheapest = itemPrices.length > 0
-                      ? Math.min(...itemPrices.map((p) => p.isOnSpecial && p.specialPrice ? p.specialPrice : p.normalPrice))
+                      ? Math.min(...itemPrices.map((p) => getEffectiveUnitPrice(p)))
                       : null;
                     const hasSpecial = itemPrices.some((p) => isSpecialActive(p));
 
@@ -386,16 +386,34 @@ const Items: React.FC = () => {
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{formatPrice(p.normalPrice)}</span>
                                       )}
                                       {/* Combo deal badge */}
-                                      {p.comboDeal && (
-                                        <span className="ml-1 px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap">
-                                          <Gift size={9} />
-                                          {p.comboDeal.type === 'multi-buy' && p.comboDeal.quantity && p.comboDeal.forPrice
-                                            ? `${p.comboDeal.quantity} for ${formatPrice(p.comboDeal.forPrice)}`
-                                            : p.comboDeal.type === 'bogo'
-                                            ? 'B1G1'
-                                            : p.comboDeal.description || 'Deal'}
-                                        </span>
-                                      )}
+                                      {p.comboDeal && (() => {
+                                        const cd = p.comboDeal;
+                                        const unitPrice = getEffectiveUnitPrice(p);
+                                        const isCheaperThanNormal = unitPrice < p.normalPrice;
+                                        let label = '';
+                                        let unitLabel = '';
+                                        if (cd.type === 'multi-buy' && cd.quantity && cd.forPrice) {
+                                          label = `${cd.quantity} for ${formatPrice(cd.forPrice)}`;
+                                          unitLabel = `${formatPrice(unitPrice)}/unit`;
+                                        } else if (cd.type === 'bogo') {
+                                          label = 'B1G1';
+                                          unitLabel = `${formatPrice(unitPrice)}/unit`;
+                                        } else {
+                                          label = cd.description || 'Deal';
+                                        }
+                                        return (
+                                          <span className="ml-1 flex items-center gap-1 flex-wrap">
+                                            <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap">
+                                              <Gift size={9} />{label}
+                                            </span>
+                                            {unitLabel && isCheaperThanNormal && (
+                                              <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-[10px] font-bold whitespace-nowrap">
+                                                = {unitLabel}
+                                              </span>
+                                            )}
+                                          </span>
+                                        );
+                                      })()}
                                       {/* Edit / Delete buttons — always visible */}
                                       <span className="flex items-center gap-0.5 ml-1">
                                         <button
