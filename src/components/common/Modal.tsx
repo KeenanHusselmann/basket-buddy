@@ -26,7 +26,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -43,7 +43,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className={cn(
-              'relative w-full bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden',
+              'relative w-full bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh]',
               sizeMap[size]
             )}
           >
@@ -59,7 +59,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             </div>
 
             {/* Body */}
-            <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">{children}</div>
+            <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
           </motion.div>
         </div>
       )}
