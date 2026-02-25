@@ -10,6 +10,7 @@ import {
   TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle,
   Target, Receipt, ShoppingCart, Repeat, StickyNote,
   LayoutGrid, BarChart2, ClipboardList,
+  CheckCircle2, Calendar, ChevronDown, ChevronUp, X,
 } from 'lucide-react';
 
 import { useApp } from '../contexts/AppContext';
@@ -26,6 +27,8 @@ import type {
   FinanceTransaction,
   FinanceTransactionType,
   FinanceCategoryTarget,
+  SavingsGoal,
+  SavingsContribution,
 } from '../types';
 
 // ── Local Constants ──────────────────────────────────────────
@@ -40,6 +43,7 @@ const TABS = [
   { id: 'fixed',     label: 'Fixed Costs',    icon: Receipt },
   { id: 'variable',  label: 'Variable Costs', icon: ArrowDownCircle },
   { id: 'plan',      label: 'Budget Plan',    icon: Target },
+  { id: 'savings',   label: 'Savings',        icon: PiggyBank },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
 
@@ -116,6 +120,8 @@ const Finance: React.FC = () => {
     transactions, financePlans, trips, budgets,
     addTransaction, updateTransaction, deleteTransaction,
     setFinancePlan,
+    savingsGoals, addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
+    addSavingsContribution, deleteSavingsContribution,
   } = useApp();
 
   // Month navigation
@@ -517,6 +523,18 @@ const Finance: React.FC = () => {
               onEdit={openEdit}
               onDelete={deleteTransaction}
               currentPlan={currentPlan}
+            />
+          )}
+
+          {/* ── SAVINGS GOALS ─────────────────────────────────── */}
+          {activeTab === 'savings' && (
+            <SavingsTab
+              goals={savingsGoals}
+              onAdd={addSavingsGoal}
+              onUpdate={updateSavingsGoal}
+              onDelete={deleteSavingsGoal}
+              onContribute={addSavingsContribution}
+              onDeleteContribution={deleteSavingsContribution}
             />
           )}
 
@@ -1694,6 +1712,358 @@ const PlanTab: React.FC<PlanTabProps> = ({
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// ── Savings Tab ──────────────────────────────────────────────
+const SavingsTab: React.FC<{
+  goals: SavingsGoal[];
+  onAdd: (g: Omit<SavingsGoal, 'id' | 'createdAt' | 'contributions'>) => void;
+  onUpdate: (id: string, updates: Partial<SavingsGoal>) => void;
+  onDelete: (id: string) => void;
+  onContribute: (goalId: string, c: Omit<SavingsContribution, 'id'>) => void;
+  onDeleteContribution: (goalId: string, cId: string) => void;
+}> = ({ goals, onAdd, onUpdate, onDelete, onContribute, onDeleteContribution }) => {
+  const [goalModal, setGoalModal] = useState<{
+    open: boolean;
+    mode: 'add' | 'edit';
+    id?: string;
+    name: string;
+    emoji: string;
+    targetAmount: number;
+    deadline: string;
+  }>({ open: false, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, deadline: '' });
+
+  const [contributeModal, setContributeModal] = useState<{
+    open: boolean;
+    goalId: string;
+    goalName: string;
+    amount: number;
+    note: string;
+    date: string;
+  }>({ open: false, goalId: '', goalName: '', amount: 0, note: '', date: new Date().toISOString().slice(0, 10) });
+
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
+  const toggleExpand = (id: string) =>
+    setExpandedGoals((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const openAddGoal = () =>
+    setGoalModal({ open: true, mode: 'add', name: '', emoji: '🎯', targetAmount: 0, deadline: '' });
+  const openEditGoal = (g: SavingsGoal) =>
+    setGoalModal({ open: true, mode: 'edit', id: g.id, name: g.name, emoji: g.emoji, targetAmount: g.targetAmount, deadline: g.deadline ?? '' });
+  const closeGoalModal = () =>
+    setGoalModal((s) => ({ ...s, open: false }));
+
+  const saveGoal = () => {
+    const { mode, id, name, emoji, targetAmount, deadline } = goalModal;
+    if (!name.trim() || targetAmount <= 0) return;
+    if (mode === 'add') {
+      onAdd({ name: name.trim(), emoji: emoji || '🎯', targetAmount, ...(deadline ? { deadline } : {}) });
+    } else if (id) {
+      onUpdate(id, { name: name.trim(), emoji: emoji || '🎯', targetAmount, ...(deadline ? { deadline } : { deadline: undefined }) });
+    }
+    closeGoalModal();
+  };
+
+  const openContribute = (g: SavingsGoal) =>
+    setContributeModal({
+      open: true, goalId: g.id, goalName: g.name,
+      amount: 0, note: '', date: new Date().toISOString().slice(0, 10),
+    });
+  const closeContribute = () =>
+    setContributeModal((s) => ({ ...s, open: false }));
+
+  const saveContribution = () => {
+    const { goalId, amount, note, date } = contributeModal;
+    if (amount <= 0) return;
+    onContribute(goalId, { amount, ...(note.trim() ? { note: note.trim() } : {}), date });
+    closeContribute();
+  };
+
+  const totalSaved = goals.reduce((s, g) => s + g.contributions.reduce((acc, c) => acc + c.amount, 0), 0);
+  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">Savings Goals</h2>
+          {goals.length > 0 && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              {CURRENCY}{totalSaved.toLocaleString()} saved of {CURRENCY}{totalTarget.toLocaleString()} across {goals.length} goal{goals.length !== 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={openAddGoal}
+          className="flex items-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors"
+        >
+          <Plus size={15} /> New Goal
+        </button>
+      </div>
+
+      {/* Empty state */}
+      {goals.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center mb-4">
+            <PiggyBank size={28} className="text-purple-500" />
+          </div>
+          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">No savings goals yet</p>
+          <p className="text-sm text-gray-400 mt-1">Create a goal like "Emergency Fund" or "New Car" and track your progress.</p>
+          <button
+            onClick={openAddGoal}
+            className="mt-5 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            Create First Goal
+          </button>
+        </div>
+      )}
+
+      {/* Goal cards */}
+      <div className="space-y-3">
+        {goals.map((goal) => {
+          const saved = goal.contributions.reduce((s, c) => s + c.amount, 0);
+          const progress = goal.targetAmount > 0 ? Math.min(100, (saved / goal.targetAmount) * 100) : 0;
+          const isComplete = saved >= goal.targetAmount;
+          const expanded = expandedGoals.has(goal.id);
+
+          let daysLeft: number | null = null;
+          let deadlineLabel = '';
+          if (goal.deadline) {
+            const diff = new Date(goal.deadline).getTime() - Date.now();
+            daysLeft = Math.ceil(diff / (1000 * 60 * 60 * 24));
+            if (daysLeft < 0) deadlineLabel = 'Overdue';
+            else if (daysLeft === 0) deadlineLabel = 'Due today';
+            else deadlineLabel = `${daysLeft}d left`;
+          }
+
+          return (
+            <div key={goal.id} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+              <div className="px-5 py-4">
+                {/* Top row */}
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl mt-0.5 shrink-0">{goal.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-800 dark:text-gray-100">{goal.name}</span>
+                      {isComplete && (
+                        <span className="flex items-center gap-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-medium">
+                          <CheckCircle2 size={11} /> Achieved!
+                        </span>
+                      )}
+                      {goal.deadline && (
+                        <span className={cn(
+                          'flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium',
+                          daysLeft !== null && daysLeft < 0
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                            : daysLeft !== null && daysLeft <= 30
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        )}>
+                          <Calendar size={11} /> {deadlineLabel}
+                        </span>
+                      )}
+                    </div>
+                    {/* Progress bar */}
+                    <div className="mt-2.5">
+                      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                        <span>{CURRENCY}{saved.toLocaleString()} saved</span>
+                        <span className="font-medium">{Math.round(progress)}% of {CURRENCY}{goal.targetAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all duration-500',
+                            isComplete ? 'bg-green-500' : 'bg-purple-500'
+                          )}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 shrink-0 ml-1">
+                    <button
+                      onClick={() => openContribute(goal)}
+                      className="p-1.5 text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                      title="Add money"
+                    >
+                      <Plus size={15} />
+                    </button>
+                    <button
+                      onClick={() => openEditGoal(goal)}
+                      className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                      title="Edit goal"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Delete "${goal.name}"?`)) onDelete(goal.id); }}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Delete goal"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Add money button */}
+                <button
+                  onClick={() => openContribute(goal)}
+                  className="mt-3 w-full py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-xl transition-colors"
+                >
+                  + Add Money
+                </button>
+              </div>
+
+              {/* Contributions toggle */}
+              {goal.contributions.length > 0 && (
+                <>
+                  <button
+                    onClick={() => toggleExpand(goal.id)}
+                    className="w-full flex items-center justify-between px-5 py-2.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                  >
+                    <span>{goal.contributions.length} contribution{goal.contributions.length !== 1 ? 's' : ''}</span>
+                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {expanded && (
+                    <div className="border-t border-gray-100 dark:border-gray-700">
+                      {[...goal.contributions].reverse().map((c) => (
+                        <div key={c.id} className="flex items-center gap-3 px-5 py-2.5 group border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-semibold text-green-600 dark:text-green-400">+{CURRENCY}{c.amount.toLocaleString()}</span>
+                            {c.note && <span className="text-xs text-gray-400 ml-2">{c.note}</span>}
+                            <span className="text-xs text-gray-400 ml-2">{new Date(c.date).toLocaleDateString('en-NA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          </div>
+                          <button
+                            onClick={() => onDeleteContribution(goal.id, c.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-500 transition-all"
+                          >
+                            <X size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add/Edit Goal Modal */}
+      <Modal isOpen={goalModal.open} onClose={closeGoalModal}
+        title={goalModal.mode === 'add' ? 'New Savings Goal' : 'Edit Goal'}>
+        <div className="space-y-4 p-1">
+          <div className="flex gap-3">
+            <div className="w-20 shrink-0">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Emoji</label>
+              <input
+                type="text"
+                value={goalModal.emoji}
+                onChange={(e) => setGoalModal((s) => ({ ...s, emoji: e.target.value }))}
+                className="w-full text-center text-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-2 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                maxLength={2}
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Goal name *</label>
+              <input
+                type="text"
+                value={goalModal.name}
+                onChange={(e) => setGoalModal((s) => ({ ...s, name: e.target.value }))}
+                placeholder="e.g. Emergency Fund"
+                className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Target amount ({CURRENCY}) *</label>
+            <input
+              type="number"
+              min={1}
+              value={goalModal.targetAmount || ''}
+              onChange={(e) => setGoalModal((s) => ({ ...s, targetAmount: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Deadline (optional)</label>
+            <input
+              type="date"
+              value={goalModal.deadline}
+              onChange={(e) => setGoalModal((s) => ({ ...s, deadline: e.target.value }))}
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={closeGoalModal} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+            <button
+              onClick={saveGoal}
+              disabled={!goalModal.name.trim() || goalModal.targetAmount <= 0}
+              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              {goalModal.mode === 'add' ? 'Create Goal' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Contribution Modal */}
+      <Modal isOpen={contributeModal.open} onClose={closeContribute}
+        title={`Add Money — ${contributeModal.goalName}`}>
+        <div className="space-y-4 p-1">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Amount ({CURRENCY}) *</label>
+            <input
+              type="number"
+              min={1}
+              value={contributeModal.amount || ''}
+              onChange={(e) => setContributeModal((s) => ({ ...s, amount: parseFloat(e.target.value) || 0 }))}
+              placeholder="0.00"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Note (optional)</label>
+            <input
+              type="text"
+              value={contributeModal.note}
+              onChange={(e) => setContributeModal((s) => ({ ...s, note: e.target.value }))}
+              placeholder="e.g. Monthly transfer"
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
+            <input
+              type="date"
+              value={contributeModal.date}
+              onChange={(e) => setContributeModal((s) => ({ ...s, date: e.target.value }))}
+              className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button onClick={closeContribute} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+            <button
+              onClick={saveContribution}
+              disabled={contributeModal.amount <= 0}
+              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              Add Money
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

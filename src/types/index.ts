@@ -208,3 +208,20 @@ export interface FinancePlan {
   categoryTargets: FinanceCategoryTarget[];
   createdAt: number;
 }
+
+export interface SavingsContribution {
+  id: string;
+  amount: number;
+  note?: string;
+  date: string;
+}
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  emoji: string;
+  targetAmount: number;
+  contributions: SavingsContribution[];
+  deadline?: string;
+  createdAt: number;
+}

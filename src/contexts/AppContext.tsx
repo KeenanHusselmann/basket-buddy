@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
-  FinanceTransaction, FinancePlan,
+  FinanceTransaction, FinancePlan, SavingsGoal, SavingsContribution,
 } from '../types';
 import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
@@ -25,7 +25,9 @@ interface AppState {
   trips: ShoppingTrip[];
   budgets: MonthlyBudget[];
   reminders: RestockReminder[];  transactions: FinanceTransaction[];
-  financePlans: FinancePlan[];}
+  financePlans: FinancePlan[];
+  savingsGoals: SavingsGoal[];
+}
 
 // ── Context Interface ────────────────────────────────────────
 interface AppContextType extends AppState {
@@ -67,6 +69,12 @@ interface AppContextType extends AppState {
   deleteTransaction: (id: string) => void;
   // Finance Plans
   setFinancePlan: (plan: Omit<FinancePlan, 'id' | 'createdAt'>) => void;
+  // Savings Goals
+  addSavingsGoal: (goal: Omit<SavingsGoal, 'id' | 'createdAt' | 'contributions'>) => void;
+  updateSavingsGoal: (id: string, updates: Partial<Omit<SavingsGoal, 'contributions'>>) => void;
+  deleteSavingsGoal: (id: string) => void;
+  addSavingsContribution: (goalId: string, contribution: Omit<SavingsContribution, 'id'>) => void;
+  deleteSavingsContribution: (goalId: string, contributionId: string) => void;
   // Helpers
   getStore: (id: string) => Store | undefined;
   getCategory: (id: string) => Category | undefined;
@@ -122,6 +130,7 @@ function loadState(): AppState {
         reminders: parsed.reminders || [],
         transactions: parsed.transactions || [],
         financePlans: parsed.financePlans || [],
+        savingsGoals: parsed.savingsGoals || [],
       };
     }
   } catch (e) {
@@ -137,6 +146,7 @@ function loadState(): AppState {
     reminders: [],
     transactions: [],
     financePlans: [],
+    savingsGoals: [],
   };
 }
 
@@ -205,6 +215,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             reminders: cloudData.reminders || [],
             transactions: cloudData.transactions || [],
             financePlans: cloudData.financePlans || [],
+            savingsGoals: cloudData.savingsGoals || [],
           };
           // Track whether defaults were injected so we save them back
           needsDefaultsSaved = !cloudData.items?.length;
@@ -589,6 +600,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [setDirtyState]);
 
+  // ── Savings Goals CRUD ─────────────────────────────────────
+  const addSavingsGoal = useCallback((goal: Omit<SavingsGoal, 'id' | 'createdAt' | 'contributions'>) => {
+    setDirtyState((s) => ({
+      ...s,
+      savingsGoals: [...s.savingsGoals, { ...goal, id: generateId(), contributions: [], createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
+
+  const updateSavingsGoal = useCallback((id: string, updates: Partial<Omit<SavingsGoal, 'contributions'>>) => {
+    setDirtyState((s) => ({
+      ...s,
+      savingsGoals: s.savingsGoals.map((g) => (g.id === id ? { ...g, ...updates } : g)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteSavingsGoal = useCallback((id: string) => {
+    setDirtyState((s) => ({ ...s, savingsGoals: s.savingsGoals.filter((g) => g.id !== id) }));
+  }, [setDirtyState]);
+
+  const addSavingsContribution = useCallback((goalId: string, contribution: Omit<SavingsContribution, 'id'>) => {
+    setDirtyState((s) => ({
+      ...s,
+      savingsGoals: s.savingsGoals.map((g) =>
+        g.id === goalId
+          ? { ...g, contributions: [...g.contributions, { ...contribution, id: generateId() }] }
+          : g
+      ),
+    }));
+  }, [setDirtyState]);
+
+  const deleteSavingsContribution = useCallback((goalId: string, contributionId: string) => {
+    setDirtyState((s) => ({
+      ...s,
+      savingsGoals: s.savingsGoals.map((g) =>
+        g.id === goalId
+          ? { ...g, contributions: g.contributions.filter((c) => c.id !== contributionId) }
+          : g
+      ),
+    }));
+  }, [setDirtyState]);
+
   // ── Lookup Helpers ─────────────────────────────────────────
   const getStore = useCallback((id: string) => state.stores.find((s) => s.id === id), [state.stores]);
   const getCategory = useCallback((id: string) => state.categories.find((c) => c.id === id), [state.categories]);
@@ -607,6 +659,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addReminder, updateReminder, deleteReminder,
         addTransaction, updateTransaction, deleteTransaction,
         setFinancePlan,
+        addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
+        addSavingsContribution, deleteSavingsContribution,
         getStore, getCategory, getItem,
         syncNow, syncStatus, ready,
       }}

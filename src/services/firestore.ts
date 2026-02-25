@@ -32,6 +32,7 @@ import type {
   RestockReminder,
   FinanceTransaction,
   FinancePlan,
+  SavingsGoal,
 } from '../types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -54,6 +55,7 @@ export interface UserAppData {
   reminders: RestockReminder[];
   transactions: FinanceTransaction[];
   financePlans: FinancePlan[];
+  savingsGoals: SavingsGoal[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -69,7 +71,7 @@ function subCol(uid: string, name: string) {
 
 const SUBCOLLECTIONS: Array<keyof UserAppData> = [
   'stores', 'categories', 'items', 'prices', 'trips', 'budgets', 'reminders',
-  'transactions', 'financePlans',
+  'transactions', 'financePlans', 'savingsGoals',
 ];
 
 /** Recursively remove undefined values — Firestore rejects them */
@@ -172,13 +174,13 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
     const [
       storesSnap, categoriesSnap, itemsSnap,
       pricesSnap, tripsSnap, budgetsSnap, remindersSnap,
-      transactionsSnap, financePlansSnap,
+      transactionsSnap, financePlansSnap, savingsGoalsSnap,
     ] = await Promise.all(SUBCOLLECTIONS.map((name) => getDocs(subCol(uid, name))));
 
     const totalDocs =
       storesSnap.size + categoriesSnap.size + itemsSnap.size +
       pricesSnap.size + tripsSnap.size + budgetsSnap.size + remindersSnap.size +
-      transactionsSnap.size + financePlansSnap.size;
+      transactionsSnap.size + financePlansSnap.size + savingsGoalsSnap.size;
 
     if (totalDocs === 0) {
       console.log('[Firestore] No app data found for', uid);
@@ -195,6 +197,7 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
       reminders:    remindersSnap.docs.map((d) => d.data() as RestockReminder),
       transactions: transactionsSnap.docs.map((d) => d.data() as FinanceTransaction),
       financePlans: financePlansSnap.docs.map((d) => d.data() as FinancePlan),
+      savingsGoals: savingsGoalsSnap.docs.map((d) => d.data() as SavingsGoal),
     };
 
     console.log(
@@ -228,6 +231,7 @@ export async function saveUserData(uid: string, data: UserAppData): Promise<void
       syncSubcollection(uid, 'reminders',     data.reminders     as any || []),
       syncSubcollection(uid, 'transactions',  data.transactions  as any || []),
       syncSubcollection(uid, 'financePlans',  data.financePlans  as any || []),
+      syncSubcollection(uid, 'savingsGoals',  data.savingsGoals  as any || []),
     ]);
 
     // Stamp last sync time on the profile doc
