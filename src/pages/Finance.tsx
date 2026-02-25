@@ -932,18 +932,10 @@ const OverviewTab: React.FC<OverviewProps> = ({
             {/* Variable costs bar */}
             <CashFlowBar
               label="Variable Costs"
-              actual={(() => {
-                // Only include grocery spend in the bar when there's a grocery budget to compare against,
-                // otherwise the actual inflates vs a target that has no grocery component, making it misleading.
-                return totalVariable + (groceryBudget > 0 ? grocerySpent : 0);
-              })()}
-              goal={(() => {
-                const planVar = currentPlan?.categoryTargets
-                  .filter((t: FinanceCategoryTarget) => t.type === 'variable')
-                  .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) || 0;
-                const total = planVar + groceryBudget;
-                return total > 0 ? total : undefined;
-              })()}
+              actual={totalVariable}
+              goal={currentPlan ? (currentPlan.categoryTargets
+                .filter((t: FinanceCategoryTarget) => t.type === 'variable')
+                .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) || undefined) : undefined}
               color="#f97316"
               isExpense
             />
