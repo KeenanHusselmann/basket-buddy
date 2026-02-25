@@ -136,6 +136,7 @@ export const FINANCE_FIXED_CATEGORIES = [
   { id: 'loan',        label: '🏦 Loan Repayment',      icon: '🏦' },
   { id: 'subscriptions', label: '📺 Subscriptions',     icon: '📺' },
   { id: 'banking-fees', label: '💳 Banking Fees',       icon: '💳' },
+  { id: 'savings',      label: '🐷 Savings',            icon: '🐷' },
   { id: 'other-fixed', label: '📌 Other Fixed',         icon: '📌' },
 ];
 
