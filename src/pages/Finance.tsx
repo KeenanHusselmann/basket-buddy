@@ -437,14 +437,14 @@ const Finance: React.FC = () => {
             key={id}
             onClick={() => setActiveTab(id)}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex-1 justify-center',
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0',
               activeTab === id
                 ? 'bg-white dark:bg-gray-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             )}
           >
             <Icon size={14} />
-            <span className="hidden sm:inline">{label}</span>
+            {label}
           </button>
         ))}
       </div>
