@@ -2,7 +2,7 @@
 // BasketBuddy - Items & Prices Management
 // ==========================================
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
@@ -36,19 +36,8 @@ const Items: React.FC = () => {
   const [editPriceId, setEditPriceId] = useState<string | null>(null);
   const [editItemId, setEditItemId] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
-  // Start with all categories expanded so items are immediately visible
-  const [expandedCats, setExpandedCats] = useState<Set<string>>(
-    () => new Set(categories.map((c) => c.id))
-  );
-
-  // Expand any newly arrived categories (e.g. after Firestore sync)
-  useEffect(() => {
-    setExpandedCats((prev) => {
-      const next = new Set(prev);
-      categories.forEach((c) => next.add(c.id));
-      return next;
-    });
-  }, [categories]);
+  // Start with all categories collapsed
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [catModal, setCatModal] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6366f1' });
 
