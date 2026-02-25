@@ -838,6 +838,56 @@ const OverviewTab: React.FC<OverviewProps> = ({
 
   return (
     <div className="space-y-5">
+      {/* ── Total Expenses Card ─────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
+          <Receipt size={15} className="text-rose-500" />
+          <h2 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Total Monthly Expenses</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-gray-800">
+          {/* Fixed */}
+          <div className="p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-xs text-gray-500 font-medium">Fixed</span>
+            </div>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(totalFixed)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Rent, insurance…</p>
+          </div>
+          {/* Variable */}
+          <div className="p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-orange-500" />
+              <span className="text-xs text-gray-500 font-medium">Variable</span>
+            </div>
+            <p className="text-lg font-bold text-gray-900 dark:text-white">{formatPrice(totalAllVariable)}</p>
+            {grocerySpent > 0 && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">+{formatPrice(grocerySpent)} groceries</p>
+            )}
+          </div>
+          {/* Net Savings */}
+          <div className="p-4">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={cn('w-2 h-2 rounded-full', netSavings >= 0 ? 'bg-green-500' : 'bg-red-500')} />
+              <span className="text-xs text-gray-500 font-medium">{netSavings >= 0 ? 'Surplus' : 'Deficit'}</span>
+            </div>
+            <p className={cn('text-lg font-bold', netSavings >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400')}>
+              {formatPrice(Math.abs(netSavings))}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">Income − Expenses</p>
+          </div>
+          {/* Total Out */}
+          <div className="p-4 bg-rose-50 dark:bg-rose-900/10">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowDownCircle size={12} className="text-rose-500" />
+              <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">Total Out</span>
+            </div>
+            <p className="text-lg font-bold text-rose-600 dark:text-rose-400">{formatPrice(totalExpenses)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">All expenses combined</p>
+          </div>
+        </div>
+      </div>
+
       {/* Cash Flow Progress */}
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
         <h2 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
