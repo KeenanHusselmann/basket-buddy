@@ -150,5 +150,6 @@ export const FINANCE_VARIABLE_CATEGORIES = [
   { id: 'education',    label: '📚 Education',          icon: '📚' },
   { id: 'savings',      label: '🏦 Savings',            icon: '🏦' },
   { id: 'quick-loans',  label: '💸 Quick Loans',        icon: '💸' },
+  { id: 'accounts',     label: '🏧 Accounts',           icon: '🏧' },
   { id: 'miscellaneous',label: '📦 Miscellaneous',      icon: '📦' },
 ];
