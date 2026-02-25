@@ -25,8 +25,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache all app shell files
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Cache JS/CSS/assets but NOT index.html — navigation requests must
+        // always hit the network so a new deploy is picked up immediately.
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        // Serve index.html from network; fall back to cache only when offline.
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
+        // Claim all open tabs and activate the new SW immediately on update.
+        skipWaiting: true,
+        clientsClaim: true,
         // Runtime caching for Firebase + Google Fonts
         runtimeCaching: [
           {
