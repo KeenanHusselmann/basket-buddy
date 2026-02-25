@@ -252,7 +252,7 @@ const Trips: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setSelectedTripId(trip.id);
-                                  setItemForm({ itemId: items[0]?.id || '', quantity: '1', estimatedPrice: '' });
+                                  setItemForm({ itemId: '', quantity: '1', estimatedPrice: '' });
                                   setAddItemModal(true);
                                 }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 text-white rounded-lg text-xs font-medium hover:bg-brand-600 transition-colors"
@@ -272,7 +272,7 @@ const Trips: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setSelectedTripId(trip.id);
-                                  setItemForm({ itemId: items[0]?.id || '', quantity: '1', estimatedPrice: '' });
+                                  setItemForm({ itemId: '', quantity: '1', estimatedPrice: '' });
                                   setAddItemModal(true);
                                 }}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 text-white rounded-lg text-xs font-medium hover:bg-brand-600 transition-colors"
@@ -464,26 +464,52 @@ const Trips: React.FC = () => {
       {/* Add Item to Trip Modal */}
       <Modal isOpen={addItemModal} onClose={() => setAddItemModal(false)} title="Add Item to Trip">
         <form onSubmit={handleAddItem} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Select Item *</label>
-            <select
-              value={itemForm.itemId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setItemForm({ ...itemForm, itemId: id });
-              }}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
-              required
-            >
-              <option value="">Choose an item...</option>
-              {items.map((item) => {
-                const cat = categories.find((c) => c.id === item.categoryId);
-                return (
-                  <option key={item.id} value={item.id}>{cat?.icon} {item.name} ({item.unit})</option>
-                );
-              })}
-            </select>
-          </div>
+          {(() => {
+            const tripStoreId = trips.find((t) => t.id === selectedTripId)?.storeId || '';
+            const itemsAtStore = items.filter((item) =>
+              prices.some((p) => p.itemId === item.id && p.storeId === tripStoreId)
+            );
+            const storeName = stores.find((s) => s.id === tripStoreId)?.name || 'this store';
+            return (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Select Item *</label>
+                  <select
+                    value={itemForm.itemId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      const storePrice = prices.find((p) => p.itemId === id && p.storeId === tripStoreId);
+                      const autoPrice = storePrice
+                        ? String(storePrice.isOnSpecial && storePrice.specialPrice ? storePrice.specialPrice : storePrice.normalPrice)
+                        : '';
+                      setItemForm({ ...itemForm, itemId: id, estimatedPrice: autoPrice });
+                    }}
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
+                    required
+                  >
+                    <option value="">
+                      {itemsAtStore.length === 0 ? `No items registered at ${storeName}` : 'Choose an item...'}
+                    </option>
+                    {itemsAtStore.map((item) => {
+                      const cat = categories.find((c) => c.id === item.categoryId);
+                      const sp = prices.find((p) => p.itemId === item.id && p.storeId === tripStoreId);
+                      const price = sp ? (sp.isOnSpecial && sp.specialPrice ? sp.specialPrice : sp.normalPrice) : null;
+                      return (
+                        <option key={item.id} value={item.id}>
+                          {cat?.icon} {item.name} ({item.unit}){price != null ? ` — N$${price}` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {itemsAtStore.length === 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                      No items have prices registered for {storeName}. Go to Items → add prices for this store first.
+                    </p>
+                  )}
+                </div>
+              </>
+            );
+          })()}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Quantity</label>
