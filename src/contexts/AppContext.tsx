@@ -80,6 +80,9 @@ interface AppContextType extends AppState {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'bb-app-data';
+// Set when local state has unsaved changes, cleared after a successful Firestore write.
+// Survives a hard refresh so we can detect that localStorage is newer than Firestore.
+const PENDING_KEY = 'bb-pending-save';
 
 /** One-time migration: split old 'fruits-veg' into separate Fruits + Vegetables */
 function migrateCategories(categories: typeof DEFAULT_CATEGORIES): typeof DEFAULT_CATEGORIES {
@@ -154,6 +157,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   /** Wraps setState and marks data as needing a Firestore save */
   const setDirtyState: typeof setState = useCallback((value) => {
     isDirtyRef.current = true;
+    localStorage.setItem(PENDING_KEY, '1'); // survives hard-refresh
     setState(value);
   }, []);
 
@@ -181,7 +185,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const cloudData = await loadUserData(user.uid);
         if (cancelled) return;
-        if (cloudData) {
+        const hasPendingLocalSave = localStorage.getItem(PENDING_KEY) === '1';
+
+        if (cloudData && !hasPendingLocalSave) {
+          // Normal case: Firestore has the latest data — load it.
           const migratedCats = migrateCategories(
             cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
           );
@@ -205,14 +212,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
           console.log('[AppContext] Loaded data from Firestore, items:', resolvedItems.length, needsDefaultsSaved ? '(defaults injected — will save)' : '');
         } else {
-          // First-time user — save current local data to Firestore immediately
+          // Either first-time user OR local has unsaved changes from before a
+          // hard-refresh (PENDING_KEY was set). In both cases, local state is
+          // the source of truth — save it up to Firestore now.
           const current = loadState();
           setState(current);
+          if (hasPendingLocalSave) {
+            console.log('[AppContext] Pending local changes detected — saving local state to Firestore');
+          } else {
+            console.log('[AppContext] First-time user — initialising Firestore with local/default data');
+          }
           try {
             await saveUserData(user.uid, current);
-            console.log('[AppContext] Initialized Firestore with default data');
+            localStorage.removeItem(PENDING_KEY);
+            console.log('[AppContext] Saved local state to Firestore ✓');
           } catch (saveErr: any) {
-            console.error('[AppContext] Failed to init Firestore:', saveErr);
+            console.error('[AppContext] Failed to save to Firestore:', saveErr);
             if (saveErr?.code === 'permission-denied') {
               toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
             }
@@ -268,6 +283,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await saveUserData(user.uid, state);
       isDirtyRef.current = false;
+      localStorage.removeItem(PENDING_KEY);
       setSyncStatus('saved');
       toast.success('Data synced to cloud ✓');
       setTimeout(() => setSyncStatus('idle'), 3000);
@@ -297,6 +313,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         await saveUserData(user.uid, state);
         isDirtyRef.current = false;
+        localStorage.removeItem(PENDING_KEY);
         setSyncStatus('saved');
         console.log('[AppContext] Saved to Firestore ✓');
         setTimeout(() => setSyncStatus('idle'), 3000);
