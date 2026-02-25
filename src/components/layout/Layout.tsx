@@ -7,6 +7,7 @@ import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import FloatingCalculator from '../common/FloatingCalculator';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -53,6 +54,8 @@ const Layout: React.FC = () => {
           </motion.div>
         </main>
       </motion.div>
+
+      <FloatingCalculator />
     </div>
   );
 };
