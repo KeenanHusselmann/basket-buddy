@@ -1,3 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  # Ignore all automatic git-triggered builds.
+  # Deploy manually from the Netlify dashboard whenever you're ready.
+  ignore = "exit 1"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
