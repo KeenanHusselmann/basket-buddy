@@ -6,8 +6,15 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  DndContext, DragOverlay,
+  useDraggable, useDroppable,
+  PointerSensor, TouchSensor,
+  useSensor, useSensors,
+  type DragEndEvent, type DragStartEvent,
+} from '@dnd-kit/core';
+import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
-  ChevronDown, ChevronRight, Star, AlertCircle, Package, FolderPlus, Gift,
+  ChevronDown, ChevronRight, Star, AlertCircle, Package, FolderPlus, Gift, GripVertical,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
@@ -20,6 +27,42 @@ const CATEGORY_COLORS = [
   '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
   '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e',
 ];
+
+// ── Drag & Drop sub-components ───────────────────────────────
+function DroppableCategory({ id, color, children }: { id: string; color: string; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'rounded-2xl transition-all duration-150',
+        isOver && 'ring-2 ring-offset-1 ring-brand-400 scale-[1.005]',
+      )}
+      style={isOver ? { backgroundColor: `${color}18` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DragHandle({ itemId }: { itemId: string }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: itemId });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        'p-1 mt-0.5 cursor-grab active:cursor-grabbing touch-none flex-shrink-0',
+        'text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 transition-colors',
+        isDragging && 'opacity-40',
+      )}
+      title="Drag to move to another category"
+    >
+      <GripVertical size={14} />
+    </div>
+  );
+}
 
 const Items: React.FC = () => {
   const {
@@ -39,6 +82,12 @@ const Items: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   // Remember the last store the user picked so it persists across modal opens
   const lastUsedStoreId = React.useRef<string>('');
+  // Drag & Drop state
+  const [activeDragItem, setActiveDragItem] = useState<GroceryItem | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
   // Start with all categories collapsed
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [catModal, setCatModal] = useState(false);
@@ -232,7 +281,25 @@ const Items: React.FC = () => {
     setPriceModal(false);
   };
 
+  const handleDragStart = (e: DragStartEvent) => {
+    const found = items.find((i) => i.id === e.active.id);
+    if (found) setActiveDragItem(found);
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setActiveDragItem(null);
+    const itemId = e.active.id as string;
+    const newCatId = e.over?.id as string | undefined;
+    if (!newCatId) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item || item.categoryId === newCatId) return;
+    const newCat = categories.find((c) => c.id === newCatId);
+    updateItem(itemId, { categoryId: newCatId });
+    toast.success(`Moved to ${newCat?.name ?? 'category'}`);
+  };
+
   return (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -322,8 +389,8 @@ const Items: React.FC = () => {
               const isExpanded = expandedCats.has(catId);
 
               return (
+                <DroppableCategory key={catId} id={catId} color={cat?.color || '#999'}>
                 <motion.div
-                  key={catId}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
@@ -399,8 +466,13 @@ const Items: React.FC = () => {
                     const hasSpecial = itemPrices.some((p) => isSpecialActive(p));
 
                     return (
-                      <div key={item.id} className="px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
-                        <div className="flex items-start gap-4">
+                      <div
+                        key={item.id}
+                        className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                        style={activeDragItem?.id === item.id ? { opacity: 0.4 } : undefined}
+                      >
+                        <div className="flex items-start gap-2">
+                          <DragHandle itemId={item.id} />
                           {/* Item Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -538,11 +610,22 @@ const Items: React.FC = () => {
                     )}
                   </AnimatePresence>
                 </motion.div>
+                </DroppableCategory>
               );
             })}
           </>
         )}
       </div>
+      {/* Drag overlay — floating ghost while dragging */}
+      <DragOverlay dropAnimation={null}>
+        {activeDragItem && (
+          <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-brand-300 dark:border-brand-600 text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2 opacity-95">
+            <GripVertical size={14} className="text-brand-400" />
+            {activeDragItem.name}
+            {activeDragItem.brand && <span className="text-xs text-gray-400">{activeDragItem.brand}</span>}
+          </div>
+        )}
+      </DragOverlay>
 
       {/* Add/Edit Item Modal */}
       <Modal isOpen={itemModal} onClose={() => setItemModal(false)} title={editItemId ? 'Edit Item' : 'Add New Item'}
@@ -851,6 +934,7 @@ const Items: React.FC = () => {
         </form>
       </Modal>
     </div>
+    </DndContext>
   );
 };
 
