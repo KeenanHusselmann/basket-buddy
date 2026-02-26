@@ -154,10 +154,17 @@ const Items: React.FC = () => {
     prevGroupIdsRef.current = currentIds;
   }, [groupedItems]);
 
-  // Open add item
+  // Open add item (global — uses first category)
   const openAddItem = () => {
     setEditItemId(null);
     setItemForm({ name: '', categoryId: categories[0]?.id || '', unit: 'each', brand: '', notes: '' });
+    setItemModal(true);
+  };
+
+  // Open add item pre-selecting a specific category
+  const openAddItemInCategory = (catId: string) => {
+    setEditItemId(null);
+    setItemForm({ name: '', categoryId: catId, unit: 'each', brand: '', notes: '' });
     setItemModal(true);
   };
 
@@ -424,6 +431,17 @@ const Items: React.FC = () => {
                         <ChevronRight size={18} />
                       </motion.div>
                     </button>
+                    {/* Quick-add item to this category */}
+                    {cat && (
+                      <button
+                        type="button"
+                        onClick={() => openAddItemInCategory(cat.id)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors flex-shrink-0"
+                        title={`Add item to ${cat.name}`}
+                      >
+                        <Plus size={15} />
+                      </button>
+                    )}
                     {/* Delete category button */}
                     {cat && (
                       <button
@@ -432,7 +450,7 @@ const Items: React.FC = () => {
                           const msg = group.items.length > 0
                             ? `Delete "${cat.name}" and its ${group.items.length} item${group.items.length !== 1 ? 's' : ''}?`
                             : `Delete category "${cat.name}"?`;
-                          if (confirm(msg)) deleteCategory(cat.id);
+                          if (confirm(msg)) { deleteCategory(cat.id); toast.success(`Category "${cat.name}" deleted`); }
                         }}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
                         title="Delete category"
