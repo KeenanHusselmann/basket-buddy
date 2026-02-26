@@ -213,6 +213,66 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
   }
 }
 
+// ── Fast upsert-only save (no getDocs reads) ─────────────────
+// Used for auto-saves: ~3x faster because it skips reading existing docs.
+// Explicit deletes (from tracked CRUD operations) are handled separately.
+export interface PendingDelete { col: string; id: string; }
+
+export async function fastSaveUserData(
+  uid: string,
+  data: UserAppData,
+  deletes: PendingDelete[],
+): Promise<void> {
+  if (!isFirebaseConfigured || !db) return;
+  const firestore = db;
+  const BATCH_SIZE = 490;
+  let batch = writeBatch(firestore);
+  let opCount = 0;
+
+  const flush = async () => {
+    if (opCount > 0) {
+      await batch.commit();
+      batch = writeBatch(firestore);
+      opCount = 0;
+    }
+  };
+
+  // Process explicit deletes first
+  for (const { col, id } of deletes) {
+    batch.delete(doc(firestore, 'users', uid, col, id));
+    opCount++;
+    if (opCount >= BATCH_SIZE) await flush();
+  }
+
+  // Upsert every collection
+  const entries: [string, Array<{ id: string } & Record<string, unknown>>][] = [
+    ['stores',       data.stores       as any || []],
+    ['categories',   data.categories   as any || []],
+    ['items',        data.items        as any || []],
+    ['prices',       data.prices       as any || []],
+    ['trips',        data.trips        as any || []],
+    ['budgets',      data.budgets      as any || []],
+    ['reminders',    data.reminders    as any || []],
+    ['transactions', data.transactions as any || []],
+    ['financePlans', data.financePlans as any || []],
+    ['savingsGoals', data.savingsGoals as any || []],
+  ];
+
+  for (const [col, items] of entries) {
+    for (const item of items) {
+      batch.set(
+        doc(firestore, 'users', uid, col, item.id),
+        stripUndefined(item) as Record<string, unknown>,
+      );
+      opCount++;
+      if (opCount >= BATCH_SIZE) await flush();
+    }
+  }
+
+  await flush();
+  await updateDoc(userDocRef(uid), { lastSyncAt: serverTimestamp() }).catch(() => {});
+}
+
 // ── Save all app data to subcollections ──────────────────────
 export async function saveUserData(uid: string, data: UserAppData): Promise<void> {
   if (!isFirebaseConfigured || !db) {

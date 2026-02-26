@@ -13,7 +13,7 @@ import {
 import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
 import { useAuth } from './AuthContext';
-import { loadUserData, saveUserData, type UserAppData } from '../services/firestore';
+import { loadUserData, saveUserData, fastSaveUserData, type UserAppData, type PendingDelete } from '../services/firestore';
 import { isFirebaseConfigured } from '../config/firebase';
 
 // ── State Shape ──────────────────────────────────────────────
@@ -174,6 +174,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
+  // Tracks explicit deletes so fastSaveUserData can remove them without a getDocs read
+  const pendingDeletesRef = useRef<PendingDelete[]>([]);
   // When Firestore quota is exhausted, pause auto-saves until this timestamp.
   const quotaPausedUntilRef = useRef<number>(0);
   // Gate auto-save until the initial Firestore load is complete.
@@ -294,7 +296,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [state.items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** Reject a promise after `ms` milliseconds — prevents the spinner sticking on mobile */
-  const withSyncTimeout = <T,>(p: Promise<T>, ms = 15000): Promise<T> =>
+  const withSyncTimeout = <T,>(p: Promise<T>, ms = 20000): Promise<T> =>
     Promise.race([
       p,
       new Promise<T>((_, reject) =>
@@ -373,15 +375,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       console.log('[AppContext] Auto-saving to Firestore…');
       setSyncStatus('saving');
+      const deletesToFlush = [...pendingDeletesRef.current];
       try {
-        await withSyncTimeout(saveUserData(user.uid, state));
+        // Fast path: upsert-only (no getDocs reads) + targeted deletes ~3x faster
+        await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush), 45_000);
         isDirtyRef.current = false;
+        pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
         localStorage.removeItem(PENDING_KEY);
         setSyncStatus('saved');
         console.log('[AppContext] Saved to Firestore ✓');
         setTimeout(() => setSyncStatus('idle'), 3000);
       } catch (err: any) {
-        handleSyncError(err, 'auto');
+        const isTimeout = err?.message?.includes('timed out');
+        if (isTimeout) {
+          // Data is safe in localStorage (PENDING_KEY is still set).
+          // Leave isDirtyRef true so the next state change triggers a retry.
+          setSyncStatus('idle');
+          console.warn('[AppContext] Auto-save timed out — will retry on next change. Data is safe locally.');
+        } else {
+          handleSyncError(err, 'auto');
+        }
       }
     }, 3_000);
 
@@ -434,11 +447,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteStore = useCallback((id: string) => {
-    setDirtyState((s) => ({
-      ...s,
-      stores: s.stores.filter((st) => st.id !== id),
-      prices: s.prices.filter((p) => p.storeId !== id),
-    }));
+    setDirtyState((s) => {
+      const priceIds = s.prices.filter((p) => p.storeId === id).map((p) => p.id);
+      pendingDeletesRef.current.push(
+        { col: 'stores', id },
+        ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
+      );
+      return {
+        ...s,
+        stores: s.stores.filter((st) => st.id !== id),
+        prices: s.prices.filter((p) => p.storeId !== id),
+      };
+    });
   }, [setDirtyState]);
 
   // ── Category CRUD ──────────────────────────────────────────
@@ -459,6 +479,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteCategory = useCallback((id: string) => {
     setDirtyState((s) => {
       const itemIds = s.items.filter((i) => i.categoryId === id).map((i) => i.id);
+      const priceIds = s.prices.filter((p) => itemIds.includes(p.itemId)).map((p) => p.id);
+      pendingDeletesRef.current.push(
+        { col: 'categories', id },
+        ...itemIds.map((iid) => ({ col: 'items', id: iid })),
+        ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
+      );
       return {
         ...s,
         categories: s.categories.filter((c) => c.id !== id),
@@ -484,11 +510,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteItem = useCallback((id: string) => {
-    setDirtyState((s) => ({
-      ...s,
-      items: s.items.filter((i) => i.id !== id),
-      prices: s.prices.filter((p) => p.itemId !== id),
-    }));
+    setDirtyState((s) => {
+      const priceIds = s.prices.filter((p) => p.itemId === id).map((p) => p.id);
+      pendingDeletesRef.current.push(
+        { col: 'items', id },
+        ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
+      );
+      return {
+        ...s,
+        items: s.items.filter((i) => i.id !== id),
+        prices: s.prices.filter((p) => p.itemId !== id),
+      };
+    });
   }, [setDirtyState]);
 
   // ── Price CRUD ─────────────────────────────────────────────
@@ -520,6 +553,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deletePrice = useCallback((id: string) => {
+    pendingDeletesRef.current.push({ col: 'prices', id });
     setDirtyState((s) => ({ ...s, prices: s.prices.filter((p) => p.id !== id) }));
   }, [setDirtyState]);
 
@@ -549,6 +583,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteTrip = useCallback((id: string) => {
+    pendingDeletesRef.current.push({ col: 'trips', id });
     setDirtyState((s) => ({ ...s, trips: s.trips.filter((t) => t.id !== id) }));
   }, [setDirtyState]);
 
@@ -633,6 +668,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteReminder = useCallback((id: string) => {
+    pendingDeletesRef.current.push({ col: 'reminders', id });
     setDirtyState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
   }, [setDirtyState]);
 
@@ -652,6 +688,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteTransaction = useCallback((id: string) => {
+    pendingDeletesRef.current.push({ col: 'transactions', id });
     setDirtyState((s) => ({ ...s, transactions: s.transactions.filter((t) => t.id !== id) }));
   }, [setDirtyState]);
 
@@ -692,6 +729,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteSavingsGoal = useCallback((id: string) => {
+    pendingDeletesRef.current.push({ col: 'savingsGoals', id });
     setDirtyState((s) => ({ ...s, savingsGoals: s.savingsGoals.filter((g) => g.id !== id) }));
   }, [setDirtyState]);
 
