@@ -13,7 +13,7 @@ import {
 import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
 import { useAuth } from './AuthContext';
-import { loadUserData, saveUserData, fastSaveUserData, setQuotaExhausted, isQuotaExhausted, type UserAppData, type PendingDelete } from '../services/firestore';
+import { loadUserData, fastSaveUserData, setQuotaExhausted, isQuotaExhausted, type UserAppData, type PendingDelete } from '../services/firestore';
 import { isFirebaseConfigured } from '../config/firebase';
 
 // ── State Shape ──────────────────────────────────────────────
@@ -268,13 +268,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.log('[AppContext] First-time user — initialising Firestore with local/default data');
           }
           try {
-            await saveUserData(user.uid, current);
-            localStorage.removeItem(PENDING_KEY);
-            console.log('[AppContext] Saved local state to Firestore ✓');
+            if (isQuotaExhausted()) {
+              console.warn('[AppContext] Quota exhausted — skipping recovery save. Data is safe in localStorage.');
+            } else {
+              // Use fastSaveUserData (no getDocs reads, writes all docs since we have no dirty map from previous session)
+              await fastSaveUserData(user.uid, current, []);
+              localStorage.removeItem(PENDING_KEY);
+              console.log('[AppContext] Saved local state to Firestore ✓');
+            }
           } catch (saveErr: any) {
-            console.error('[AppContext] Failed to save to Firestore:', saveErr);
-            if (saveErr?.code === 'permission-denied') {
-              toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
+            if (saveErr?.code === 'resource-exhausted') {
+              setQuotaExhausted();
+              console.warn('[AppContext] Quota exhausted during recovery — will retry after quota resets.');
+            } else {
+              console.error('[AppContext] Failed to save to Firestore:', saveErr);
+              if (saveErr?.code === 'permission-denied') {
+                toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
+              }
             }
           }
         }
@@ -452,10 +462,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || isDemo || !isFirebaseConfigured) return;
 
     const saveIfDirty = () => {
-      if (!isDirtyRef.current || Date.now() < quotaPausedUntilRef.current) return;
+      if (!isDirtyRef.current || Date.now() < quotaPausedUntilRef.current || isQuotaExhausted()) return;
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       // Fire-and-forget — best effort before the page unloads
-      saveUserData(user.uid, state).then(() => {
+      const deletes = [...pendingDeletesRef.current];
+      const dirtyMap = dirtyDocsRef.current.size > 0 ? dirtyDocsRef.current : undefined;
+      fastSaveUserData(user.uid, state, deletes, dirtyMap).then(() => {
         isDirtyRef.current = false;
         localStorage.removeItem(PENDING_KEY);
         console.log('[AppContext] Saved on page hide/unload ✓');
