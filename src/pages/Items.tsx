@@ -3,6 +3,7 @@
 // ==========================================
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
@@ -132,6 +133,7 @@ const Items: React.FC = () => {
     e.preventDefault();
     if (!catForm.name.trim()) return;
     addCategory({ name: catForm.name.trim(), icon: catForm.icon, color: catForm.color, isCustom: true });
+    toast.success(`Category "${catForm.name.trim()}" added`);
     setCatForm({ name: '', icon: '📦', color: '#6366f1' });
     setCatModal(false);
   };
@@ -188,8 +190,10 @@ const Items: React.FC = () => {
     if (!itemForm.name.trim() || !itemForm.categoryId) return;
     if (editItemId) {
       updateItem(editItemId, itemForm);
+      toast.success(`"${itemForm.name.trim()}" updated`);
     } else {
       addItem(itemForm);
+      toast.success(`"${itemForm.name.trim()}" added`);
     }
     setItemModal(false);
   };
@@ -219,8 +223,11 @@ const Items: React.FC = () => {
     };
     if (editPriceId) {
       updatePrice(editPriceId, payload);
+      toast.success('Price updated');
     } else {
       setPrice(payload);
+      const storeName = stores.find((s) => s.id === priceForm.storeId)?.name;
+      toast.success(`Price set${storeName ? ` at ${storeName}` : ''}`);
     }
     setPriceModal(false);
   };
@@ -476,7 +483,7 @@ const Items: React.FC = () => {
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => deletePrice(p.id)}
+                                          onClick={() => { deletePrice(p.id); toast.success('Price removed'); }}
                                           className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
                                           title="Remove price"
                                         >
@@ -514,7 +521,7 @@ const Items: React.FC = () => {
                                 <Edit3 size={14} />
                               </button>
                               <button
-                                onClick={() => { if (confirm('Delete this item?')) deleteItem(item.id); }}
+                                onClick={() => { if (confirm('Delete this item?')) { deleteItem(item.id); toast.success(`"${item.name}" deleted`); } }}
                                 className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                 title="Delete"
                               >

@@ -3,6 +3,7 @@
 // ==========================================
 
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { Plus, Edit3, Trash2, Store as StoreIcon, Package, Tag } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
@@ -33,15 +34,19 @@ const Stores: React.FC = () => {
     if (!form.name.trim()) return;
     if (editId) {
       updateStore(editId, form);
+      toast.success(`"${form.name.trim()}" updated`);
     } else {
       addStore(form);
+      toast.success(`"${form.name.trim()}" added`);
     }
     setModalOpen(false);
   };
 
   const handleDelete = (id: string) => {
+    const store = stores.find((s) => s.id === id);
     if (confirm('Delete this store? Prices associated with it will also be removed.')) {
       deleteStore(id);
+      toast.success(`"${store?.name}" deleted`);
     }
   };
 

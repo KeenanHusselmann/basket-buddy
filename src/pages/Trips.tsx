@@ -3,6 +3,7 @@
 // ==========================================
 
 import React, { useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ShoppingCart, Play, Check, Trash2, ChevronDown,
@@ -56,6 +57,7 @@ const Trips: React.FC = () => {
       sharedWith: [],
       notes: '',
     });
+    toast.success(`Trip "${tripForm.name.trim()}" created`);
     setTripModal(false);
   };
 
@@ -85,12 +87,14 @@ const Trips: React.FC = () => {
       checked: false,
       storeId: trip?.storeId || '',
     });
+    toast.success(`"${item.name}" added to trip`);
     setAddItemModal(false);
   };
 
   // Start trip
   const startTrip = (id: string) => {
     updateTrip(id, { status: 'in-progress' });
+    toast('Trip started — happy shopping! 🛒', { icon: '▶️' });
   };
 
   // Complete trip
@@ -101,6 +105,7 @@ const Trips: React.FC = () => {
       return sum + (i.actualPrice !== undefined ? i.actualPrice : i.estimatedPrice) * i.quantity;
     }, 0);
     updateTrip(id, { status: 'completed', totalSpent, completedAt: Date.now() });
+    toast.success(`Trip complete! Spent N$${totalSpent.toFixed(2)}`, { duration: 4000 });
   };
 
   // Toggle item checked
@@ -288,7 +293,7 @@ const Trips: React.FC = () => {
                             </>
                           )}
                           <button
-                            onClick={() => { if (confirm('Delete this trip?')) deleteTrip(trip.id); }}
+                            onClick={() => { if (confirm('Delete this trip?')) { deleteTrip(trip.id); toast.success('Trip deleted'); } }}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
                           >
                             <Trash2 size={12} /> Delete
