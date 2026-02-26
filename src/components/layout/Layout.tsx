@@ -4,10 +4,10 @@
 
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import FloatingCalculator from '../common/FloatingCalculator';
+import { cn } from '../../utils/helpers';
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -37,23 +37,15 @@ const Layout: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <motion.div
-        initial={false}
-        animate={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className="min-h-screen flex flex-col max-lg:!ml-0"
-      >
+      <div className={cn(
+        'min-h-screen flex flex-col transition-[margin] duration-200 ease-in-out',
+        sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-[260px]'
+      )}>
         <Header onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} />
         <main className="flex-1 p-6 pb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Outlet />
-          </motion.div>
+          <Outlet />
         </main>
-      </motion.div>
+      </div>
 
       <FloatingCalculator />
     </div>

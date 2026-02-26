@@ -35,6 +35,11 @@
     @apply antialiased;
   }
 
+  /* Prevent iOS Safari from auto-zooming on input focus */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
   body {
     @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-200;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -145,14 +150,116 @@
   font-family: 'Inter', sans-serif !important;
 }
 
-/* Modal height — uses dvh so mobile browser toolbars don't cut content */
-.modal-content {
-  max-height: 80vh;
-  max-height: 80dvh;
+/* ---- Modal bottom sheet ---- */
+.modal-portal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
 }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: all;
+}
+.modal-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  max-height: 88%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  overflow: hidden;
+  pointer-events: all;
+}
+
+/* Desktop: centered card */
 @media (min-width: 640px) {
-  .modal-content {
+  .modal-sheet {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 32rem;
     max-height: 90vh;
-    max-height: 90dvh;
+    border-radius: 1rem;
   }
+}
+.modal-pill-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 4px;
+  flex-shrink: 0;
+}
+.modal-pill {
+  width: 40px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #d1d5db;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+.modal-close {
+  padding: 6px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 14px;
+  min-height: 0;
+}
+.modal-footer {
+  flex-shrink: 0;
+  padding: 10px 14px 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Dark mode overrides for modal */
+.dark .modal-sheet {
+  background: #111827;
+}
+.dark .modal-title {
+  color: #f9fafb;
+}
+.dark .modal-header {
+  border-color: #1f2937;
+}
+.dark .modal-footer {
+  border-color: #1f2937;
+}
+.dark .modal-pill {
+  background: #4b5563;
+}
+.dark .modal-close {
+  color: #6b7280;
 }

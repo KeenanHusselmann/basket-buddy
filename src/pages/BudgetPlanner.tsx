@@ -290,8 +290,15 @@ const BudgetPlanner: React.FC = () => {
       )}
 
       {/* Budget Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Budget for ${MONTHS[viewMonth - 1]} ${viewYear}`} size="lg">
-        <form onSubmit={saveBudget} className="space-y-5">
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={`Budget for ${MONTHS[viewMonth - 1]} ${viewYear}`} size="lg"
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="budget-form" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="budget-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Save Budget</button>
+          </div>
+        }
+      >
+        <form id="budget-form" onSubmit={saveBudget} className="space-y-5">
 
           {/* Category Budgets — filled first, drives auto-total */}
           <div>
@@ -408,10 +415,6 @@ const BudgetPlanner: React.FC = () => {
             })()}
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Save Budget</button>
-          </div>
         </form>
       </Modal>
     </div>

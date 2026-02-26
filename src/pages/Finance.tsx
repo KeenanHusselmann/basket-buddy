@@ -1970,7 +1970,20 @@ const SavingsTab: React.FC<{
 
       {/* Add/Edit Goal Modal */}
       <Modal isOpen={goalModal.open} onClose={closeGoalModal}
-        title={goalModal.mode === 'add' ? 'New Savings Goal' : 'Edit Goal'}>
+        title={goalModal.mode === 'add' ? 'New Savings Goal' : 'Edit Goal'}
+        footer={
+          <div className="flex gap-2">
+            <button onClick={closeGoalModal} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+            <button
+              onClick={saveGoal}
+              disabled={!goalModal.name.trim() || goalModal.targetAmount <= 0}
+              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              {goalModal.mode === 'add' ? 'Create Goal' : 'Save Changes'}
+            </button>
+          </div>
+        }
+      >
         <div className="space-y-4 p-1">
           <div className="flex gap-3">
             <div className="w-20 shrink-0">
@@ -2074,22 +2087,25 @@ const SavingsTab: React.FC<{
               </div>
             );
           })()}
-          <div className="flex gap-2 pt-1">
-            <button onClick={closeGoalModal} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-            <button
-              onClick={saveGoal}
-              disabled={!goalModal.name.trim() || goalModal.targetAmount <= 0}
-              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              {goalModal.mode === 'add' ? 'Create Goal' : 'Save Changes'}
-            </button>
-          </div>
         </div>
       </Modal>
 
       {/* Add Contribution Modal */}
       <Modal isOpen={contributeModal.open} onClose={closeContribute}
-        title={`Add Money — ${contributeModal.goalName}`}>
+        title={`Add Money — ${contributeModal.goalName}`}
+        footer={
+          <div className="flex gap-2">
+            <button onClick={closeContribute} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
+            <button
+              onClick={saveContribution}
+              disabled={contributeModal.amount <= 0}
+              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
+            >
+              Add Money
+            </button>
+          </div>
+        }
+      >
         <div className="space-y-4 p-1">
           <div>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Amount ({CURRENCY}) *</label>
@@ -2121,16 +2137,6 @@ const SavingsTab: React.FC<{
               onChange={(e) => setContributeModal((s) => ({ ...s, date: e.target.value }))}
               className="w-full border border-gray-200 dark:border-gray-700 dark:bg-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button onClick={closeContribute} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-            <button
-              onClick={saveContribution}
-              disabled={contributeModal.amount <= 0}
-              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              Add Money
-            </button>
           </div>
         </div>
       </Modal>

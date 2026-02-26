@@ -142,7 +142,7 @@ const Trips: React.FC = () => {
       </div>
 
       {/* Status Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {(['all', 'planned', 'in-progress', 'completed'] as const).map((status) => (
           <button
             key={status}
@@ -405,8 +405,15 @@ const Trips: React.FC = () => {
       </div>
 
       {/* Create Trip Modal */}
-      <Modal isOpen={tripModal} onClose={() => setTripModal(false)} title="New Shopping Trip">
-        <form onSubmit={handleCreateTrip} className="space-y-4">
+      <Modal isOpen={tripModal} onClose={() => setTripModal(false)} title="New Shopping Trip"
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="trip-form" onClick={() => setTripModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="trip-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Create Trip</button>
+          </div>
+        }
+      >
+        <form id="trip-form" onSubmit={handleCreateTrip} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Trip Name *</label>
             <input
@@ -454,16 +461,19 @@ const Trips: React.FC = () => {
               className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
             />
           </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setTripModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Create Trip</button>
-          </div>
         </form>
       </Modal>
 
       {/* Add Item to Trip Modal */}
-      <Modal isOpen={addItemModal} onClose={() => setAddItemModal(false)} title="Add Item to Trip">
-        <form onSubmit={handleAddItem} className="space-y-4">
+      <Modal isOpen={addItemModal} onClose={() => setAddItemModal(false)} title="Add Item to Trip"
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="add-item-form" onClick={() => setAddItemModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="add-item-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Add to Trip</button>
+          </div>
+        }
+      >
+        <form id="add-item-form" onSubmit={handleAddItem} className="space-y-4">
           {(() => {
             const tripStoreId = trips.find((t) => t.id === selectedTripId)?.storeId || '';
             const itemsAtStore = items.filter((item) =>
@@ -533,10 +543,6 @@ const Trips: React.FC = () => {
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
               />
             </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setAddItemModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Add to Trip</button>
           </div>
         </form>
       </Modal>

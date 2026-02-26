@@ -491,8 +491,15 @@ const Items: React.FC = () => {
       </div>
 
       {/* Add/Edit Item Modal */}
-      <Modal isOpen={itemModal} onClose={() => setItemModal(false)} title={editItemId ? 'Edit Item' : 'Add New Item'}>
-        <form onSubmit={submitItem} className="space-y-4">
+      <Modal isOpen={itemModal} onClose={() => setItemModal(false)} title={editItemId ? 'Edit Item' : 'Add New Item'}
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="item-form" onClick={() => setItemModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="item-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">{editItemId ? 'Save' : 'Add Item'}</button>
+          </div>
+        }
+      >
+        <form id="item-form" onSubmit={submitItem} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Item Name *</label>
             <input
@@ -559,27 +566,19 @@ const Items: React.FC = () => {
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setItemModal(false)}
-              className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
-            >
-              {editItemId ? 'Save' : 'Add Item'}
-            </button>
-          </div>
         </form>
       </Modal>
 
       {/* Set Price Modal */}
-      <Modal isOpen={priceModal} onClose={() => setPriceModal(false)} title={editPriceId ? 'Edit Price' : 'Add Price'}>
-        <form onSubmit={submitPrice} className="space-y-4">
+      <Modal isOpen={priceModal} onClose={() => setPriceModal(false)} title={editPriceId ? 'Edit Price' : 'Add Price'}
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="price-form" onClick={() => setPriceModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="price-form" className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">{editPriceId ? 'Update Price' : 'Set Price'}</button>
+          </div>
+        }
+      >
+        <form id="price-form" onSubmit={submitPrice} className="space-y-4">
           {selectedItem && (
             <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
               <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -729,27 +728,19 @@ const Items: React.FC = () => {
             </div>
           )}
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setPriceModal(false)}
-              className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"
-            >
-              {editPriceId ? 'Update Price' : 'Set Price'}
-            </button>
-          </div>
         </form>
       </Modal>
 
       {/* Add Category Modal */}
-      <Modal isOpen={catModal} onClose={() => setCatModal(false)} title="Add New Category">
-        <form onSubmit={submitCategory} className="space-y-4">
+      <Modal isOpen={catModal} onClose={() => setCatModal(false)} title="Add New Category"
+        footer={
+          <div className="flex gap-3">
+            <button type="button" form="cat-form" onClick={() => setCatModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
+            <button type="submit" form="cat-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Add Category</button>
+          </div>
+        }
+      >
+        <form id="cat-form" onSubmit={submitCategory} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category Name *</label>
             <input
@@ -803,21 +794,6 @@ const Items: React.FC = () => {
             <span className="font-medium text-gray-700 dark:text-gray-300">{catForm.name || 'Category Preview'}</span>
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setCatModal(false)}
-              className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
-            >
-              Add Category
-            </button>
-          </div>
         </form>
       </Modal>
     </div>
