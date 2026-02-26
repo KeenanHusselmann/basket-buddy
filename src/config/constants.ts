@@ -37,7 +37,8 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'alcohol', name: 'Alcohol', icon: '🍺', color: '#FF5722', isCustom: false },
   { id: 'frozen', name: 'Frozen', icon: '🧊', color: '#4FC3F7', isCustom: false },
   { id: 'canned', name: 'Canned Goods', icon: '🥫', color: '#EF6C00', isCustom: false },
-  { id: 'spices', name: 'Spices & Condiments', icon: '🧂', color: '#D84315', isCustom: false },
+  { id: 'spices', name: 'Spices', icon: '🧂', color: '#D84315', isCustom: false },
+  { id: 'condiments', name: 'Condiments', icon: '🫙', color: '#A0522D', isCustom: false },
   { id: 'grains-pasta', name: 'Grains & Pasta', icon: '🍝', color: '#FFA726', isCustom: false },
 ];
 
@@ -77,9 +78,10 @@ export const DEFAULT_ITEMS: GroceryItem[] = [
   // Canned Goods
   { id: 'di-baked-beans', name: 'Baked Beans',       categoryId: 'canned',       unit: 'tin',   brand: 'Koo',  createdAt: T },
   { id: 'di-tuna',        name: 'Tuna Chunks',       categoryId: 'canned',       unit: 'tin',   brand: 'Lucky Star', createdAt: T },
-  // Spices & Condiments
+  // Spices
   { id: 'di-braai-salt',  name: 'Braai Salt',        categoryId: 'spices',       unit: 'each',  brand: 'Aromat', createdAt: T },
-  { id: 'di-sunflower-oil', name: 'Sunflower Oil',   categoryId: 'spices',       unit: 'litre', createdAt: T },
+  // Condiments
+  { id: 'di-sunflower-oil', name: 'Sunflower Oil',   categoryId: 'condiments',   unit: 'litre', createdAt: T },
   // Cleaning
   { id: 'di-dishwash',    name: 'Dishwashing Liquid',categoryId: 'cleaning',     unit: 'each',  brand: 'Sunlight', createdAt: T },
   { id: 'di-toilet-paper',name: 'Toilet Paper',      categoryId: 'toiletries',   unit: '6-pack', brand: 'Twinsaver', createdAt: T },

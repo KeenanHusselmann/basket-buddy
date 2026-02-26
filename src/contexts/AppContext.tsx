@@ -94,15 +94,30 @@ const PENDING_KEY = 'bb-pending-save';
 
 /** One-time migration: split old 'fruits-veg' into separate Fruits + Vegetables */
 function migrateCategories(categories: typeof DEFAULT_CATEGORIES): typeof DEFAULT_CATEGORIES {
-  const hasFruitsVeg = categories.some((c) => c.id === 'fruits-veg');
-  const hasFruits = categories.some((c) => c.id === 'fruits');
-  const hasVegetables = categories.some((c) => c.id === 'vegetables');
-  if (!hasFruitsVeg) return categories; // already migrated
-  return [
-    ...categories.filter((c) => c.id !== 'fruits-veg'),
-    ...(hasFruits ? [] : [{ id: 'fruits', name: 'Fruits', icon: '🍎', color: '#f97316', isCustom: false } as const]),
-    ...(hasVegetables ? [] : [{ id: 'vegetables', name: 'Vegetables', icon: '🥬', color: '#4CAF50', isCustom: false } as const]),
-  ];
+  let result = categories;
+
+  // Migration 1: split 'fruits-veg' → 'fruits' + 'vegetables'
+  const hasFruitsVeg = result.some((c) => c.id === 'fruits-veg');
+  if (hasFruitsVeg) {
+    const hasFruits = result.some((c) => c.id === 'fruits');
+    const hasVegetables = result.some((c) => c.id === 'vegetables');
+    result = [
+      ...result.filter((c) => c.id !== 'fruits-veg'),
+      ...(hasFruits ? [] : [{ id: 'fruits', name: 'Fruits', icon: '🍎', color: '#f97316', isCustom: false } as const]),
+      ...(hasVegetables ? [] : [{ id: 'vegetables', name: 'Vegetables', icon: '🥬', color: '#4CAF50', isCustom: false } as const]),
+    ];
+  }
+
+  // Migration 2: rename 'Spices & Condiments' → 'Spices' and inject 'Condiments'
+  const hasCondiments = result.some((c) => c.id === 'condiments');
+  if (!hasCondiments) {
+    result = result.map((c) =>
+      c.id === 'spices' ? { ...c, name: 'Spices' } : c
+    );
+    result = [...result, { id: 'condiments', name: 'Condiments', icon: '🫙', color: '#A0522D', isCustom: false }];
+  }
+
+  return result;
 }
 
 /** Migrate item categoryIds — replace old 'fruits-veg' with 'fruits' */
