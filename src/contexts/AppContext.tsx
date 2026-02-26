@@ -442,10 +442,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteCategory = useCallback((id: string) => {
-    setDirtyState((s) => ({
-      ...s,
-      categories: s.categories.filter((c) => c.id !== id),
-    }));
+    setDirtyState((s) => {
+      const itemIds = s.items.filter((i) => i.categoryId === id).map((i) => i.id);
+      return {
+        ...s,
+        categories: s.categories.filter((c) => c.id !== id),
+        items: s.items.filter((i) => i.categoryId !== id),
+        prices: s.prices.filter((p) => !itemIds.includes(p.itemId)),
+      };
+    });
   }, [setDirtyState]);
 
   // ── Item CRUD ──────────────────────────────────────────────

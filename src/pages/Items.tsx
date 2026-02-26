@@ -25,7 +25,7 @@ const Items: React.FC = () => {
     items, categories, stores, prices,
     addItem, updateItem, deleteItem,
     setPrice, updatePrice, deletePrice,
-    addCategory,
+    addCategory, deleteCategory,
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -321,31 +321,52 @@ const Items: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
                 >
-                  {/* Category Header — clickable */}
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(catId)}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 text-left select-none hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                  {/* Category Header */}
+                  <div
+                    className="flex items-center gap-3 px-5 py-3.5 select-none"
                     style={{ backgroundColor: `${cat?.color || '#999'}10` }}
                   >
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                      style={{ backgroundColor: `${cat?.color || '#999'}20` }}
+                    {/* Expand toggle — takes up most of the row */}
+                    <button
+                      type="button"
+                      onClick={() => toggleCategory(catId)}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
                     >
-                      {cat?.icon || '📦'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="font-semibold text-gray-800 dark:text-gray-200">{cat?.name || 'Uncategorized'}</h2>
-                      <p className="text-xs text-gray-400">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</p>
-                    </div>
-                    <motion.div
-                      animate={{ rotate: isExpanded ? 90 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="text-gray-400"
-                    >
-                      <ChevronRight size={18} />
-                    </motion.div>
-                  </button>
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                        style={{ backgroundColor: `${cat?.color || '#999'}20` }}
+                      >
+                        {cat?.icon || '📦'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="font-semibold text-gray-800 dark:text-gray-200">{cat?.name || 'Uncategorized'}</h2>
+                        <p className="text-xs text-gray-400">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</p>
+                      </div>
+                      <motion.div
+                        animate={{ rotate: isExpanded ? 90 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-gray-400"
+                      >
+                        <ChevronRight size={18} />
+                      </motion.div>
+                    </button>
+                    {/* Delete category button */}
+                    {cat && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const msg = group.items.length > 0
+                            ? `Delete "${cat.name}" and its ${group.items.length} item${group.items.length !== 1 ? 's' : ''}?`
+                            : `Delete category "${cat.name}"?`;
+                          if (confirm(msg)) deleteCategory(cat.id);
+                        }}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                        title="Delete category"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
+                  </div>
 
                   {/* Items in Category — shown only when expanded */}
                   <AnimatePresence initial={false}>
