@@ -40,20 +40,6 @@ const Items: React.FC = () => {
   const lastUsedStoreId = React.useRef<string>('');
   // Start with all categories collapsed
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
-  // Track previously seen group IDs so newly added categories auto-expand
-  const prevGroupIdsRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const currentIds = new Set(groupedItems.map((g) => g.category?.id || 'uncategorized'));
-    const newIds = [...currentIds].filter((id) => !prevGroupIdsRef.current.has(id));
-    if (prevGroupIdsRef.current.size > 0 && newIds.length > 0) {
-      setExpandedCats((prev) => {
-        const next = new Set(prev);
-        newIds.forEach((id) => next.add(id));
-        return next;
-      });
-    }
-    prevGroupIdsRef.current = currentIds;
-  }, [groupedItems]);
   const [catModal, setCatModal] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6366f1' });
 
@@ -102,6 +88,21 @@ const Items: React.FC = () => {
       }))
       .sort((a, b) => (a.category?.name || '').localeCompare(b.category?.name || ''));
   }, [filteredItems, categories, filterCat, filterStore, search]);
+
+  // Track previously seen group IDs so newly added categories auto-expand
+  const prevGroupIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const currentIds = new Set(groupedItems.map((g) => g.category?.id || 'uncategorized'));
+    const newIds = [...currentIds].filter((id) => !prevGroupIdsRef.current.has(id));
+    if (prevGroupIdsRef.current.size > 0 && newIds.length > 0) {
+      setExpandedCats((prev) => {
+        const next = new Set(prev);
+        newIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+    prevGroupIdsRef.current = currentIds;
+  }, [groupedItems]);
 
   // Open add item
   const openAddItem = () => {
