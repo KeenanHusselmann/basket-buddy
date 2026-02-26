@@ -144,3 +144,15 @@
   border-radius: 12px !important;
   font-family: 'Inter', sans-serif !important;
 }
+
+/* Modal height — uses dvh so mobile browser toolbars don't cut content */
+.modal-content {
+  max-height: 80vh;
+  max-height: 80dvh;
+}
+@media (min-width: 640px) {
+  .modal-content {
+    max-height: 90vh;
+    max-height: 90dvh;
+  }
+}
