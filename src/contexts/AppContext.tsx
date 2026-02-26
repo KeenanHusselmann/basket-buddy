@@ -348,9 +348,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setSyncStatus('saving');
+    const deletesToFlush = [...pendingDeletesRef.current];
     try {
-      await withSyncTimeout(saveUserData(user.uid, state));
+      // Use the fast upsert path (no getDocs reads) — same as auto-save.
+      // 60 s timeout for a manual sync gives plenty of headroom on slow connections.
+      await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush), 60_000);
       isDirtyRef.current = false;
+      pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
       localStorage.removeItem(PENDING_KEY);
       setSyncStatus('saved');
       toast.success('Data synced to cloud ✓');
