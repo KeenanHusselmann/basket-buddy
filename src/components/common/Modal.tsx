@@ -59,7 +59,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             </div>
 
             {/* Body */}
-            <div className="px-6 py-4 pb-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+            <div className="px-6 py-4 overflow-y-auto flex-1 min-h-0" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>{children}</div>
           </motion.div>
         </div>
       )}
