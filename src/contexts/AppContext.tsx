@@ -349,7 +349,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!isDirtyRef.current) return;
 
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    // 30 s debounce: batches rapid changes and dramatically reduces Firestore writes
+    // 3 s debounce: batches rapid changes while saving quickly enough that
+    // a page reload within a few seconds still captures the data.
     saveTimerRef.current = setTimeout(async () => {
       if (Date.now() < quotaPausedUntilRef.current) {
         console.log('[AppContext] Auto-save skipped — quota pause active');
@@ -367,12 +368,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (err: any) {
         handleSyncError(err, 'auto');
       }
-    }, 30_000);
+    }, 3_000);
 
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [state, user, isDemo, firestoreLoaded]);
+
+  // Save immediately when the user navigates away or closes the tab
+  useEffect(() => {
+    if (!user || isDemo || !isFirebaseConfigured) return;
+
+    const saveIfDirty = () => {
+      if (!isDirtyRef.current || Date.now() < quotaPausedUntilRef.current) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      // Fire-and-forget — best effort before the page unloads
+      saveUserData(user.uid, state).then(() => {
+        isDirtyRef.current = false;
+        localStorage.removeItem(PENDING_KEY);
+        console.log('[AppContext] Saved on page hide/unload ✓');
+      }).catch((e) => console.warn('[AppContext] Save on hide failed:', e));
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') saveIfDirty();
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', saveIfDirty);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', saveIfDirty);
+    };
+  }, [user, isDemo, state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Store CRUD ─────────────────────────────────────────────
   const addStore = useCallback((store: Omit<Store, 'id' | 'createdAt'>) => {
