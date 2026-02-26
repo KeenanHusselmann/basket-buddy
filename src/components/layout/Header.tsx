@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         {notifOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-            <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-1rem)] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden">
+            <div className="fixed top-[4.5rem] left-2 right-2 sm:left-auto sm:right-4 sm:w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden">
               <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                 <h3 className="font-semibold text-gray-800 dark:text-gray-200">Notifications</h3>
               </div>
