@@ -241,7 +241,8 @@ export async function saveUserData(uid: string, data: UserAppData): Promise<void
       `[Firestore] Saved — stores:${data.stores?.length ?? 0}` +
       ` categories:${data.categories?.length ?? 0}` +
       ` items:${data.items?.length ?? 0}` +
-      ` prices:${data.prices?.length ?? 0}`
+      ` prices:${data.prices?.length ?? 0}` +
+      ` trips:${data.trips?.length ?? 0}`
     );
   } catch (e) {
     console.error('[Firestore] Failed to save app data:', e);

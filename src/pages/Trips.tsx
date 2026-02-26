@@ -37,10 +37,25 @@ const Trips: React.FC = () => {
   });
 
   const filteredTrips = useMemo(() => {
-    const sorted = [...trips].sort((a, b) => b.createdAt - a.createdAt);
+    // Guard: old trips without createdAt fall back to date field
+    const sorted = [...trips].sort((a, b) => (b.createdAt ?? b.date ?? 0) - (a.createdAt ?? a.date ?? 0));
     if (filter === 'all') return sorted;
     return sorted.filter((t) => t.status === filter);
   }, [trips, filter]);
+
+  /** Returns a human-friendly date string with year when not current year */
+  const formatTripDate = (ts: number): string => {
+    const d = new Date(ts);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const tripDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (tripDay.getTime() === today.getTime()) return 'Today';
+    if (tripDay.getTime() === yesterday.getTime()) return 'Yesterday';
+    const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+    return d.toLocaleDateString('en-NA', opts);
+  };
 
   // Create trip
   const handleCreateTrip = (e: React.FormEvent) => {
@@ -211,7 +226,10 @@ const Trips: React.FC = () => {
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      {store?.name} · {trip.items.length} items · {new Date(trip.date).toLocaleDateString('en-NA', { month: 'short', day: 'numeric' })}
+                      {store?.name} · {trip.items.length} item{trip.items.length !== 1 ? 's' : ''} ·{' '}
+                      {trip.status === 'completed' && trip.completedAt
+                        ? `Completed ${formatTripDate(trip.completedAt)}`
+                        : formatTripDate(trip.date)}
                     </p>
                     {/* Budget bar */}
                     {trip.budget > 0 && (
