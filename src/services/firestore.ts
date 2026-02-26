@@ -222,6 +222,9 @@ export async function fastSaveUserData(
   uid: string,
   data: UserAppData,
   deletes: PendingDelete[],
+  // When provided, only write docs whose IDs appear in the map.
+  // When undefined (e.g. first sync / localStorage recovery), write everything.
+  dirtyDocs?: Map<string, Set<string>>,
 ): Promise<void> {
   if (!isFirebaseConfigured || !db) return;
   const firestore = db;
@@ -244,7 +247,7 @@ export async function fastSaveUserData(
     if (opCount >= BATCH_SIZE) await flush();
   }
 
-  // Upsert every collection
+  // Upsert only changed documents (or all, if dirtyDocs not provided)
   const entries: [string, Array<{ id: string } & Record<string, unknown>>][] = [
     ['stores',       data.stores       as any || []],
     ['categories',   data.categories   as any || []],
@@ -259,7 +262,13 @@ export async function fastSaveUserData(
   ];
 
   for (const [col, items] of entries) {
-    for (const item of items) {
+    const dirtyIds = dirtyDocs?.get(col);
+    // If a dirtyDocs map is provided, only write docs that changed.
+    // If the collection isn't in the map at all, skip it entirely.
+    const toWrite = dirtyDocs
+      ? (dirtyIds ? items.filter((item) => dirtyIds.has(item.id)) : [])
+      : items;
+    for (const item of toWrite) {
       batch.set(
         doc(firestore, 'users', uid, col, item.id),
         stripUndefined(item) as Record<string, unknown>,

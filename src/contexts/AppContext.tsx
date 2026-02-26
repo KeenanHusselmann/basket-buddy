@@ -176,8 +176,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const isDirtyRef = useRef(false);
   // Tracks explicit deletes so fastSaveUserData can remove them without a getDocs read
   const pendingDeletesRef = useRef<PendingDelete[]>([]);
+  // Tracks which specific doc IDs changed — fastSaveUserData only writes those (per-doc dirty tracking).
+  // This prevents re-writing all 131+ items/prices on every save, staying under Firestore quota.
+  const dirtyDocsRef = useRef<Map<string, Set<string>>>(new Map());
   // When Firestore quota is exhausted, pause auto-saves until this timestamp.
   const quotaPausedUntilRef = useRef<number>(0);
+
+  // Stable ref to current state — lets callbacks read latest state without stale closures
+  // (updated synchronously every render, safe for ref mutation)
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  /** Mark a single document as needing a Firestore write */
+  const markDirty = (col: string, id: string) => {
+    const set = dirtyDocsRef.current.get(col) ?? new Set<string>();
+    set.add(id);
+    dirtyDocsRef.current.set(col, set);
+  };
   // Gate auto-save until the initial Firestore load is complete.
   // Must be real state (not a ref) so flipping it triggers the auto-save
   // effect to re-run and notice any dirty changes queued during load.
@@ -349,10 +364,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setSyncStatus('saving');
     const deletesToFlush = [...pendingDeletesRef.current];
+    // Snapshot dirty docs, pass to fast writer; clear ref before await so new changes accumulate cleanly
+    const dirtyMap = dirtyDocsRef.current.size > 0 ? dirtyDocsRef.current : undefined;
+    dirtyDocsRef.current = new Map();
     try {
       // Use the fast upsert path (no getDocs reads) — same as auto-save.
       // 60 s timeout for a manual sync gives plenty of headroom on slow connections.
-      await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush), 60_000);
+      await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush, dirtyMap), 60_000);
       isDirtyRef.current = false;
       pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
       localStorage.removeItem(PENDING_KEY);
@@ -360,6 +378,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.success('Data synced to cloud ✓');
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err: any) {
+      // Restore dirty docs so the next attempt picks them up
+      if (dirtyMap) {
+        for (const [col, ids] of dirtyMap) {
+          const existing = dirtyDocsRef.current.get(col) ?? new Set<string>();
+          for (const id of ids) existing.add(id);
+          dirtyDocsRef.current.set(col, existing);
+        }
+      }
       handleSyncError(err, 'syncNow');
     }
   }, [user, isDemo, state]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -380,9 +406,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('[AppContext] Auto-saving to Firestore…');
       setSyncStatus('saving');
       const deletesToFlush = [...pendingDeletesRef.current];
+      // Snapshot and clear dirty docs before awaiting — new mutations during the save will accumulate freshly
+      const dirtyMap = dirtyDocsRef.current.size > 0 ? dirtyDocsRef.current : undefined;
+      dirtyDocsRef.current = new Map();
       try {
-        // Fast path: upsert-only (no getDocs reads) + targeted deletes ~3x faster
-        await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush), 45_000);
+        // Fast path: only write changed docs + targeted deletes (no getDocs reads)
+        await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush, dirtyMap), 45_000);
         isDirtyRef.current = false;
         pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
         localStorage.removeItem(PENDING_KEY);
@@ -390,6 +419,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('[AppContext] Saved to Firestore ✓');
         setTimeout(() => setSyncStatus('idle'), 3000);
       } catch (err: any) {
+        // Restore dirty docs so the next attempt retries only the affected docs
+        if (dirtyMap) {
+          for (const [col, ids] of dirtyMap) {
+            const existing = dirtyDocsRef.current.get(col) ?? new Set<string>();
+            for (const id of ids) existing.add(id);
+            dirtyDocsRef.current.set(col, existing);
+          }
+        }
         const isTimeout = err?.message?.includes('timed out');
         if (isTimeout) {
           // Data is safe in localStorage (PENDING_KEY is still set).
@@ -437,13 +474,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Store CRUD ─────────────────────────────────────────────
   const addStore = useCallback((store: Omit<Store, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('stores', id);
     setDirtyState((s) => ({
       ...s,
-      stores: [...s.stores, { ...store, id: generateId(), createdAt: Date.now() }],
+      stores: [...s.stores, { ...store, id, createdAt: Date.now() }],
     }));
   }, [setDirtyState]);
 
   const updateStore = useCallback((id: string, updates: Partial<Store>) => {
+    markDirty('stores', id);
     setDirtyState((s) => ({
       ...s,
       stores: s.stores.map((st) => (st.id === id ? { ...st, ...updates } : st)),
@@ -467,13 +507,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Category CRUD ──────────────────────────────────────────
   const addCategory = useCallback((cat: Omit<Category, 'id'>) => {
+    const id = generateId();
+    markDirty('categories', id);
     setDirtyState((s) => ({
       ...s,
-      categories: [...s.categories, { ...cat, id: generateId() }],
+      categories: [...s.categories, { ...cat, id }],
     }));
   }, [setDirtyState]);
 
   const updateCategory = useCallback((id: string, updates: Partial<Category>) => {
+    markDirty('categories', id);
     setDirtyState((s) => ({
       ...s,
       categories: s.categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
@@ -500,13 +543,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Item CRUD ──────────────────────────────────────────────
   const addItem = useCallback((item: Omit<GroceryItem, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('items', id);
     setDirtyState((s) => ({
       ...s,
-      items: [...s.items, { ...item, id: generateId(), createdAt: Date.now() }],
+      items: [...s.items, { ...item, id, createdAt: Date.now() }],
     }));
   }, [setDirtyState]);
 
   const updateItem = useCallback((id: string, updates: Partial<GroceryItem>) => {
+    markDirty('items', id);
     setDirtyState((s) => ({
       ...s,
       items: s.items.map((i) => (i.id === id ? { ...i, ...updates } : i)),
@@ -530,26 +576,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Price CRUD ─────────────────────────────────────────────
   const setPrice = useCallback((entry: Omit<PriceEntry, 'id' | 'updatedAt'>) => {
-    setDirtyState((s) => {
-      const existing = s.prices.find(
-        (p) => p.itemId === entry.itemId && p.storeId === entry.storeId
-      );
-      if (existing) {
-        return {
-          ...s,
-          prices: s.prices.map((p) =>
-            p.id === existing.id ? { ...p, ...entry, updatedAt: Date.now() } : p
-          ),
-        };
-      }
-      return {
+    const existing = stateRef.current.prices.find(
+      (p) => p.itemId === entry.itemId && p.storeId === entry.storeId
+    );
+    if (existing) {
+      markDirty('prices', existing.id);
+      setDirtyState((s) => ({
         ...s,
-        prices: [...s.prices, { ...entry, id: generateId(), updatedAt: Date.now() }],
-      };
-    });
+        prices: s.prices.map((p) =>
+          p.id === existing.id ? { ...p, ...entry, updatedAt: Date.now() } : p
+        ),
+      }));
+    } else {
+      const id = generateId();
+      markDirty('prices', id);
+      setDirtyState((s) => ({
+        ...s,
+        prices: [...s.prices, { ...entry, id, updatedAt: Date.now() }],
+      }));
+    }
   }, [setDirtyState]);
 
   const updatePrice = useCallback((id: string, updates: Partial<PriceEntry>) => {
+    markDirty('prices', id);
     setDirtyState((s) => ({
       ...s,
       prices: s.prices.map((p) => (p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p)),
@@ -573,13 +622,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Trip CRUD ──────────────────────────────────────────────
   const addTrip = useCallback((trip: Omit<ShoppingTrip, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('trips', id);
     setDirtyState((s) => ({
       ...s,
-      trips: [...s.trips, { ...trip, id: generateId(), createdAt: Date.now() }],
+      trips: [...s.trips, { ...trip, id, createdAt: Date.now() }],
     }));
   }, [setDirtyState]);
 
   const updateTrip = useCallback((id: string, updates: Partial<ShoppingTrip>) => {
+    markDirty('trips', id);
     setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) => (t.id === id ? { ...t, ...updates } : t)),
@@ -592,6 +644,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const addTripItem = useCallback((tripId: string, item: Omit<ShoppingTripItem, 'id'>) => {
+    markDirty('trips', tripId);
     setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) =>
@@ -604,6 +657,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateTripItem = useCallback(
     (tripId: string, itemId: string, updates: Partial<ShoppingTripItem>) => {
+      markDirty('trips', tripId);
       setDirtyState((s) => ({
         ...s,
         trips: s.trips.map((t) =>
@@ -620,6 +674,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const removeTripItem = useCallback((tripId: string, itemId: string) => {
+    markDirty('trips', tripId);
     setDirtyState((s) => ({
       ...s,
       trips: s.trips.map((t) =>
@@ -630,26 +685,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Budget CRUD ────────────────────────────────────────────
   const setBudget = useCallback((budget: Omit<MonthlyBudget, 'id' | 'createdAt'>) => {
-    setDirtyState((s) => {
-      const existing = s.budgets.find(
-        (b) => b.month === budget.month && b.year === budget.year
-      );
-      if (existing) {
-        return {
-          ...s,
-          budgets: s.budgets.map((b) =>
-            b.id === existing.id ? { ...b, ...budget } : b
-          ),
-        };
-      }
-      return {
+    const existing = stateRef.current.budgets.find(
+      (b) => b.month === budget.month && b.year === budget.year
+    );
+    if (existing) {
+      markDirty('budgets', existing.id);
+      setDirtyState((s) => ({
         ...s,
-        budgets: [...s.budgets, { ...budget, id: generateId(), createdAt: Date.now() }],
-      };
-    });
+        budgets: s.budgets.map((b) => (b.id === existing.id ? { ...b, ...budget } : b)),
+      }));
+    } else {
+      const id = generateId();
+      markDirty('budgets', id);
+      setDirtyState((s) => ({
+        ...s,
+        budgets: [...s.budgets, { ...budget, id, createdAt: Date.now() }],
+      }));
+    }
   }, [setDirtyState]);
 
   const updateBudget = useCallback((id: string, updates: Partial<MonthlyBudget>) => {
+    markDirty('budgets', id);
     setDirtyState((s) => ({
       ...s,
       budgets: s.budgets.map((b) => (b.id === id ? { ...b, ...updates } : b)),
@@ -658,13 +714,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Reminder CRUD ──────────────────────────────────────────
   const addReminder = useCallback((reminder: Omit<RestockReminder, 'id'>) => {
+    const id = generateId();
+    markDirty('reminders', id);
     setDirtyState((s) => ({
       ...s,
-      reminders: [...s.reminders, { ...reminder, id: generateId() }],
+      reminders: [...s.reminders, { ...reminder, id }],
     }));
   }, [setDirtyState]);
 
   const updateReminder = useCallback((id: string, updates: Partial<RestockReminder>) => {
+    markDirty('reminders', id);
     setDirtyState((s) => ({
       ...s,
       reminders: s.reminders.map((r) => (r.id === id ? { ...r, ...updates } : r)),
@@ -678,13 +737,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Finance Transaction CRUD ───────────────────────────────
   const addTransaction = useCallback((tx: Omit<FinanceTransaction, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('transactions', id);
     setDirtyState((s) => ({
       ...s,
-      transactions: [...s.transactions, { ...tx, id: generateId(), createdAt: Date.now() }],
+      transactions: [...s.transactions, { ...tx, id, createdAt: Date.now() }],
     }));
   }, [setDirtyState]);
 
   const updateTransaction = useCallback((id: string, updates: Partial<FinanceTransaction>) => {
+    markDirty('transactions', id);
     setDirtyState((s) => ({
       ...s,
       transactions: s.transactions.map((t) => (t.id === id ? { ...t, ...updates } : t)),
@@ -698,34 +760,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ── Finance Plan CRUD ──────────────────────────────────────
   const setFinancePlan = useCallback((plan: Omit<FinancePlan, 'id' | 'createdAt'>) => {
-    setDirtyState((s) => {
-      const existing = s.financePlans.find(
-        (p) => p.month === plan.month && p.year === plan.year
-      );
-      if (existing) {
-        return {
-          ...s,
-          financePlans: s.financePlans.map((p) =>
-            p.id === existing.id ? { ...p, ...plan } : p
-          ),
-        };
-      }
-      return {
+    const existing = stateRef.current.financePlans.find(
+      (p) => p.month === plan.month && p.year === plan.year
+    );
+    if (existing) {
+      markDirty('financePlans', existing.id);
+      setDirtyState((s) => ({
         ...s,
-        financePlans: [...s.financePlans, { ...plan, id: generateId(), createdAt: Date.now() }],
-      };
-    });
+        financePlans: s.financePlans.map((p) => (p.id === existing.id ? { ...p, ...plan } : p)),
+      }));
+    } else {
+      const id = generateId();
+      markDirty('financePlans', id);
+      setDirtyState((s) => ({
+        ...s,
+        financePlans: [...s.financePlans, { ...plan, id, createdAt: Date.now() }],
+      }));
+    }
   }, [setDirtyState]);
 
   // ── Savings Goals CRUD ─────────────────────────────────────
   const addSavingsGoal = useCallback((goal: Omit<SavingsGoal, 'id' | 'createdAt' | 'contributions'>) => {
+    const id = generateId();
+    markDirty('savingsGoals', id);
     setDirtyState((s) => ({
       ...s,
-      savingsGoals: [...s.savingsGoals, { ...goal, id: generateId(), contributions: [], createdAt: Date.now() }],
+      savingsGoals: [...s.savingsGoals, { ...goal, id, contributions: [], createdAt: Date.now() }],
     }));
   }, [setDirtyState]);
 
   const updateSavingsGoal = useCallback((id: string, updates: Partial<Omit<SavingsGoal, 'contributions'>>) => {
+    markDirty('savingsGoals', id);
     setDirtyState((s) => ({
       ...s,
       savingsGoals: s.savingsGoals.map((g) => (g.id === id ? { ...g, ...updates } : g)),
@@ -738,6 +803,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const addSavingsContribution = useCallback((goalId: string, contribution: Omit<SavingsContribution, 'id'>) => {
+    markDirty('savingsGoals', goalId);
     setDirtyState((s) => ({
       ...s,
       savingsGoals: s.savingsGoals.map((g) =>
@@ -749,6 +815,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteSavingsContribution = useCallback((goalId: string, contributionId: string) => {
+    markDirty('savingsGoals', goalId);
     setDirtyState((s) => ({
       ...s,
       savingsGoals: s.savingsGoals.map((g) =>
