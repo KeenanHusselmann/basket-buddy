@@ -2,7 +2,7 @@
 // BasketBuddy - Items & Prices Management
 // ==========================================
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Search, Edit3, Trash2, Tag, DollarSign, Filter,
@@ -40,6 +40,20 @@ const Items: React.FC = () => {
   const lastUsedStoreId = React.useRef<string>('');
   // Start with all categories collapsed
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  // Track previously seen group IDs so newly added categories auto-expand
+  const prevGroupIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const currentIds = new Set(groupedItems.map((g) => g.category?.id || 'uncategorized'));
+    const newIds = [...currentIds].filter((id) => !prevGroupIdsRef.current.has(id));
+    if (prevGroupIdsRef.current.size > 0 && newIds.length > 0) {
+      setExpandedCats((prev) => {
+        const next = new Set(prev);
+        newIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+    prevGroupIdsRef.current = currentIds;
+  }, [groupedItems]);
   const [catModal, setCatModal] = useState(false);
   const [catForm, setCatForm] = useState({ name: '', icon: '📦', color: '#6366f1' });
 
@@ -66,7 +80,7 @@ const Items: React.FC = () => {
     });
   }, [items, search, filterCat, filterStore, prices]);
 
-  // Group filtered items by category
+  // Group filtered items by category — also include empty categories so newly added ones are visible
   const groupedItems = useMemo(() => {
     const map = new Map<string, typeof filteredItems>();
     filteredItems.forEach((item) => {
@@ -74,6 +88,12 @@ const Items: React.FC = () => {
       group.push(item);
       map.set(item.categoryId, group);
     });
+    // Add empty categories that have no items (so new categories appear immediately)
+    if (filterCat === 'all' && filterStore === 'all' && !search) {
+      categories.forEach((c) => {
+        if (!map.has(c.id)) map.set(c.id, []);
+      });
+    }
     // Sort groups by category name
     return Array.from(map.entries())
       .map(([catId, catItems]) => ({
@@ -81,7 +101,7 @@ const Items: React.FC = () => {
         items: catItems,
       }))
       .sort((a, b) => (a.category?.name || '').localeCompare(b.category?.name || ''));
-  }, [filteredItems, categories]);
+  }, [filteredItems, categories, filterCat, filterStore, search]);
 
   // Open add item
   const openAddItem = () => {
@@ -337,6 +357,11 @@ const Items: React.FC = () => {
                         className="overflow-hidden border-t border-gray-100 dark:border-gray-800"
                       >
                         <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                          {group.items.length === 0 && (
+                            <p className="px-5 py-4 text-sm text-gray-400 dark:text-gray-500 text-center italic">
+                              No items yet — tap &ldquo;Add Item&rdquo; to get started.
+                            </p>
+                          )}
                           {group.items.map((item) => {
                     const itemPrices = prices.filter((p) => p.itemId === item.id);
                     const cheapest = itemPrices.length > 0
