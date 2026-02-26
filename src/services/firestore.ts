@@ -87,6 +87,37 @@ function stripUndefined<T>(obj: T): T {
   return obj;
 }
 
+// ── Quota gate ───────────────────────────────────────────────
+// When Firestore returns resource-exhausted, the SDK enters exponential backoff
+// and subsequent operations hang (sometimes for minutes) before failing.
+// We track quota exhaustion here so callers can fail immediately instead of timing out.
+let _quotaExhaustedUntil = 0;
+const QUOTA_PAUSE_MS = 10 * 60 * 1000; // 10 minutes
+
+/** Call this from anywhere a resource-exhausted error is caught. */
+export function setQuotaExhausted(): void {
+  _quotaExhaustedUntil = Date.now() + QUOTA_PAUSE_MS;
+}
+
+/** Returns true if quota is known to be exhausted right now. */
+export function isQuotaExhausted(): boolean {
+  return Date.now() < _quotaExhaustedUntil;
+}
+
+/**
+ * Wraps a Firestore operation with a short timeout.
+ * When quota is exceeded the SDK enters max-backoff and operations hang;
+ * this makes them fail fast so callers get a resource-exhausted error immediately.
+ */
+async function withBatchTimeout<T>(p: Promise<T>, ms = 12_000): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject({ code: 'resource-exhausted', message: 'Batch timeout — quota likely exceeded' }), ms)
+    ),
+  ]);
+}
+
 /**
  * Sync one subcollection: delete removed docs, upsert all current docs.
  * Handles Firestore's 500-op batch limit automatically.
@@ -234,7 +265,19 @@ export async function fastSaveUserData(
 
   const flush = async () => {
     if (opCount > 0) {
-      await batch.commit();
+      try {
+        await withBatchTimeout(batch.commit());
+      } catch (err: any) {
+        const isQuota = err?.code === 'resource-exhausted' ||
+          (err?.message || '').toLowerCase().includes('quota');
+        if (isQuota) {
+          setQuotaExhausted();
+          const e = new Error('Quota exceeded') as any;
+          e.code = 'resource-exhausted';
+          throw e;
+        }
+        throw err;
+      }
       batch = writeBatch(firestore);
       opCount = 0;
     }

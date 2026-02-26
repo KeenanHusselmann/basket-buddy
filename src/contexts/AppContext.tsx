@@ -13,7 +13,7 @@ import {
 import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
 import { generateId } from '../utils/helpers';
 import { useAuth } from './AuthContext';
-import { loadUserData, saveUserData, fastSaveUserData, type UserAppData, type PendingDelete } from '../services/firestore';
+import { loadUserData, saveUserData, fastSaveUserData, setQuotaExhausted, isQuotaExhausted, type UserAppData, type PendingDelete } from '../services/firestore';
 import { isFirebaseConfigured } from '../config/firebase';
 
 // ── State Shape ──────────────────────────────────────────────
@@ -325,8 +325,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimeout(() => setSyncStatus('idle'), 5000);
     console.error(`[AppContext] ${source} FAILED:`, err);
     if (err?.code === 'resource-exhausted') {
-      // Pause all auto-saves for 5 minutes to let quota recover
-      quotaPausedUntilRef.current = Date.now() + 5 * 60 * 1000;
+      // Set the module-level quota gate so future operations fail immediately
+      // instead of hanging for minutes waiting on SDK exponential backoff.
+      setQuotaExhausted();
+      // Pause all auto-saves for 10 minutes to let quota recover
+      quotaPausedUntilRef.current = Date.now() + 10 * 60 * 1000;
       toast.error(
         '⚠️ Firestore free-tier quota exceeded. Saves paused for 5 min. Your data is safe in local storage.',
         { duration: 12000, id: 'fs-quota' }
@@ -358,7 +361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast.error(!user ? 'Not signed in.' : isDemo ? 'Demo mode — no cloud sync.' : 'Firebase not configured — check .env and restart dev server.');
       return;
     }
-    if (Date.now() < quotaPausedUntilRef.current) {
+    if (Date.now() < quotaPausedUntilRef.current || isQuotaExhausted()) {
       toast.error('Quota recovery in progress — try again in a few minutes.', { id: 'fs-quota' });
       return;
     }
@@ -399,7 +402,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 3 s debounce: batches rapid changes while saving quickly enough that
     // a page reload within a few seconds still captures the data.
     saveTimerRef.current = setTimeout(async () => {
-      if (Date.now() < quotaPausedUntilRef.current) {
+      if (Date.now() < quotaPausedUntilRef.current || isQuotaExhausted()) {
         console.log('[AppContext] Auto-save skipped — quota pause active');
         return;
       }
