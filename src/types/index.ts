@@ -10,6 +10,13 @@ export interface Store {
   isCustom: boolean;
   createdBy?: string;
   createdAt: number;
+  // Shopping details
+  address?: string;
+  phone?: string;
+  website?: string;
+  openingHours?: string;
+  notes?: string;
+  loyaltyCard?: string;
 }
 
 export interface Category {
@@ -199,13 +206,40 @@ export interface FinanceCategoryTarget {
   targetAmount: number;
 }
 
+export interface CustomFinanceCategory {
+  id: string;
+  label: string;
+  icon: string;
+  type: 'fixed' | 'variable';
+}
+
 export interface FinancePlan {
   id: string;
   month: number;
   year: number;
   incomeGoal: number;
   savingsGoal: number;
+  fixedBudget?: number;
+  variableBudget?: number;
   categoryTargets: FinanceCategoryTarget[];
+  customCategories?: CustomFinanceCategory[];
+  createdAt: number;
+}
+
+// ── Fuel / Transport Types ───────────────────────────────────
+
+export type FuelType = 'petrol-93' | 'petrol-95' | 'diesel' | 'other';
+
+export interface FuelFillup {
+  id: string;
+  date: number;           // epoch ms
+  fuelType: FuelType;
+  litres: number;
+  pricePerLitre: number;
+  totalCost: number;
+  stationName: string;
+  odometer?: number;
+  notes?: string;
   createdAt: number;
 }
 

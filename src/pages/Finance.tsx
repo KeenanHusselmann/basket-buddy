@@ -10,7 +10,7 @@ import {
   TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle,
   Target, Receipt, ShoppingCart, Repeat, StickyNote,
   LayoutGrid, BarChart2, ClipboardList,
-  CheckCircle2, Calendar, ChevronDown, ChevronUp, X,
+  CheckCircle2, Calendar, ChevronDown, ChevronUp, X, Check,
 } from 'lucide-react';
 
 import { useApp } from '../contexts/AppContext';
@@ -22,6 +22,7 @@ import {
   FINANCE_FIXED_CATEGORIES,
   FINANCE_VARIABLE_CATEGORIES,
 } from '../config/constants';
+import { CustomFinanceCategory } from '../types';
 import Modal from '../components/common/Modal';
 import type {
   FinanceTransaction,
@@ -61,6 +62,10 @@ function barColor(spent: number, budget: number) {
   return '#22c55e';
 }
 
+// Module-level cache updated by the Finance component each render so
+// sub-components (TxRow, TransactionTab) can resolve custom category labels.
+let _planCustomCats: CustomFinanceCategory[] = [];
+
 function getCategoryLabel(
   type: FinanceTransactionType,
   categoryId: string
@@ -69,6 +74,7 @@ function getCategoryLabel(
     ...FINANCE_INCOME_CATEGORIES,
     ...FINANCE_FIXED_CATEGORIES,
     ...FINANCE_VARIABLE_CATEGORIES,
+    ..._planCustomCats,
   ];
   return all.find((c) => c.id === categoryId)?.label || categoryId;
 }
@@ -81,6 +87,7 @@ function getCategoryIcon(
     ...FINANCE_INCOME_CATEGORIES,
     ...FINANCE_FIXED_CATEGORIES,
     ...FINANCE_VARIABLE_CATEGORIES,
+    ..._planCustomCats,
   ];
   return all.find((c) => c.id === categoryId)?.icon || '💰';
 }
@@ -125,15 +132,42 @@ const Finance: React.FC = () => {
   } = useApp();
 
   // Month navigation
+  // Budget periods run from the 25th of one month through the 24th of the next.
+  // e.g. Feb 25 – Mar 24 is the "February" budget period.
+  // Rule: if today is the 1st–24th, we're still in last month's period;
+  //       if today is the 25th–31st, the new period has just started.
   const now = new Date();
-  const [viewMonth, setViewMonth] = useState(now.getMonth() + 1);
-  const [viewYear, setViewYear] = useState(now.getFullYear());
+  const _currentBillingPeriod = (() => {
+    const d = now.getDate();
+    const m = now.getMonth() + 1; // 1-based
+    const y = now.getFullYear();
+    if (d <= 24) {
+      // Still in the previous month's period
+      return m === 1 ? { month: 12, year: y - 1 } : { month: m - 1, year: y };
+    }
+    return { month: m, year: y };
+  })();
+  const [viewMonth, setViewMonth] = useState(_currentBillingPeriod.month);
+  const [viewYear, setViewYear] = useState(_currentBillingPeriod.year);
+
+  // Period label: month M, year Y → "25 MMM – 24 MMM+1 YYYY"
+  const billingPeriodLabel = (() => {
+    const startDate = new Date(viewYear, viewMonth - 1, 25);
+    const endDate   = new Date(viewYear, viewMonth, 24); // month is 0-based so viewMonth = next month
+    const fmt = (d: Date) => d.toLocaleDateString('en-NA', { day: 'numeric', month: 'short' });
+    const endYear = endDate.getFullYear();
+    return `${fmt(startDate)} – ${fmt(endDate)}${endYear !== viewYear ? ` ${endYear}` : `, ${viewYear}`}`;
+  })();
+
+  const isOnCurrentPeriod =
+    viewMonth === _currentBillingPeriod.month && viewYear === _currentBillingPeriod.year;
 
   const prevMonth = () => {
     if (viewMonth === 1) { setViewMonth(12); setViewYear((y) => y - 1); }
     else setViewMonth((m) => m - 1);
   };
   const nextMonth = () => {
+    if (isOnCurrentPeriod) return; // can't go past the current period
     if (viewMonth === 12) { setViewMonth(1); setViewYear((y) => y + 1); }
     else setViewMonth((m) => m + 1);
   };
@@ -156,12 +190,29 @@ const Finance: React.FC = () => {
   const [planModal, setPlanModal] = useState(false);
   const [planIncomeGoal, setPlanIncomeGoal] = useState('');
   const [planSavingsGoal, setPlanSavingsGoal] = useState('');
+  const [planFixedBudget, setPlanFixedBudget] = useState('');
+  const [planVariableBudget, setPlanVariableBudget] = useState('');
   const [planTargets, setPlanTargets] = useState<Record<string, string>>({});
+  const [planCustomFixed, setPlanCustomFixed] = useState<{id: string; label: string; icon: string}[]>([]);
+  const [planCustomVariable, setPlanCustomVariable] = useState<{id: string; label: string; icon: string}[]>([]);
+
+  // ── Billing period date range ────────────────────────────────
+  // Period for "February 2026" = Feb 25 00:00:00 → Mar 24 23:59:59
+  const periodStart = useMemo(
+    () => new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime(),
+    [viewMonth, viewYear]
+  );
+  const periodEnd = useMemo(
+    () => new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime(),
+    [viewMonth, viewYear]
+  );
 
   // ── Computed values ──────────────────────────────────────────
+  // Filter by date range so transactions entered in early March still appear
+  // in the February billing period (Feb 25 – Mar 24) regardless of the stored month field.
   const monthTx = useMemo(
-    () => transactions.filter((t) => t.month === viewMonth && t.year === viewYear),
-    [transactions, viewMonth, viewYear]
+    () => transactions.filter((t) => t.date >= periodStart && t.date <= periodEnd),
+    [transactions, periodStart, periodEnd]
   );
   const incomeTx = useMemo(() => monthTx.filter((t) => t.type === 'income'), [monthTx]);
   const fixedTx  = useMemo(() => monthTx.filter((t) => t.type === 'fixed'),  [monthTx]);
@@ -175,15 +226,11 @@ const Finance: React.FC = () => {
   const grocerySpent = useMemo(() => {
     return trips
       .filter((t) => {
-        const d = new Date(t.date);
-        return (
-          d.getMonth() + 1 === viewMonth &&
-          d.getFullYear() === viewYear &&
-          t.status === 'completed'
-        );
+        const d = new Date(t.date).getTime();
+        return d >= periodStart && d <= periodEnd && t.status === 'completed';
       })
       .reduce((sum, t) => sum + t.totalSpent, 0);
-  }, [trips, viewMonth, viewYear]);
+  }, [trips, periodStart, periodEnd]);
 
   // Grocery budget from the Shopping Budget section — used as target on Finance page
   const groceryBudget = useMemo(
@@ -221,20 +268,44 @@ const Finance: React.FC = () => {
   const openPlan = () => {
     setPlanIncomeGoal(currentPlan?.incomeGoal?.toString() || '');
     setPlanSavingsGoal(currentPlan?.savingsGoal?.toString() || '');
+    setPlanFixedBudget(currentPlan?.fixedBudget?.toString() || '');
+    setPlanVariableBudget(currentPlan?.variableBudget?.toString() || '');
     const existing: Record<string, string> = {};
     currentPlan?.categoryTargets.forEach((ct) => {
       existing[ct.category] = ct.targetAmount.toString();
     });
     setPlanTargets(existing);
+    const saved = currentPlan?.customCategories || [];
+    setPlanCustomFixed(saved.filter((c) => c.type === 'fixed').map(({ id, label, icon }) => ({ id, label, icon })));
+    setPlanCustomVariable(saved.filter((c) => c.type === 'variable').map(({ id, label, icon }) => ({ id, label, icon })));
     setPlanModal(true);
   };
+
+  const updatePlanCustomCategories = (type: 'fixed' | 'variable', newCats: CustomFinanceCategory[]) => {
+    const others = (currentPlan?.customCategories || []).filter((c) => c.type !== type);
+    setFinancePlan({
+      month: viewMonth,
+      year: viewYear,
+      incomeGoal: currentPlan?.incomeGoal || 0,
+      savingsGoal: currentPlan?.savingsGoal || 0,
+      fixedBudget: currentPlan?.fixedBudget || 0,
+      variableBudget: currentPlan?.variableBudget || 0,
+      categoryTargets: currentPlan?.categoryTargets || [],
+      customCategories: [...others, ...newCats],
+    });
+  };
+
+  // Custom categories from the current month's plan
+  const allCustomCats = useMemo(() => currentPlan?.customCategories || [], [currentPlan]);
+  // Keep module-level cache in sync so TxRow / TransactionTab can resolve labels
+  _planCustomCats = allCustomCats;
 
   // Categories for form select based on type
   const formCategories = useMemo(() => {
     if (txModal.data.type === 'income') return FINANCE_INCOME_CATEGORIES;
-    if (txModal.data.type === 'fixed') return FINANCE_FIXED_CATEGORIES;
-    return FINANCE_VARIABLE_CATEGORIES;
-  }, [txModal.data.type]);
+    if (txModal.data.type === 'fixed') return [...FINANCE_FIXED_CATEGORIES, ...allCustomCats.filter((c) => c.type === 'fixed')];
+    return [...FINANCE_VARIABLE_CATEGORIES, ...allCustomCats.filter((c) => c.type === 'variable')];
+  }, [txModal.data.type, allCustomCats]);
 
   // ── Handlers ─────────────────────────────────────────────────
   const handleTxSubmit = (e: React.FormEvent) => {
@@ -250,12 +321,21 @@ const Finance: React.FC = () => {
 
   const handlePlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const allCats = [...FINANCE_FIXED_CATEGORIES, ...FINANCE_VARIABLE_CATEGORIES];
+    const customCatsAll: CustomFinanceCategory[] = [
+      ...planCustomFixed.map((c) => ({ ...c, type: 'fixed' as const })),
+      ...planCustomVariable.map((c) => ({ ...c, type: 'variable' as const })),
+    ];
+    const allCats = [
+      ...FINANCE_FIXED_CATEGORIES,
+      ...FINANCE_VARIABLE_CATEGORIES,
+      ...customCatsAll,
+    ];
     const targets: FinanceCategoryTarget[] = allCats
       .filter((c) => parseFloat(planTargets[c.id] || '0') > 0)
       .map((c) => ({
         category: c.id,
-        type: FINANCE_FIXED_CATEGORIES.some((fc) => fc.id === c.id) ? 'fixed' : 'variable',
+        type: (FINANCE_FIXED_CATEGORIES.some((fc) => fc.id === c.id) || planCustomFixed.some((cf) => cf.id === c.id))
+          ? 'fixed' : 'variable',
         targetAmount: parseFloat(planTargets[c.id]),
       }));
 
@@ -264,7 +344,10 @@ const Finance: React.FC = () => {
       year: viewYear,
       incomeGoal: parseFloat(planIncomeGoal) || 0,
       savingsGoal: parseFloat(planSavingsGoal) || 0,
+      fixedBudget: parseFloat(planFixedBudget) || 0,
+      variableBudget: parseFloat(planVariableBudget) || 0,
       categoryTargets: targets,
+      customCategories: customCatsAll,
     });
     setPlanModal(false);
   };
@@ -323,12 +406,16 @@ const Finance: React.FC = () => {
         >
           <ChevronLeft size={20} className="text-gray-600 dark:text-gray-400" />
         </button>
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 min-w-[200px] text-center">
-          {MONTHS[viewMonth - 1]} {viewYear}
-        </h2>
+        <div className="text-center min-w-[220px]">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            {MONTHS[viewMonth - 1]} {viewYear}
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">{billingPeriodLabel}</p>
+        </div>
         <button
           onClick={nextMonth}
-          className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          disabled={isOnCurrentPeriod}
+          className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <ChevronRight size={20} className="text-gray-600 dark:text-gray-400" />
         </button>
@@ -509,6 +596,12 @@ const Finance: React.FC = () => {
               onEdit={openEdit}
               onDelete={deleteTransaction}
               currentPlan={currentPlan}
+              customCats={allCustomCats.filter((c) => c.type === 'fixed')}
+              onAddCustomCat={(cat) => {
+                const newCat: CustomFinanceCategory = { id: `cf-${Date.now()}`, ...cat, type: 'fixed' };
+                updatePlanCustomCategories('fixed', [...allCustomCats.filter((c) => c.type === 'fixed'), newCat]);
+              }}
+              onDeleteCustomCat={(id) => updatePlanCustomCategories('fixed', allCustomCats.filter((c) => c.type === 'fixed' && c.id !== id))}
             />
           )}
 
@@ -523,6 +616,12 @@ const Finance: React.FC = () => {
               onEdit={openEdit}
               onDelete={deleteTransaction}
               currentPlan={currentPlan}
+              customCats={allCustomCats.filter((c) => c.type === 'variable')}
+              onAddCustomCat={(cat) => {
+                const newCat: CustomFinanceCategory = { id: `cv-${Date.now()}`, ...cat, type: 'variable' };
+                updatePlanCustomCategories('variable', [...allCustomCats.filter((c) => c.type === 'variable'), newCat]);
+              }}
+              onDeleteCustomCat={(id) => updatePlanCustomCategories('variable', allCustomCats.filter((c) => c.type === 'variable' && c.id !== id))}
             />
           )}
 
@@ -622,7 +721,7 @@ const Finance: React.FC = () => {
             >
               {formCategories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.label}
+                  {`${c.icon}  ${c.label}`}
                 </option>
               ))}
             </select>
@@ -806,6 +905,23 @@ const Finance: React.FC = () => {
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
               <Receipt size={11} className="text-blue-500" /> Fixed Expenses
             </p>
+            {/* Fixed total budget input */}
+            <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-2xl px-4 py-3 mb-3">
+              <Receipt size={14} className="text-blue-500 shrink-0" />
+              <span className="flex-1 text-sm font-semibold text-blue-700 dark:text-blue-400">Total Fixed Budget</span>
+              <div className="relative w-40 shrink-0">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">{CURRENCY}</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={planFixedBudget}
+                  onChange={(e) => setPlanFixedBudget(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 rounded-xl text-sm font-medium text-right outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+            </div>
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
               {FINANCE_FIXED_CATEGORIES.map((cat, i) => (
                 <div
@@ -817,7 +933,7 @@ const Finance: React.FC = () => {
                 >
                   <span className="text-base w-6 text-center shrink-0">{cat.icon}</span>
                   <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">
-                    {cat.label.replace(/^.\s/, '')}
+                    {cat.label}
                   </span>
                   <div className="relative w-36 shrink-0">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
@@ -833,6 +949,44 @@ const Finance: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {/* Custom fixed category rows */}
+              {planCustomFixed.map((cat) => (
+                <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-100 dark:border-gray-800">
+                  <input
+                    type="text"
+                    value={cat.icon}
+                    onChange={(e) => setPlanCustomFixed((prev) => prev.map((c) => c.id === cat.id ? { ...c, icon: e.target.value } : c))}
+                    maxLength={4}
+                    className="w-8 text-center text-base bg-transparent outline-none shrink-0"
+                    placeholder="📌"
+                  />
+                  <input
+                    type="text"
+                    value={cat.label}
+                    onChange={(e) => setPlanCustomFixed((prev) => prev.map((c) => c.id === cat.id ? { ...c, label: e.target.value } : c))}
+                    placeholder="Category name"
+                    className="flex-1 text-sm text-gray-700 dark:text-gray-200 bg-transparent border-b border-gray-200 dark:border-gray-700 outline-none py-0.5"
+                  />
+                  <div className="relative w-32 shrink-0">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={planTargets[cat.id] || ''}
+                      onChange={(e) => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full pl-8 pr-2 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-right outline-none focus:border-blue-400 transition-colors"
+                    />
+                  </div>
+                  <button type="button" onClick={() => { setPlanCustomFixed((prev) => prev.filter((c) => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-red-400 hover:text-red-600 shrink-0"><X size={14} /></button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setPlanCustomFixed((prev) => [...prev, { id: `cf-${Date.now()}`, label: '', icon: '📌' }])}
+                className="w-full px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 text-xs text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
+              >
+                <Plus size={12} /> Add custom fixed category
+              </button>
             </div>
           </div>
 
@@ -841,6 +995,23 @@ const Finance: React.FC = () => {
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
               <ArrowDownCircle size={11} className="text-orange-500" /> Variable Expenses
             </p>
+            {/* Variable total budget input */}
+            <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800/30 rounded-2xl px-4 py-3 mb-3">
+              <ArrowDownCircle size={14} className="text-orange-500 shrink-0" />
+              <span className="flex-1 text-sm font-semibold text-orange-700 dark:text-orange-400">Total Variable Budget</span>
+              <div className="relative w-40 shrink-0">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">{CURRENCY}</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={planVariableBudget}
+                  onChange={(e) => setPlanVariableBudget(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-10 pr-3 py-2 bg-white dark:bg-gray-900 border border-orange-200 dark:border-orange-800 rounded-xl text-sm font-medium text-right outline-none focus:border-orange-500 transition-colors"
+                />
+              </div>
+            </div>
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
               {/* Groceries locked row */}
               <div className="flex items-center gap-3 px-4 py-2.5 bg-brand-50/50 dark:bg-brand-900/10">
@@ -859,7 +1030,7 @@ const Finance: React.FC = () => {
                 >
                   <span className="text-base w-6 text-center shrink-0">{cat.icon}</span>
                   <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">
-                    {cat.label.replace(/^.\s/, '')}
+                    {cat.label}
                   </span>
                   <div className="relative w-36 shrink-0">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
@@ -875,6 +1046,44 @@ const Finance: React.FC = () => {
                   </div>
                 </div>
               ))}
+              {/* Custom variable category rows */}
+              {planCustomVariable.map((cat) => (
+                <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5 border-t border-gray-100 dark:border-gray-800">
+                  <input
+                    type="text"
+                    value={cat.icon}
+                    onChange={(e) => setPlanCustomVariable((prev) => prev.map((c) => c.id === cat.id ? { ...c, icon: e.target.value } : c))}
+                    maxLength={4}
+                    className="w-8 text-center text-base bg-transparent outline-none shrink-0"
+                    placeholder="📋"
+                  />
+                  <input
+                    type="text"
+                    value={cat.label}
+                    onChange={(e) => setPlanCustomVariable((prev) => prev.map((c) => c.id === cat.id ? { ...c, label: e.target.value } : c))}
+                    placeholder="Category name"
+                    className="flex-1 text-sm text-gray-700 dark:text-gray-200 bg-transparent border-b border-gray-200 dark:border-gray-700 outline-none py-0.5"
+                  />
+                  <div className="relative w-32 shrink-0">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">{CURRENCY}</span>
+                    <input
+                      type="number" step="0.01" min="0"
+                      value={planTargets[cat.id] || ''}
+                      onChange={(e) => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full pl-8 pr-2 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-right outline-none focus:border-orange-400 transition-colors"
+                    />
+                  </div>
+                  <button type="button" onClick={() => { setPlanCustomVariable((prev) => prev.filter((c) => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-red-400 hover:text-red-600 shrink-0"><X size={14} /></button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setPlanCustomVariable((prev) => [...prev, { id: `cv-${Date.now()}`, label: '', icon: '📋' }])}
+                className="w-full px-4 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2 text-xs text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-colors"
+              >
+                <Plus size={12} /> Add custom variable category
+              </button>
             </div>
           </div>
 
@@ -1056,19 +1265,26 @@ const OverviewTab: React.FC<OverviewProps> = ({
             <CashFlowBar
               label="Fixed Costs"
               actual={totalFixed}
-              goal={currentPlan ? (currentPlan.categoryTargets
-                .filter((t: FinanceCategoryTarget) => t.type === 'fixed')
-                .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0)) : undefined}
+              goal={currentPlan ? (
+                currentPlan.fixedBudget ||
+                currentPlan.categoryTargets
+                  .filter((t: FinanceCategoryTarget) => t.type === 'fixed')
+                  .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0)
+              ) || undefined : undefined}
               color="#3b82f6"
               isExpense
             />
             {/* Variable costs bar */}
             <CashFlowBar
               label="Variable Costs"
-              actual={totalVariable}
-              goal={currentPlan ? (currentPlan.categoryTargets
-                .filter((t: FinanceCategoryTarget) => t.type === 'variable')
-                .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0) || undefined) : undefined}
+              actual={totalAllVariable}
+              goal={currentPlan ? (
+                currentPlan.variableBudget ||
+                (currentPlan.categoryTargets
+                  .filter((t: FinanceCategoryTarget) => t.type === 'variable')
+                  .reduce((s: number, t: FinanceCategoryTarget) => s + t.targetAmount, 0)
+                  + groceryBudget)
+              ) || undefined : undefined}
               color="#f97316"
               isExpense
             />
@@ -1192,6 +1408,9 @@ interface TransactionTabProps {
   onEdit: (tx: FinanceTransaction) => void;
   onDelete: (id: string) => void;
   currentPlan: any;
+  customCats?: CustomFinanceCategory[];
+  onAddCustomCat?: (cat: { label: string; icon: string }) => void;
+  onDeleteCustomCat?: (id: string) => void;
 }
 
 const colorMap = {
@@ -1202,6 +1421,7 @@ const colorMap = {
 
 const TransactionTab: React.FC<TransactionTabProps> = ({
   title, color, txList, type, total, onAdd, onEdit, onDelete, currentPlan,
+  customCats = [], onAddCustomCat, onDeleteCustomCat,
 }) => {
   const c = colorMap[color];
   const planTarget = currentPlan?.categoryTargets
@@ -1212,6 +1432,17 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggle = (id: string) =>
     setExpanded((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+
+  // Inline new-category form state
+  const [addingCat, setAddingCat] = useState(false);
+  const [newIcon, setNewIcon] = useState('📌');
+  const [newLabel, setNewLabel] = useState('');
+  const saveNewCat = () => {
+    if (newLabel.trim() && onAddCustomCat) {
+      onAddCustomCat({ label: newLabel.trim(), icon: newIcon || '📌' });
+      setNewLabel(''); setNewIcon('📌'); setAddingCat(false);
+    }
+  };
 
   // Group by category
   const groups = useMemo(() => {
@@ -1247,7 +1478,7 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
       </div>
 
       {/* Grouped entries */}
-      {groups.length === 0 ? (
+      {groups.length === 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center">
           <ClipboardList size={32} className="mx-auto text-gray-300 dark:text-gray-700 mb-2" />
           <p className="text-sm text-gray-400 mb-3">No {title.toLowerCase()} entries this month</p>
@@ -1258,30 +1489,39 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
             <span className="flex items-center gap-1.5"><Plus size={14} /> Add Entry</span>
           </button>
         </div>
-      ) : (
+      )}
+      {groups.length > 0 && (
         <div className="space-y-3">
           {groups.map(([catId, { total: catTotal, items }]) => {
             const isOpen = expanded.has(catId);
+            const isCustom = customCats.some((c) => c.id === catId);
             return (
               <div
                 key={catId}
                 className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
               >
-                <button
-                  onClick={() => toggle(catId)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
+                <div className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
+                  <button onClick={() => toggle(catId)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                     <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-base shrink-0">{getCategoryIcon(type, catId)}</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                       {getCategoryLabel(type, catId)}
                     </span>
-                    <span className="text-xs text-gray-400">({items.length})</span>
+                    <span className="text-xs text-gray-400 shrink-0">({items.length})</span>
+                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{formatPrice(catTotal)}</span>
+                    {isCustom && onDeleteCustomCat && (
+                      <button
+                        onClick={() => { if (confirm(`Delete "${getCategoryLabel(type, catId)}" category?`)) onDeleteCustomCat(catId); }}
+                        className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Delete custom category"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
                   </div>
-                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    {formatPrice(catTotal)}
-                  </span>
-                </button>
+                </div>
                 {isOpen && (
                   <div className="divide-y divide-gray-50 dark:divide-gray-800">
                     {items.sort((a, b) => b.date - a.date).map((tx) => (
@@ -1292,6 +1532,36 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Add custom category */}
+      {onAddCustomCat && (
+        <div className="mt-1">
+          {!addingCat ? (
+            <button
+              onClick={() => setAddingCat(true)}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 transition-colors"
+            >
+              <Plus size={12} /> New Category
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-blue-300 dark:border-blue-700">
+              <input
+                type="text" value={newIcon} onChange={(e) => setNewIcon(e.target.value)} maxLength={4}
+                className="w-8 text-center text-base bg-transparent outline-none shrink-0"
+                placeholder="📌"
+              />
+              <input
+                type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }}
+                placeholder="Category name…" autoFocus
+                className="flex-1 text-sm bg-transparent outline-none border-b border-gray-200 dark:border-gray-700 py-0.5 text-gray-700 dark:text-gray-200"
+              />
+              <button onClick={saveNewCat} disabled={!newLabel.trim()} className="p-1 text-blue-500 hover:text-blue-700 disabled:opacity-40 shrink-0"><Check size={14} /></button>
+              <button onClick={() => { setAddingCat(false); setNewLabel(''); setNewIcon('📌'); }} className="p-1 text-gray-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1308,10 +1578,14 @@ interface VariableTabProps {
   onEdit: (tx: FinanceTransaction) => void;
   onDelete: (id: string) => void;
   currentPlan: any;
+  customCats?: CustomFinanceCategory[];
+  onAddCustomCat?: (cat: { label: string; icon: string }) => void;
+  onDeleteCustomCat?: (id: string) => void;
 }
 
 const VariableTab: React.FC<VariableTabProps> = ({
   txList, totalVariable, grocerySpent, groceryBudget, onAdd, onEdit, onDelete, currentPlan,
+  customCats = [], onAddCustomCat, onDeleteCustomCat,
 }) => {
   const totalAll = totalVariable + grocerySpent;
   const planTarget = currentPlan?.categoryTargets
@@ -1322,6 +1596,17 @@ const VariableTab: React.FC<VariableTabProps> = ({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggle = (id: string) =>
     setExpanded((prev) => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
+
+  // Inline new-category form state
+  const [addingCat, setAddingCat] = useState(false);
+  const [newIcon, setNewIcon] = useState('📋');
+  const [newLabel, setNewLabel] = useState('');
+  const saveNewCat = () => {
+    if (newLabel.trim() && onAddCustomCat) {
+      onAddCustomCat({ label: newLabel.trim(), icon: newIcon || '📋' });
+      setNewLabel(''); setNewIcon('📋'); setAddingCat(false);
+    }
+  };
 
   const groups = useMemo(() => {
     const map = new Map<string, { total: number; items: FinanceTransaction[] }>();
@@ -1410,7 +1695,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
       })()}
 
       {/* Grouped manual variable entries */}
-      {groups.filter(([catId]) => catId !== 'groceries').length === 0 ? (
+      {groups.filter(([catId]) => catId !== 'groceries').length === 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-10 text-center">
           <ClipboardList size={32} className="mx-auto text-gray-300 dark:text-gray-700 mb-2" />
           <p className="text-sm text-gray-400 mb-3">No variable expenses this month</p>
@@ -1421,30 +1706,39 @@ const VariableTab: React.FC<VariableTabProps> = ({
             <span className="flex items-center gap-1.5"><Plus size={14} /> Add Expense</span>
           </button>
         </div>
-      ) : (
+      )}
+      {groups.filter(([catId]) => catId !== 'groceries').length > 0 && (
         <div className="space-y-3">
           {groups.filter(([catId]) => catId !== 'groceries').map(([catId, { total: catTotal, items }]) => {
             const isOpen = expanded.has(catId);
+            const isCustom = customCats.some((c) => c.id === catId);
             return (
             <div
               key={catId}
               className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
             >
-              <button
-                onClick={() => toggle(catId)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors"
-              >
-                <div className="flex items-center gap-2">
+              <div className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/40 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-800/70 transition-colors">
+                <button onClick={() => toggle(catId)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
                   <ChevronRight size={14} className={cn('text-gray-400 transition-transform duration-200', isOpen && 'rotate-90')} />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-base shrink-0">{getCategoryIcon('variable', catId)}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
                     {getCategoryLabel('variable', catId)}
                   </span>
-                  <span className="text-xs text-gray-400">({items.length})</span>
+                  <span className="text-xs text-gray-400 shrink-0">({items.length})</span>
+                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{formatPrice(catTotal)}</span>
+                  {isCustom && onDeleteCustomCat && (
+                    <button
+                      onClick={() => { if (confirm(`Delete "${getCategoryLabel('variable', catId)}" category?`)) onDeleteCustomCat(catId); }}
+                      className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Delete custom category"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
                 </div>
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                  {formatPrice(catTotal)}
-                </span>
-              </button>
+              </div>
               {isOpen && (
                 <div className="divide-y divide-gray-50 dark:divide-gray-800">
                   {items.sort((a, b) => b.date - a.date).map((tx) => (
@@ -1455,6 +1749,36 @@ const VariableTab: React.FC<VariableTabProps> = ({
             </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Add custom category */}
+      {onAddCustomCat && (
+        <div className="mt-1">
+          {!addingCat ? (
+            <button
+              onClick={() => setAddingCat(true)}
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-400 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 transition-colors"
+            >
+              <Plus size={12} /> New Category
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-3 bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-orange-300 dark:border-orange-700">
+              <input
+                type="text" value={newIcon} onChange={(e) => setNewIcon(e.target.value)} maxLength={4}
+                className="w-8 text-center text-base bg-transparent outline-none shrink-0"
+                placeholder="📋"
+              />
+              <input
+                type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }}
+                placeholder="Category name…" autoFocus
+                className="flex-1 text-sm bg-transparent outline-none border-b border-gray-200 dark:border-gray-700 py-0.5 text-gray-700 dark:text-gray-200"
+              />
+              <button onClick={saveNewCat} disabled={!newLabel.trim()} className="p-1 text-orange-500 hover:text-orange-700 disabled:opacity-40 shrink-0"><Check size={14} /></button>
+              <button onClick={() => { setAddingCat(false); setNewLabel(''); setNewIcon('📋'); }} className="p-1 text-gray-400 hover:text-red-500 shrink-0"><X size={14} /></button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1642,7 +1966,7 @@ const PlanTab: React.FC<PlanTabProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-sm">{cat?.icon}</span>
                       <span className="text-sm text-gray-700 dark:text-gray-300">
-                        {cat?.label.replace(/^.\s/, '') || ct.category}
+                        {cat?.label || ct.category}
                       </span>
                       <span className={cn(
                         'text-xs px-1.5 py-0.5 rounded-full',

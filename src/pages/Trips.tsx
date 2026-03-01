@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, ShoppingCart, Play, Check, Trash2, ChevronDown,
-  ChevronUp, Package, Clock, CheckCircle2, DollarSign, Minus,
+  ChevronUp, Package, Clock, CheckCircle2, DollarSign, Minus, Pencil,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
@@ -35,6 +35,10 @@ const Trips: React.FC = () => {
   const [itemForm, setItemForm] = useState({
     itemId: '', quantity: '1', estimatedPrice: '',
   });
+
+  const [editItemModal, setEditItemModal] = useState(false);
+  const [editingTripItem, setEditingTripItem] = useState<{ tripId: string; ti: ShoppingTripItem } | null>(null);
+  const [editItemForm, setEditItemForm] = useState({ quantity: '1', estimatedPrice: '' });
 
   const filteredTrips = useMemo(() => {
     // Guard: old trips without createdAt fall back to date field
@@ -104,6 +108,18 @@ const Trips: React.FC = () => {
     });
     toast.success(`"${item.name}" added to trip`);
     setAddItemModal(false);
+  };
+
+  const handleEditItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTripItem) return;
+    updateTripItem(editingTripItem.tripId, editingTripItem.ti.id, {
+      quantity: parseInt(editItemForm.quantity) || 1,
+      estimatedPrice: parseFloat(editItemForm.estimatedPrice) || 0,
+    });
+    toast.success(`"${editingTripItem.ti.itemName}" updated`);
+    setEditItemModal(false);
+    setEditingTripItem(null);
   };
 
   // Start trip
@@ -393,14 +409,28 @@ const Trips: React.FC = () => {
                                     {formatPrice((ti.actualPrice !== undefined ? ti.actualPrice : ti.estimatedPrice) * ti.quantity)}
                                   </span>
 
-                                  {/* Remove */}
+                                  {/* Edit / Remove */}
                                   {trip.status !== 'completed' && (
-                                    <button
-                                      onClick={() => removeTripItem(trip.id, ti.id)}
-                                      className="p-1 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setEditingTripItem({ tripId: trip.id, ti });
+                                          setEditItemForm({ quantity: String(ti.quantity), estimatedPrice: String(ti.estimatedPrice) });
+                                          setEditItemModal(true);
+                                        }}
+                                        className="p-1 text-gray-300 hover:text-brand-500 transition-colors flex-shrink-0"
+                                        title="Edit item"
+                                      >
+                                        <Pencil size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => removeTripItem(trip.id, ti.id)}
+                                        className="p-1 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
+                                        title="Remove item"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                               );
@@ -567,6 +597,68 @@ const Trips: React.FC = () => {
               />
             </div>
           </div>
+        </form>
+      </Modal>
+
+      {/* Edit Trip Item Modal */}
+      <Modal
+        isOpen={editItemModal}
+        onClose={() => { setEditItemModal(false); setEditingTripItem(null); }}
+        title={editingTripItem ? `Edit "${editingTripItem.ti.itemName}"` : 'Edit Item'}
+        footer={
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { setEditItemModal(false); setEditingTripItem(null); }}
+              className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="edit-item-form"
+              className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
+            >
+              Save Changes
+            </button>
+          </div>
+        }
+      >
+        <form id="edit-item-form" onSubmit={handleEditItem} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Quantity
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={editItemForm.quantity}
+                onChange={(e) => setEditItemForm({ ...editItemForm, quantity: e.target.value })}
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Est. Price ({CURRENCY})
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editItemForm.estimatedPrice}
+                onChange={(e) => setEditItemForm({ ...editItemForm, estimatedPrice: e.target.value })}
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                required
+              />
+            </div>
+          </div>
+          {editingTripItem && (
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Unit: {editingTripItem.ti.unit}
+            </p>
+          )}
         </form>
       </Modal>
     </div>

@@ -2,13 +2,13 @@
 // BasketBuddy - Dashboard Page
 // ==========================================
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   ShoppingCart, TrendingDown, TrendingUp, Wallet, Tag,
   AlertTriangle, ArrowRight, Clock, CheckCircle2, Sparkles, Package,
-  Receipt, ArrowDownCircle,
+  Receipt, ArrowDownCircle, Fuel, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,32 +26,83 @@ const item = {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { trips, items, prices, stores, budgets, reminders, categories, transactions } = useApp();
+  const { trips, items, prices, stores, budgets, reminders, categories, transactions, fuelFillups } = useApp();
 
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
 
-  // Stats
-  const monthTrips = trips.filter((t) => {
-    const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  });
+  // Billing period: 25th of month → 24th of next month.
+  // Days 1–24 = still in previous month's period; days 25–31 = new period started.
+  const _currentBillingPeriod = (() => {
+    const d = now.getDate();
+    const m = now.getMonth() + 1;
+    const y = now.getFullYear();
+    if (d <= 24) return m === 1 ? { month: 12, year: y - 1 } : { month: m - 1, year: y };
+    return { month: m, year: y };
+  })();
+  const [viewMonth, setViewMonth] = useState(_currentBillingPeriod.month);
+  const [viewYear,  setViewYear]  = useState(_currentBillingPeriod.year);
+
+  const isOnCurrentPeriod =
+    viewMonth === _currentBillingPeriod.month && viewYear === _currentBillingPeriod.year;
+
+  const prevMonth = () => {
+    if (viewMonth === 1) { setViewMonth(12); setViewYear((y) => y - 1); }
+    else setViewMonth((m) => m - 1);
+  };
+  const nextMonth = () => {
+    if (isOnCurrentPeriod) return;
+    if (viewMonth === 12) { setViewMonth(1); setViewYear((y) => y + 1); }
+    else setViewMonth((m) => m + 1);
+  };
+
+  // Period date range: e.g. "February" = Feb 25 00:00 → Mar 24 23:59
+  const periodStart = useMemo(
+    () => new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime(),
+    [viewMonth, viewYear]
+  );
+  const periodEnd = useMemo(
+    () => new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime(),
+    [viewMonth, viewYear]
+  );
+
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const billingPeriodLabel = (() => {
+    const startDate = new Date(viewYear, viewMonth - 1, 25);
+    const endDate   = new Date(viewYear, viewMonth, 24);
+    const fmt = (d: Date) => d.toLocaleDateString('en-NA', { day: 'numeric', month: 'short' });
+    const endYear = endDate.getFullYear();
+    return `${fmt(startDate)} – ${fmt(endDate)}${endYear !== viewYear ? ` ${endYear}` : `, ${viewYear}`}`;
+  })();
+
+  // Stats — all filtered by billing period date range
+  const monthTrips = useMemo(() =>
+    trips.filter((t) => t.date >= periodStart && t.date <= periodEnd),
+    [trips, periodStart, periodEnd]
+  );
   const completedTrips = monthTrips.filter((t) => t.status === 'completed');
   const plannedTrips = trips.filter((t) => t.status === 'planned');
   const monthlySpent = completedTrips.reduce((s, t) => s + t.totalSpent, 0);
 
-  const currentBudget = budgets.find((b) => b.month === currentMonth + 1 && b.year === currentYear);
+  const currentBudget = budgets.find((b) => b.month === viewMonth && b.year === viewYear);
   const budgetTotal = currentBudget?.totalBudget || 0;
   const budgetPct = budgetTotal > 0 ? calcPercentage(monthlySpent, budgetTotal) : 0;
 
-  // Personal finance: fixed + variable expenses this month (from Home Budget)
-  const monthTransactions = transactions.filter(
-    (t) => t.month === currentMonth + 1 && t.year === currentYear
+  // Personal finance: fixed + variable expenses in this billing period
+  const monthTransactions = useMemo(() =>
+    transactions.filter((t) => t.date >= periodStart && t.date <= periodEnd),
+    [transactions, periodStart, periodEnd]
   );
   const totalFixed    = monthTransactions.filter((t) => t.type === 'fixed').reduce((s, t) => s + t.amount, 0);
   const totalVariable = monthTransactions.filter((t) => t.type === 'variable').reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = totalFixed + totalVariable + monthlySpent; // incl. grocery trips
+
+  // Fuel: fillups in this billing period
+  const monthFillups = useMemo(() =>
+    fuelFillups.filter((f) => f.date >= periodStart && f.date <= periodEnd),
+    [fuelFillups, periodStart, periodEnd]
+  );
+  const totalFuel = monthFillups.reduce((s, f) => s + f.totalCost, 0);
+
+  const totalExpenses = totalFixed + totalVariable + monthlySpent + totalFuel;
 
   // Specials count
   const activeSpecials = prices.filter(
@@ -94,13 +145,35 @@ const Dashboard: React.FC = () => {
   return (
     <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
       {/* Welcome */}
-      <motion.div variants={item}>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {greeting()}, {user?.displayName?.split(' ')[0] || 'there'} 👋
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-0.5">
-          Here's your grocery overview for {now.toLocaleDateString('en-NA', { month: 'long', year: 'numeric' })}
-        </p>
+      <motion.div variants={item} className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {greeting()}, {user?.displayName?.split(' ')[0] || 'there'} 👋
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-0.5">
+            Overview for {MONTH_NAMES[viewMonth - 1]} {viewYear}
+            <span className="ml-1.5 text-xs text-gray-400">({billingPeriodLabel})</span>
+          </p>
+        </div>
+        {/* Billing period navigator */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevMonth}
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <ChevronLeft size={18} className="text-gray-600 dark:text-gray-400" />
+          </button>
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 min-w-[110px] text-center">
+            {MONTH_NAMES[viewMonth - 1]} {viewYear}
+          </span>
+          <button
+            onClick={nextMonth}
+            disabled={isOnCurrentPeriod}
+            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={18} className="text-gray-600 dark:text-gray-400" />
+          </button>
+        </div>
       </motion.div>
 
       {/* Stat Cards */}
@@ -200,7 +273,7 @@ const Dashboard: React.FC = () => {
             Home Budget <ArrowRight size={12} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-gray-800">
+        <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-gray-800">
           {/* Fixed */}
           <div className="p-5">
             <div className="flex items-center gap-1.5 mb-1">
@@ -227,6 +300,18 @@ const Dashboard: React.FC = () => {
             </div>
             <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(monthlySpent)}</p>
             <p className="text-xs text-gray-400 mt-0.5">From shopping trips</p>
+          </div>
+          {/* Fuel */}
+          <div className="p-5">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-xs text-gray-500 font-medium">Fuel</span>
+            </div>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalFuel)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{monthFillups.length} fill-up{monthFillups.length !== 1 ? 's' : ''}</p>
+            <Link to="/fuel" className="inline-flex items-center gap-1 text-xs text-brand-500 font-medium mt-1 hover:text-brand-600">
+              View <ArrowRight size={12} />
+            </Link>
           </div>
           {/* Total */}
           <div className="p-5 bg-rose-50 dark:bg-rose-900/10">
@@ -377,6 +462,12 @@ const Dashboard: React.FC = () => {
                 className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
               >
                 <ShoppingCart size={14} /> New Shopping Trip
+              </Link>
+              <Link
+                to="/fuel"
+                className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
+              >
+                <Fuel size={14} /> Log Fuel Fill-up
               </Link>
               <Link
                 to="/optimizer"

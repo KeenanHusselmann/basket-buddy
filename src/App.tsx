@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import Stores from './pages/Stores';
 import Items from './pages/Items';
 import Trips from './pages/Trips';
+import Fuel from './pages/Fuel';
 import BudgetPlanner from './pages/BudgetPlanner';
 import Finance from './pages/Finance';
 import PriceComparison from './pages/PriceComparison';
@@ -46,6 +47,7 @@ const ProtectedRoutes: React.FC = () => {
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="trips" element={<Trips />} />
+          <Route path="fuel" element={<Fuel />} />
           <Route path="items" element={<Items />} />
           <Route path="stores" element={<Stores />} />
           <Route path="compare" element={<PriceComparison />} />

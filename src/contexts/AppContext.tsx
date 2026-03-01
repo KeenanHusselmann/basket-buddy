@@ -9,11 +9,12 @@ import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
   FinanceTransaction, FinancePlan, SavingsGoal, SavingsContribution,
+  FuelFillup,
 } from '../types';
-import { DEFAULT_STORES, DEFAULT_CATEGORIES, DEFAULT_ITEMS } from '../config/constants';
+
 import { generateId } from '../utils/helpers';
 import { useAuth } from './AuthContext';
-import { loadUserData, fastSaveUserData, setQuotaExhausted, isQuotaExhausted, type UserAppData, type PendingDelete } from '../services/firestore';
+import { loadUserData, fastSaveUserData, getCloudLastModified, setQuotaExhausted, isQuotaExhausted, type UserAppData, type PendingDelete } from '../services/firestore';
 import { isFirebaseConfigured } from '../config/firebase';
 
 // ── State Shape ──────────────────────────────────────────────
@@ -27,6 +28,7 @@ interface AppState {
   reminders: RestockReminder[];  transactions: FinanceTransaction[];
   financePlans: FinancePlan[];
   savingsGoals: SavingsGoal[];
+  fuelFillups: FuelFillup[];
 }
 
 // ── Context Interface ────────────────────────────────────────
@@ -75,13 +77,19 @@ interface AppContextType extends AppState {
   deleteSavingsGoal: (id: string) => void;
   addSavingsContribution: (goalId: string, contribution: Omit<SavingsContribution, 'id'>) => void;
   deleteSavingsContribution: (goalId: string, contributionId: string) => void;
+  // Fuel Fillups
+  addFuelFillup: (fillup: Omit<FuelFillup, 'id' | 'createdAt'>) => void;
+  updateFuelFillup: (id: string, updates: Partial<FuelFillup>) => void;
+  deleteFuelFillup: (id: string) => void;
   // Helpers
   getStore: (id: string) => Store | undefined;
   getCategory: (id: string) => Category | undefined;
   getItem: (id: string) => GroceryItem | undefined;
   // Sync
   syncNow: () => Promise<void>;
+  mergeSync: () => Promise<void>;
   syncStatus: 'idle' | 'saving' | 'saved' | 'error';
+  lastSyncedAt: number | null;
   ready: boolean;
 }
 
@@ -91,9 +99,19 @@ const STORAGE_KEY = 'bb-app-data';
 // Set when local state has unsaved changes, cleared after a successful Firestore write.
 // Survives a hard refresh so we can detect that localStorage is newer than Firestore.
 const PENDING_KEY = 'bb-pending-save';
+// Timestamps used to decide which device's data wins on load.
+// bb-last-local-modified: updated every time the user makes a change (setDirtyState).
+// bb-last-cloud-sync:     updated every time a Firestore save or load succeeds.
+const LAST_LOCAL_MODIFIED_KEY  = 'bb-last-local-modified';
+const LAST_CLOUD_SYNC_KEY      = 'bb-last-cloud-sync';
+// Pending Firestore deletes — survives page refreshes so deletes are never lost.
+const PENDING_DELETES_KEY      = 'bb-pending-deletes';
+// Snapshot saved immediately before any pull-on-focus overwrites local state.
+// Lets the user undo an accidental cloud overwrite within the same session.
+const PRE_PULL_BACKUP_KEY = 'bb-pre-pull-backup';
 
 /** One-time migration: split old 'fruits-veg' into separate Fruits + Vegetables */
-function migrateCategories(categories: typeof DEFAULT_CATEGORIES): typeof DEFAULT_CATEGORIES {
+function migrateCategories(categories: Category[]): Category[] {
   let result = categories;
 
   // Migration 1: split 'fruits-veg' → 'fruits' + 'vegetables'
@@ -135,26 +153,26 @@ function loadState(): AppState {
       const rawItems: GroceryItem[] = Array.isArray(parsed.items) ? parsed.items : [];
       const migratedItems = migrateItems(rawItems);
       return {
-        stores: parsed.stores?.length ? parsed.stores : DEFAULT_STORES,
-        categories: migrateCategories(parsed.categories?.length ? parsed.categories : DEFAULT_CATEGORIES),
-        // Always guarantee at least DEFAULT_ITEMS
-        items: migratedItems.length > 0 ? migratedItems : DEFAULT_ITEMS,
-        prices: parsed.prices || [],
-        trips: parsed.trips || [],
-        budgets: parsed.budgets || [],
-        reminders: parsed.reminders || [],
+        stores:       parsed.stores || [],
+        categories:   migrateCategories(parsed.categories || []),
+        items:        migratedItems,
+        prices:       parsed.prices || [],
+        trips:        parsed.trips || [],
+        budgets:      parsed.budgets || [],
+        reminders:    parsed.reminders || [],
         transactions: parsed.transactions || [],
         financePlans: parsed.financePlans || [],
         savingsGoals: parsed.savingsGoals || [],
+        fuelFillups:  parsed.fuelFillups || [],
       };
     }
   } catch (e) {
     console.error('Failed to load state:', e);
   }
   return {
-    stores: DEFAULT_STORES,
-    categories: DEFAULT_CATEGORIES,
-    items: DEFAULT_ITEMS,
+    stores: [],
+    categories: [],
+    items: [],
     prices: [],
     trips: [],
     budgets: [],
@@ -162,6 +180,7 @@ function loadState(): AppState {
     transactions: [],
     financePlans: [],
     savingsGoals: [],
+    fuelFillups: [],
   };
 }
 
@@ -172,10 +191,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Firestore syncs in the background and updates state when done.
   const [ready, setReady] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(() => {
+    const stored = localStorage.getItem(LAST_CLOUD_SYNC_KEY);
+    return stored ? parseInt(stored) : null;
+  });
+
+  /** Appends deletes to the ref AND persists to localStorage so they survive page refreshes. */
+  const trackDeletes = (...entries: PendingDelete[]) => {
+    pendingDeletesRef.current.push(...entries);
+    try { localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(pendingDeletesRef.current)); } catch {}
+  };
+
+  /** Removes the first `count` flushed deletes from the ref and updates localStorage. */
+  const flushPendingDeletes = (count: number) => {
+    pendingDeletesRef.current = pendingDeletesRef.current.slice(count);
+    try {
+      if (pendingDeletesRef.current.length === 0) localStorage.removeItem(PENDING_DELETES_KEY);
+      else localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(pendingDeletesRef.current));
+    } catch {}
+  };
+
+  /** Call after every successful Firestore write to update timestamp state + localStorage */
+  const markSynced = () => {
+    const now = Date.now();
+    setLastSyncedAt(now);
+    localStorage.setItem(LAST_CLOUD_SYNC_KEY, now.toString());
+  };
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
-  // Tracks explicit deletes so fastSaveUserData can remove them without a getDocs read
-  const pendingDeletesRef = useRef<PendingDelete[]>([]);
+  // Tracks explicit deletes so fastSaveUserData can remove them without a getDocs read.
+  // Loaded from localStorage on mount so deletes survive page refreshes.
+  const pendingDeletesRef = useRef<PendingDelete[]>(
+    (() => {
+      try {
+        const saved = localStorage.getItem(PENDING_DELETES_KEY);
+        return saved ? (JSON.parse(saved) as PendingDelete[]) : [];
+      } catch { return []; }
+    })()
+  );
   // Tracks which specific doc IDs changed — fastSaveUserData only writes those (per-doc dirty tracking).
   // This prevents re-writing all 131+ items/prices on every save, staying under Firestore quota.
   const dirtyDocsRef = useRef<Map<string, Set<string>>>(new Map());
@@ -202,6 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setDirtyState: typeof setState = useCallback((value) => {
     isDirtyRef.current = true;
     localStorage.setItem(PENDING_KEY, '1'); // survives hard-refresh
+    localStorage.setItem(LAST_LOCAL_MODIFIED_KEY, Date.now().toString());
     setState(value);
   }, []);
 
@@ -225,37 +279,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     let cancelled = false;
     (async () => {
-      let needsDefaultsSaved = false;
       try {
         const cloudData = await loadUserData(user.uid);
         if (cancelled) return;
-        const hasPendingLocalSave = localStorage.getItem(PENDING_KEY) === '1';
+        // Local only wins if it was genuinely modified AFTER the last successful cloud sync.
+        // This prevents stale PENDING_KEY on other devices from overwriting fresh Firestore data.
+        const lastLocalModified = parseInt(localStorage.getItem(LAST_LOCAL_MODIFIED_KEY) || '0');
+        const lastCloudSync     = parseInt(localStorage.getItem(LAST_CLOUD_SYNC_KEY)     || '0');
+        // Migration for pre-timestamp sessions: if PENDING_KEY is set but LAST_LOCAL_MODIFIED
+        // was never stamped (old session before this key existed), stamp it now so all future
+        // checks treat this device's local data as newer than the cloud.
+        if (localStorage.getItem(PENDING_KEY) === '1' && lastLocalModified === 0) {
+          localStorage.setItem(LAST_LOCAL_MODIFIED_KEY, (lastCloudSync + 1).toString());
+        }
+        const effectiveLocalModified = parseInt(localStorage.getItem(LAST_LOCAL_MODIFIED_KEY) || '0');
+        // PENDING_KEY alone (without a timestamp) also wins — trusts the flag for old sessions.
+        const hasPendingLocalSave = localStorage.getItem(PENDING_KEY) === '1'
+          && (effectiveLocalModified === 0 || effectiveLocalModified > lastCloudSync);
 
         if (cloudData && !hasPendingLocalSave) {
           // Normal case: Firestore has the latest data — load it.
-          const migratedCats = migrateCategories(
-            cloudData.categories?.length ? cloudData.categories : DEFAULT_CATEGORIES
-          );
-          const resolvedItems = cloudData.items?.length
-            ? migrateItems(cloudData.items)
-            : DEFAULT_ITEMS;
           const loaded: AppState = {
-            stores: cloudData.stores?.length ? cloudData.stores : DEFAULT_STORES,
-            categories: migratedCats,
-            items: resolvedItems,
-            prices: cloudData.prices || [],
-            trips: cloudData.trips || [],
-            budgets: cloudData.budgets || [],
-            reminders: cloudData.reminders || [],
+            stores:       cloudData.stores || [],
+            categories:   migrateCategories(cloudData.categories || []),
+            items:        migrateItems(cloudData.items || []),
+            prices:       cloudData.prices || [],
+            trips:        cloudData.trips || [],
+            budgets:      cloudData.budgets || [],
+            reminders:    cloudData.reminders || [],
             transactions: cloudData.transactions || [],
             financePlans: cloudData.financePlans || [],
             savingsGoals: cloudData.savingsGoals || [],
+            fuelFillups:  cloudData.fuelFillups || [],
           };
-          // Track whether defaults were injected so we save them back
-          needsDefaultsSaved = !cloudData.items?.length;
           setState(loaded);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
-          console.log('[AppContext] Loaded data from Firestore, items:', resolvedItems.length, needsDefaultsSaved ? '(defaults injected — will save)' : '');
+          markSynced();
+          console.log('[AppContext] Loaded data from Firestore, items:', loaded.items.length);
         } else {
           // Either first-time user OR local has unsaved changes from before a
           // hard-refresh (PENDING_KEY was set). In both cases, local state is
@@ -265,35 +325,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (hasPendingLocalSave) {
             console.log('[AppContext] Pending local changes detected — saving local state to Firestore');
           } else {
-            console.log('[AppContext] First-time user — initialising Firestore with local/default data');
+            console.log('[AppContext] First-time user — starting with empty Firestore state');
           }
           try {
             if (isQuotaExhausted()) {
               console.warn('[AppContext] Quota exhausted — skipping recovery save. Data is safe in localStorage.');
+              // Mark dirty so auto-save retries as soon as quota clears
+              isDirtyRef.current = true;
             } else {
               // Use fastSaveUserData (no getDocs reads, writes all docs since we have no dirty map from previous session)
-              await fastSaveUserData(user.uid, current, []);
+              setSyncStatus('saving');
+              const recoveryDeletes = [...pendingDeletesRef.current];
+              await fastSaveUserData(user.uid, current, recoveryDeletes);
+              flushPendingDeletes(recoveryDeletes.length);
               localStorage.removeItem(PENDING_KEY);
+              markSynced();
+              setSyncStatus('saved');
+              toast.success('Local data saved to cloud ✓');
+              setTimeout(() => setSyncStatus('idle'), 3000);
               console.log('[AppContext] Saved local state to Firestore ✓');
             }
           } catch (saveErr: any) {
+            setSyncStatus('error');
+            setTimeout(() => setSyncStatus('idle'), 5000);
+            // Keep dirty flag set so auto-save retries on next user interaction
+            isDirtyRef.current = true;
             if (saveErr?.code === 'resource-exhausted') {
               setQuotaExhausted();
+              toast.error('Firestore quota exceeded — your data is safe locally and will retry.', { duration: 8000 });
               console.warn('[AppContext] Quota exhausted during recovery — will retry after quota resets.');
+            } else if (saveErr?.code === 'permission-denied') {
+              toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
+              console.error('[AppContext] Permission denied during recovery save:', saveErr);
             } else {
+              toast.error('Could not upload local data: ' + (saveErr?.message || 'unknown error'), { duration: 8000 });
               console.error('[AppContext] Failed to save to Firestore:', saveErr);
-              if (saveErr?.code === 'permission-denied') {
-                toast.error('Firestore permission denied. Update your security rules.', { duration: 8000 });
-              }
             }
           }
         }
-      } catch (e) {
-        console.error('[AppContext] Firestore load failed, using local:', e);
+      } catch (e: any) {
+        // If the load itself hit a quota error, mark it so the SDK gets terminated
+        // and auto-saves are paused (same as save-path quota handling).
+        if (e?.code === 'resource-exhausted') {
+          setQuotaExhausted();
+          quotaPausedUntilRef.current = Date.now() + 10 * 60 * 1000;
+          toast.error(
+            '⚠️ Firestore free-tier quota exceeded. Using local data. Saves paused for 10 min.',
+            { duration: 12000, id: 'fs-quota' }
+          );
+          console.warn('[AppContext] Quota exhausted during initial load — SDK terminated, auto-saves paused.');
+        } else {
+          console.error('[AppContext] Firestore load failed, using local:', e);
+        }
       } finally {
         if (!cancelled) {
-          // Only clear dirty flag when no defaults need to be saved back
-          isDirtyRef.current = needsDefaultsSaved;
           setFirestoreLoaded(true);
           setReady(true);
         }
@@ -312,13 +397,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  // Safety net: whenever items are empty, restore defaults immediately
-  useEffect(() => {
-    if (state.items.length === 0) {
-      console.warn('[AppContext] items empty — restoring DEFAULT_ITEMS');
-      setDirtyState((s) => ({ ...s, items: DEFAULT_ITEMS }));
-    }
-  }, [state.items.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Safety net removed — empty stores/items/categories is valid (new or demo account).
 
   /** Reject a promise after `ms` milliseconds — prevents the spinner sticking on mobile */
   const withSyncTimeout = <T,>(p: Promise<T>, ms = 20000): Promise<T> =>
@@ -385,8 +464,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // 60 s timeout for a manual sync gives plenty of headroom on slow connections.
       await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush, dirtyMap), 60_000);
       isDirtyRef.current = false;
-      pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
+      flushPendingDeletes(deletesToFlush.length);
       localStorage.removeItem(PENDING_KEY);
+      markSynced();
       setSyncStatus('saved');
       toast.success('Data synced to cloud ✓');
       setTimeout(() => setSyncStatus('idle'), 3000);
@@ -399,6 +479,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           dirtyDocsRef.current.set(col, existing);
         }
       }
+      handleSyncError(err, 'syncNow');
+    }
+  }, [user, isDemo, state]);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Merge cloud + local by ID union, then push result back up.
+  // Safe when devices have diverged: no data is lost.
+  const mergeSync = useCallback(async () => {
+    if (!user || isDemo || !isFirebaseConfigured) {
+      toast.error(!user ? 'Not signed in.' : 'Not available in demo/unconfigured mode.');
+      return;
+    }
+    if (isQuotaExhausted()) {
+      toast.error('Quota recovery in progress — try again later.', { id: 'fs-quota' });
+      return;
+    }
+    setSyncStatus('saving');
+    try {
+      const cloudData = await loadUserData(user.uid);
+      if (!cloudData) throw new Error('Failed to load cloud data');
+
+      // Union by ID — local copy wins when the same ID exists in both
+      const mergeById = <T extends { id: string }>(local: T[], cloud: T[]): T[] => {
+        const map = new Map<string, T>();
+        for (const item of cloud) map.set(item.id, item);
+        for (const item of local) map.set(item.id, item);
+        return Array.from(map.values());
+      };
+
+      const merged: AppState = {
+        stores:       mergeById(state.stores,       cloudData.stores       || []),
+        categories:   migrateCategories(mergeById(state.categories, cloudData.categories || [])),
+        items:        migrateItems(mergeById(state.items,     cloudData.items        || [])),
+        prices:       mergeById(state.prices,       cloudData.prices       || []),
+        trips:        mergeById(state.trips,        cloudData.trips        || []),
+        budgets:      mergeById(state.budgets,      cloudData.budgets      || []),
+        reminders:    mergeById(state.reminders,    cloudData.reminders    || []),
+        transactions: mergeById(state.transactions, cloudData.transactions || []),
+        financePlans: mergeById(state.financePlans, cloudData.financePlans || []),
+        savingsGoals: mergeById(state.savingsGoals, cloudData.savingsGoals || []),
+        fuelFillups:  mergeById(state.fuelFillups,  cloudData.fuelFillups  || []),
+      };
+
+      // Build a set of locally-deleted IDs so we don't pull them back from the cloud.
+      const deletedByCol = new Map<string, Set<string>>();
+      for (const { col, id } of pendingDeletesRef.current) {
+        const s = deletedByCol.get(col) ?? new Set<string>();
+        s.add(id);
+        deletedByCol.set(col, s);
+      }
+      const filterDeleted = <T extends { id: string }>(items: T[], col: string): T[] => {
+        const ids = deletedByCol.get(col);
+        return ids ? items.filter((i) => !ids.has(i.id)) : items;
+      };
+
+      // Strip any pending-deleted IDs from the merged result so they don't come back.
+      const mergedFiltered: AppState = {
+        stores:       filterDeleted(merged.stores,       'stores'),
+        categories:   filterDeleted(merged.categories,   'categories'),
+        items:        filterDeleted(merged.items,         'items'),
+        prices:       filterDeleted(merged.prices,        'prices'),
+        trips:        filterDeleted(merged.trips,         'trips'),
+        budgets:      filterDeleted(merged.budgets,       'budgets'),
+        reminders:    filterDeleted(merged.reminders,     'reminders'),
+        transactions: filterDeleted(merged.transactions,  'transactions'),
+        financePlans: filterDeleted(merged.financePlans,  'financePlans'),
+        savingsGoals: filterDeleted(merged.savingsGoals,  'savingsGoals'),
+        fuelFillups:  filterDeleted(merged.fuelFillups,   'fuelFillups'),
+      };
+
+      setState(mergedFiltered);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedFiltered));
+
+      const deletesToFlush = [...pendingDeletesRef.current];
+      await withSyncTimeout(fastSaveUserData(user.uid, mergedFiltered, deletesToFlush), 60_000);
+      isDirtyRef.current = false;
+      flushPendingDeletes(deletesToFlush.length);
+      localStorage.removeItem(PENDING_KEY);
+      markSynced();
+      setSyncStatus('saved');
+      toast.success('Merged & synced — all data combined ✓');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (err: any) {
       handleSyncError(err, 'syncNow');
     }
   }, [user, isDemo, state]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -426,8 +588,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // Fast path: only write changed docs + targeted deletes (no getDocs reads)
         await withSyncTimeout(fastSaveUserData(user.uid, state, deletesToFlush, dirtyMap), 45_000);
         isDirtyRef.current = false;
-        pendingDeletesRef.current = pendingDeletesRef.current.slice(deletesToFlush.length);
+        flushPendingDeletes(deletesToFlush.length);
         localStorage.removeItem(PENDING_KEY);
+        markSynced();
         setSyncStatus('saved');
         console.log('[AppContext] Saved to Firestore ✓');
         setTimeout(() => setSyncStatus('idle'), 3000);
@@ -469,13 +632,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const dirtyMap = dirtyDocsRef.current.size > 0 ? dirtyDocsRef.current : undefined;
       fastSaveUserData(user.uid, state, deletes, dirtyMap).then(() => {
         isDirtyRef.current = false;
+        flushPendingDeletes(deletes.length);
         localStorage.removeItem(PENDING_KEY);
+        markSynced();
         console.log('[AppContext] Saved on page hide/unload ✓');
       }).catch((e) => console.warn('[AppContext] Save on hide failed:', e));
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') saveIfDirty();
+      if (document.visibilityState === 'hidden') {
+        saveIfDirty();
+      } else if (document.visibilityState === 'visible') {
+        // App regained focus. Pull from Firestore ONLY when ALL of the following are true:
+        //  1. No in-session dirty changes (isDirtyRef)
+        //  2. No cross-session pending save (PENDING_KEY) — this key survives page reloads,
+        //     so a fresh-page-load with unsaved local data is correctly blocked.
+        //  3. Local data was NOT modified more recently than the last cloud sync.
+        //  4. Cloud has newer data than our last known sync (1 cheap read).
+        const hasPendingLocal = localStorage.getItem(PENDING_KEY) === '1';
+        const localModifiedTs = parseInt(localStorage.getItem(LAST_LOCAL_MODIFIED_KEY) || '0');
+        const lastLocalSync   = parseInt(localStorage.getItem(LAST_CLOUD_SYNC_KEY) || '0');
+        const localIsNewer    = localModifiedTs > lastLocalSync;
+
+        if (!isDirtyRef.current && !hasPendingLocal && !localIsNewer && !isQuotaExhausted()) {
+          if (Date.now() - lastLocalSync > 30_000) {
+            (async () => {
+              try {
+                // Step 1: 1 read — check the profile doc's lastSyncAt timestamp.
+                const cloudModified = await getCloudLastModified(user.uid);
+                if (cloudModified <= lastLocalSync) {
+                  markSynced();
+                  console.log('[AppContext] Pull-on-focus: cloud not newer, skipping full load.');
+                  return;
+                }
+                // Step 2: Cloud IS newer — save a backup of current local state before overwriting.
+                const prePullSnapshot = localStorage.getItem(STORAGE_KEY);
+                // Step 3: do the full load (11 getDocs calls).
+                const cloudData = await loadUserData(user.uid);
+                // Final safety check: bail if user made changes while we were loading.
+                if (!cloudData || isDirtyRef.current || localStorage.getItem(PENDING_KEY) === '1') return;
+                const loaded: AppState = {
+                  stores:       cloudData.stores       || [],
+                  categories:   migrateCategories(cloudData.categories || []),
+                  items:        migrateItems(cloudData.items || []),
+                  prices:       cloudData.prices       || [],
+                  trips:        cloudData.trips        || [],
+                  budgets:      cloudData.budgets      || [],
+                  reminders:    cloudData.reminders    || [],
+                  transactions: cloudData.transactions || [],
+                  financePlans: cloudData.financePlans || [],
+                  savingsGoals: cloudData.savingsGoals || [],
+                  fuelFillups:  cloudData.fuelFillups  || [],
+                };
+                // Save pre-pull backup so the user can undo if needed.
+                if (prePullSnapshot) localStorage.setItem(PRE_PULL_BACKUP_KEY, prePullSnapshot);
+                setState(loaded);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
+                markSynced();
+                localStorage.removeItem(PENDING_KEY);
+                console.log('[AppContext] Refreshed from Firestore on focus ✓');
+                // Offer a brief undo window in case the cloud had stale data.
+                toast(
+                  (t) => (
+                    <span className="flex items-center gap-2 text-sm">
+                      Synced latest data from cloud.
+                      <button
+                        className="underline font-semibold text-brand-500 ml-1"
+                        onClick={() => {
+                          const backup = localStorage.getItem(PRE_PULL_BACKUP_KEY);
+                          if (backup) {
+                            try {
+                              const prev = JSON.parse(backup) as AppState;
+                              setState(prev);
+                              localStorage.setItem(STORAGE_KEY, backup);
+                              isDirtyRef.current = true;
+                              localStorage.setItem(PENDING_KEY, '1');
+                              localStorage.setItem(LAST_LOCAL_MODIFIED_KEY, Date.now().toString());
+                              toast.dismiss(t.id);
+                              toast.success('Restored your previous data. Saving…');
+                            } catch { toast.error('Could not restore backup.'); }
+                          } else {
+                            toast.error('No backup available.');
+                          }
+                        }}
+                      >
+                        Undo
+                      </button>
+                    </span>
+                  ),
+                  { duration: 10000, id: 'pull-undo' },
+                );
+              } catch (e) {
+                console.warn('[AppContext] Pull-on-focus failed (silent):', e);
+              }
+            })();
+          }
+        }
+      }
     };
 
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -508,7 +761,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteStore = useCallback((id: string) => {
     setDirtyState((s) => {
       const priceIds = s.prices.filter((p) => p.storeId === id).map((p) => p.id);
-      pendingDeletesRef.current.push(
+      trackDeletes(
         { col: 'stores', id },
         ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
       );
@@ -542,7 +795,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDirtyState((s) => {
       const itemIds = s.items.filter((i) => i.categoryId === id).map((i) => i.id);
       const priceIds = s.prices.filter((p) => itemIds.includes(p.itemId)).map((p) => p.id);
-      pendingDeletesRef.current.push(
+      trackDeletes(
         { col: 'categories', id },
         ...itemIds.map((iid) => ({ col: 'items', id: iid })),
         ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
@@ -577,7 +830,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteItem = useCallback((id: string) => {
     setDirtyState((s) => {
       const priceIds = s.prices.filter((p) => p.itemId === id).map((p) => p.id);
-      pendingDeletesRef.current.push(
+      trackDeletes(
         { col: 'items', id },
         ...priceIds.map((pid) => ({ col: 'prices', id: pid })),
       );
@@ -621,7 +874,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deletePrice = useCallback((id: string) => {
-    pendingDeletesRef.current.push({ col: 'prices', id });
+    trackDeletes({ col: 'prices', id });
     setDirtyState((s) => ({ ...s, prices: s.prices.filter((p) => p.id !== id) }));
   }, [setDirtyState]);
 
@@ -654,7 +907,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteTrip = useCallback((id: string) => {
-    pendingDeletesRef.current.push({ col: 'trips', id });
+    trackDeletes({ col: 'trips', id });
     setDirtyState((s) => ({ ...s, trips: s.trips.filter((t) => t.id !== id) }));
   }, [setDirtyState]);
 
@@ -746,7 +999,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteReminder = useCallback((id: string) => {
-    pendingDeletesRef.current.push({ col: 'reminders', id });
+    trackDeletes({ col: 'reminders', id });
     setDirtyState((s) => ({ ...s, reminders: s.reminders.filter((r) => r.id !== id) }));
   }, [setDirtyState]);
 
@@ -769,7 +1022,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteTransaction = useCallback((id: string) => {
-    pendingDeletesRef.current.push({ col: 'transactions', id });
+    trackDeletes({ col: 'transactions', id });
     setDirtyState((s) => ({ ...s, transactions: s.transactions.filter((t) => t.id !== id) }));
   }, [setDirtyState]);
 
@@ -813,7 +1066,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [setDirtyState]);
 
   const deleteSavingsGoal = useCallback((id: string) => {
-    pendingDeletesRef.current.push({ col: 'savingsGoals', id });
+    trackDeletes({ col: 'savingsGoals', id });
     setDirtyState((s) => ({ ...s, savingsGoals: s.savingsGoals.filter((g) => g.id !== id) }));
   }, [setDirtyState]);
 
@@ -840,7 +1093,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ),
     }));
   }, [setDirtyState]);
+  // ── Fuel Fillup CRUD ───────────────────────────────
+  const addFuelFillup = useCallback((fillup: Omit<FuelFillup, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('fuelFillups', id);
+    setDirtyState((s) => ({
+      ...s,
+      fuelFillups: [...s.fuelFillups, { ...fillup, id, createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
 
+  const updateFuelFillup = useCallback((id: string, updates: Partial<FuelFillup>) => {
+    markDirty('fuelFillups', id);
+    setDirtyState((s) => ({
+      ...s,
+      fuelFillups: s.fuelFillups.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteFuelFillup = useCallback((id: string) => {
+    trackDeletes({ col: 'fuelFillups', id });
+    setDirtyState((s) => ({ ...s, fuelFillups: s.fuelFillups.filter((f) => f.id !== id) }));
+  }, [setDirtyState]);
   // ── Lookup Helpers ─────────────────────────────────────────
   const getStore = useCallback((id: string) => state.stores.find((s) => s.id === id), [state.stores]);
   const getCategory = useCallback((id: string) => state.categories.find((c) => c.id === id), [state.categories]);
@@ -861,8 +1135,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setFinancePlan,
         addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
         addSavingsContribution, deleteSavingsContribution,
+        addFuelFillup, updateFuelFillup, deleteFuelFillup,
         getStore, getCategory, getItem,
-        syncNow, syncStatus, ready,
+        syncNow, mergeSync, syncStatus, lastSyncedAt, ready,
       }}
     >
       {children}

@@ -67,6 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const enableDemoMode = () => {
+    // Wipe any previous session's data so demo always starts completely empty
+    const keysToRemove = Object.keys(localStorage).filter((k) => k.startsWith('bb-'));
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
     setUser(DEMO_USER);
     setIsDemo(true);
     localStorage.setItem('bb-demo-mode', 'true');

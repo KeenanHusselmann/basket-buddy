@@ -20,6 +20,7 @@ import {
   collection,
   writeBatch,
   serverTimestamp,
+  getCountFromServer,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../config/firebase';
 import type {
@@ -33,6 +34,7 @@ import type {
   FinanceTransaction,
   FinancePlan,
   SavingsGoal,
+  FuelFillup,
 } from '../types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -56,6 +58,7 @@ export interface UserAppData {
   transactions: FinanceTransaction[];
   financePlans: FinancePlan[];
   savingsGoals: SavingsGoal[];
+  fuelFillups: FuelFillup[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -71,7 +74,7 @@ function subCol(uid: string, name: string) {
 
 const SUBCOLLECTIONS: Array<keyof UserAppData> = [
   'stores', 'categories', 'items', 'prices', 'trips', 'budgets', 'reminders',
-  'transactions', 'financePlans', 'savingsGoals',
+  'transactions', 'financePlans', 'savingsGoals', 'fuelFillups',
 ];
 
 /** Recursively remove undefined values — Firestore rejects them */
@@ -97,6 +100,11 @@ const QUOTA_PAUSE_MS = 10 * 60 * 1000; // 10 minutes
 /** Call this from anywhere a resource-exhausted error is caught. */
 export function setQuotaExhausted(): void {
   _quotaExhaustedUntil = Date.now() + QUOTA_PAUSE_MS;
+  // NOTE: We intentionally do NOT call terminate() on the Firestore SDK here.
+  // Firebase SDK's getFirestore() returns a memoized instance — after terminate()
+  // the same dead instance is returned, making recovery impossible.
+  // The quota gate (isQuotaExhausted) is sufficient to block all new saves.
+  // The SDK's own exponential backoff will pause background reconnects automatically.
 }
 
 /** Returns true if quota is known to be exhausted right now. */
@@ -197,6 +205,53 @@ export async function createOrUpdateUserProfile(user: {
   }
 }
 
+/**
+ * Returns the server-side `lastSyncAt` timestamp from the user profile doc
+ * as a JS millisecond timestamp (or 0 if unavailable).
+ * Cost: exactly 1 Firestore read — use this as a cheap gate before loadUserData.
+ */
+export async function getCloudLastModified(uid: string): Promise<number> {
+  if (!isFirebaseConfigured || !db) return 0;
+  try {
+    const snap = await getDoc(userDocRef(uid));
+    if (!snap.exists()) return 0;
+    const ts = snap.data()?.lastSyncAt;
+    // Firestore Timestamp has a .toMillis() method; fall back for plain numbers
+    if (ts && typeof ts.toMillis === 'function') return ts.toMillis();
+    if (typeof ts === 'number') return ts;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+export interface CloudCounts {
+  stores: number; categories: number; items: number; prices: number;
+  trips: number; budgets: number; reminders: number; transactions: number;
+  financePlans: number; savingsGoals: number; fuelFillups: number;
+}
+
+/**
+ * Reads ONLY the document counts from each Firestore subcollection.
+ * Cost: 1 read per collection (11 total) regardless of how many docs exist.
+ * Use this to verify a save succeeded without re-downloading all data.
+ */
+export async function verifyCloudCounts(uid: string): Promise<CloudCounts | null> {
+  if (!isFirebaseConfigured || !db) return null;
+  try {
+    const results = await Promise.all(
+      SUBCOLLECTIONS.map((name) => getCountFromServer(subCol(uid, name)))
+    );
+    const [stores, categories, items, prices, trips, budgets, reminders,
+           transactions, financePlans, savingsGoals, fuelFillups] = results.map((r) => r.data().count);
+    return { stores, categories, items, prices, trips, budgets, reminders,
+             transactions, financePlans, savingsGoals, fuelFillups };
+  } catch (e) {
+    console.error('[Firestore] verifyCloudCounts failed:', e);
+    return null;
+  }
+}
+
 // ── Load all app data from subcollections ────────────────────
 export async function loadUserData(uid: string): Promise<UserAppData | null> {
   if (!isFirebaseConfigured || !db) return null;
@@ -205,13 +260,14 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
     const [
       storesSnap, categoriesSnap, itemsSnap,
       pricesSnap, tripsSnap, budgetsSnap, remindersSnap,
-      transactionsSnap, financePlansSnap, savingsGoalsSnap,
+      transactionsSnap, financePlansSnap, savingsGoalsSnap, fuelFillupsSnap,
     ] = await Promise.all(SUBCOLLECTIONS.map((name) => getDocs(subCol(uid, name))));
 
     const totalDocs =
       storesSnap.size + categoriesSnap.size + itemsSnap.size +
       pricesSnap.size + tripsSnap.size + budgetsSnap.size + remindersSnap.size +
-      transactionsSnap.size + financePlansSnap.size + savingsGoalsSnap.size;
+      transactionsSnap.size + financePlansSnap.size + savingsGoalsSnap.size +
+      fuelFillupsSnap.size;
 
     if (totalDocs === 0) {
       console.log('[Firestore] No app data found for', uid);
@@ -229,6 +285,7 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
       transactions: transactionsSnap.docs.map((d) => d.data() as FinanceTransaction),
       financePlans: financePlansSnap.docs.map((d) => d.data() as FinancePlan),
       savingsGoals: savingsGoalsSnap.docs.map((d) => d.data() as SavingsGoal),
+      fuelFillups:  fuelFillupsSnap.docs.map((d) => d.data() as FuelFillup),
     };
 
     console.log(
@@ -302,6 +359,7 @@ export async function fastSaveUserData(
     ['transactions', data.transactions as any || []],
     ['financePlans', data.financePlans as any || []],
     ['savingsGoals', data.savingsGoals as any || []],
+    ['fuelFillups',  data.fuelFillups  as any || []],
   ];
 
   for (const [col, items] of entries) {

@@ -4,8 +4,12 @@
 
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { motion } from 'framer-motion';
-import { Plus, Edit3, Trash2, Store as StoreIcon, Package, Tag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plus, Edit3, Trash2, Store as StoreIcon, Package, Tag,
+  MapPin, Phone, Globe, Clock, StickyNote, CreditCard,
+  ChevronDown, ChevronUp, ExternalLink,
+} from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import Modal from '../components/common/Modal';
 import { STORE_COLORS } from '../config/constants';
@@ -15,28 +19,54 @@ const Stores: React.FC = () => {
   const { stores, prices, items, trips, addStore, updateStore, deleteStore } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', color: STORE_COLORS[0], icon: '🏪', isCustom: true });
+  const [expandedStore, setExpandedStore] = useState<string | null>(null);
+
+  const emptyForm = () => ({
+    name: '', color: STORE_COLORS[0], icon: '🏪', isCustom: true,
+    address: '', phone: '', website: '', openingHours: '', notes: '', loyaltyCard: '',
+  });
+
+  const [form, setForm] = useState(emptyForm());
 
   const openAdd = () => {
     setEditId(null);
-    setForm({ name: '', color: STORE_COLORS[0], icon: '🏪', isCustom: true });
+    setForm(emptyForm());
     setModalOpen(true);
   };
 
   const openEdit = (store: typeof stores[0]) => {
     setEditId(store.id);
-    setForm({ name: store.name, color: store.color, icon: store.icon, isCustom: store.isCustom });
+    setForm({
+      name: store.name,
+      color: store.color,
+      icon: store.icon,
+      isCustom: store.isCustom,
+      address: store.address ?? '',
+      phone: store.phone ?? '',
+      website: store.website ?? '',
+      openingHours: store.openingHours ?? '',
+      notes: store.notes ?? '',
+      loyaltyCard: store.loyaltyCard ?? '',
+    });
     setModalOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    const details = {
+      address:      form.address.trim()      || undefined,
+      phone:        form.phone.trim()        || undefined,
+      website:      form.website.trim()      || undefined,
+      openingHours: form.openingHours.trim() || undefined,
+      notes:        form.notes.trim()        || undefined,
+      loyaltyCard:  form.loyaltyCard.trim()  || undefined,
+    };
     if (editId) {
-      updateStore(editId, form);
+      updateStore(editId, { ...form, ...details });
       toast.success(`"${form.name.trim()}" updated`);
     } else {
-      addStore(form);
+      addStore({ ...form, ...details });
       toast.success(`"${form.name.trim()}" added`);
     }
     setModalOpen(false);
@@ -78,6 +108,8 @@ const Stores: React.FC = () => {
           const completedTrips = storeTrips.filter((t) => t.status === 'completed');
           const totalSpent = completedTrips.reduce((s, t) => s + t.totalSpent, 0);
           const specials = storePrices.filter((p) => p.isOnSpecial && p.specialPrice);
+          const hasDetails = !!(store.address || store.phone || store.website || store.openingHours || store.notes || store.loyaltyCard);
+          const isExpanded = expandedStore === store.id;
 
           return (
             <motion.div
@@ -126,6 +158,7 @@ const Stores: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                     <Package size={14} className="mx-auto text-gray-400 mb-1" />
@@ -150,6 +183,87 @@ const Stores: React.FC = () => {
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{formatPrice(totalSpent)}</p>
                   </div>
                 )}
+
+                {/* Details toggle */}
+                {hasDetails && (
+                  <button
+                    onClick={() => setExpandedStore(isExpanded ? null : store.id)}
+                    className="mt-3 w-full flex items-center justify-between text-xs text-gray-400 hover:text-brand-500 transition-colors pt-3 border-t border-gray-100 dark:border-gray-800"
+                  >
+                    <span className="font-medium">Shopping Details</span>
+                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                )}
+
+                {/* No details yet — prompt */}
+                {!hasDetails && (
+                  <button
+                    onClick={() => openEdit(store)}
+                    className="mt-3 w-full text-xs text-gray-300 dark:text-gray-600 hover:text-brand-400 transition-colors pt-3 border-t border-gray-100 dark:border-gray-800 text-left flex items-center gap-1.5"
+                  >
+                    <Plus size={11} /> Add shopping details
+                  </button>
+                )}
+
+                {/* Expanded details */}
+                <AnimatePresence>
+                  {isExpanded && hasDetails && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 space-y-2">
+                        {store.address && (
+                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <MapPin size={12} className="flex-shrink-0 mt-0.5 text-brand-400" />
+                            <span>{store.address}</span>
+                          </div>
+                        )}
+                        {store.phone && (
+                          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Phone size={12} className="flex-shrink-0 text-green-400" />
+                            <a href={`tel:${store.phone}`} className="hover:text-brand-500 transition-colors">{store.phone}</a>
+                          </div>
+                        )}
+                        {store.openingHours && (
+                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <Clock size={12} className="flex-shrink-0 mt-0.5 text-amber-400" />
+                            <span className="whitespace-pre-line">{store.openingHours}</span>
+                          </div>
+                        )}
+                        {store.website && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Globe size={12} className="flex-shrink-0 text-blue-400" />
+                            <a
+                              href={store.website.startsWith('http') ? store.website : `https://${store.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand-500 hover:text-brand-600 transition-colors flex items-center gap-1 truncate"
+                            >
+                              {store.website.replace(/^https?:\/\//, '')}
+                              <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        )}
+                        {store.loyaltyCard && (
+                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <CreditCard size={12} className="flex-shrink-0 mt-0.5 text-purple-400" />
+                            <span>{store.loyaltyCard}</span>
+                          </div>
+                        )}
+                        {store.notes && (
+                          <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                            <StickyNote size={12} className="flex-shrink-0 mt-0.5 text-gray-400" />
+                            <span className="italic">{store.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           );
@@ -214,6 +328,82 @@ const Stores: React.FC = () => {
                   style={{ backgroundColor: color }}
                 />
               ))}
+            </div>
+          </div>
+
+          {/* Shopping Details */}
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Shopping Details{' '}
+              <span className="text-xs text-gray-400 font-normal">(optional)</span>
+            </p>
+            <div className="space-y-3">
+              {/* Address */}
+              <div className="flex items-start gap-2">
+                <MapPin size={15} className="flex-shrink-0 mt-2.5 text-brand-400" />
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  placeholder="Store address"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                />
+              </div>
+              {/* Phone */}
+              <div className="flex items-start gap-2">
+                <Phone size={15} className="flex-shrink-0 mt-2.5 text-green-400" />
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="Phone number"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                />
+              </div>
+              {/* Website */}
+              <div className="flex items-start gap-2">
+                <Globe size={15} className="flex-shrink-0 mt-2.5 text-blue-400" />
+                <input
+                  type="text"
+                  value={form.website}
+                  onChange={(e) => setForm({ ...form, website: e.target.value })}
+                  placeholder="Website (e.g. www.store.co.za)"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                />
+              </div>
+              {/* Opening Hours */}
+              <div className="flex items-start gap-2">
+                <Clock size={15} className="flex-shrink-0 mt-2.5 text-amber-400" />
+                <textarea
+                  value={form.openingHours}
+                  onChange={(e) => setForm({ ...form, openingHours: e.target.value })}
+                  placeholder="Opening hours (e.g. Mon–Fri 8am–8pm)"
+                  rows={2}
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors resize-none"
+                />
+              </div>
+              {/* Loyalty Card */}
+              <div className="flex items-start gap-2">
+                <CreditCard size={15} className="flex-shrink-0 mt-2.5 text-purple-400" />
+                <input
+                  type="text"
+                  value={form.loyaltyCard}
+                  onChange={(e) => setForm({ ...form, loyaltyCard: e.target.value })}
+                  placeholder="Loyalty card / rewards info"
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                />
+              </div>
+              {/* Notes */}
+              <div className="flex items-start gap-2">
+                <StickyNote size={15} className="flex-shrink-0 mt-2.5 text-gray-400" />
+                <textarea
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  placeholder="Notes or tips about this store"
+                  rows={2}
+                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors resize-none"
+                />
+              </div>
             </div>
           </div>
 
