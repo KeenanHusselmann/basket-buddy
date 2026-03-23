@@ -138,8 +138,16 @@ const BudgetPlanner: React.FC = () => {
   const { budgets, trips, categories, items, prices, setBudget } = useApp();
 
   const now = new Date();
-  const [viewMonth, setViewMonth] = useState(now.getMonth() + 1);
-  const [viewYear,  setViewYear]  = useState(now.getFullYear());
+
+  // Billing period: 25th of M → 24th of M+1, named after start month M
+  const _current = (() => {
+    const d = now.getDate(); const m = now.getMonth() + 1; const y = now.getFullYear();
+    if (d <= 24) return m === 1 ? { month: 12, year: y - 1 } : { month: m - 1, year: y };
+    return { month: m, year: y };
+  })();
+
+  const [viewMonth, setViewMonth] = useState(_current.month);
+  const [viewYear,  setViewYear]  = useState(_current.year);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
   // Edit state
@@ -151,10 +159,22 @@ const BudgetPlanner: React.FC = () => {
   // Scenario state
   const [scenarioPct, setScenarioPct] = useState(0);
 
-  const isCurrentMonth = viewMonth === now.getMonth() + 1 && viewYear === now.getFullYear();
+  const isCurrentPeriod = viewMonth === _current.month && viewYear === _current.year;
+
+  // Billing period date range (25th → 24th)
+  const periodStart = new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime();
+  const periodEnd   = new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime();
+
+  const billingLabel = (() => {
+    const s = new Date(viewYear, viewMonth - 1, 25);
+    const e = new Date(viewYear, viewMonth, 24);
+    const fmt = (d: Date) => d.toLocaleDateString('en-NA', { day: 'numeric', month: 'short' });
+    const ey = e.getFullYear();
+    return `${fmt(s)} – ${fmt(e)}${ey !== viewYear ? ` ${ey}` : `, ${viewYear}`}`;
+  })();
 
   const prevMonth = () => { if (viewMonth === 1) { setViewMonth(12); setViewYear(y => y - 1); } else setViewMonth(m => m - 1); };
-  const nextMonth = () => { if (viewMonth === 12) { setViewMonth(1); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); };
+  const nextMonth = () => { if (isCurrentPeriod) return; if (viewMonth === 12) { setViewMonth(1); setViewYear(y => y + 1); } else setViewMonth(m => m + 1); };
 
   // ── Current budget ─────────────────────────────────────────
   const currentBudget = useMemo(
@@ -162,13 +182,10 @@ const BudgetPlanner: React.FC = () => {
     [budgets, viewMonth, viewYear],
   );
 
-  // ── Period trips (calendar month) ────────────────────────
+  // ── Period trips (billing period: 25th → 24th) ──────────
   const monthTrips = useMemo(() =>
-    trips.filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() + 1 === viewMonth && d.getFullYear() === viewYear && t.status === 'completed';
-    }),
-    [trips, viewMonth, viewYear],
+    trips.filter(t => t.date >= periodStart && t.date <= periodEnd && t.status === 'completed'),
+    [trips, periodStart, periodEnd],
   );
 
   const totalSpent  = useMemo(() => monthTrips.reduce((s, t) => s + t.totalSpent, 0), [monthTrips]);
@@ -188,16 +205,15 @@ const BudgetPlanner: React.FC = () => {
     return map;
   }, [monthTrips]);
 
-  // ── 6-month history ────────────────────────────────────────
+  // ── 6-period history (billing periods 25th→24th) ──────────
   const monthHistory = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-      const m = d.getMonth() + 1;
-      const y = d.getFullYear();
-      const mTrips = trips.filter(t => {
-        const td = new Date(t.date);
-        return td.getMonth() + 1 === m && td.getFullYear() === y && t.status === 'completed';
-      });
+      let m = _current.month - (5 - i);
+      let y = _current.year;
+      while (m <= 0) { m += 12; y--; }
+      const pStart = new Date(y, m - 1, 25, 0, 0, 0, 0).getTime();
+      const pEnd   = new Date(y, m, 24, 23, 59, 59, 999).getTime();
+      const mTrips = trips.filter(t => t.date >= pStart && t.date <= pEnd && t.status === 'completed');
       const spent  = mTrips.reduce((s, t) => s + t.totalSpent, 0);
       const budget = budgets.find(b => b.month === m && b.year === y)?.totalBudget ?? 0;
       return { label: MONTHS_SHORT[m - 1], month: m, year: y, spent, budget };
@@ -205,14 +221,13 @@ const BudgetPlanner: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trips, budgets]);
 
-  // ── Last month data ────────────────────────────────────────
+  // ── Last period data (previous billing period) ────────────
   const lastMonthData = useMemo(() => {
     const lm = viewMonth === 1 ? 12 : viewMonth - 1;
     const ly = viewMonth === 1 ? viewYear - 1 : viewYear;
-    const lTrips = trips.filter(t => {
-      const d = new Date(t.date);
-      return d.getMonth() + 1 === lm && d.getFullYear() === ly && t.status === 'completed';
-    });
+    const lStart = new Date(ly, lm - 1, 25, 0, 0, 0, 0).getTime();
+    const lEnd   = new Date(ly, lm, 24, 23, 59, 59, 999).getTime();
+    const lTrips = trips.filter(t => t.date >= lStart && t.date <= lEnd && t.status === 'completed');
     const spent = lTrips.reduce((s, t) => s + t.totalSpent, 0);
     const catSpend = new Map<string, number>();
     lTrips.forEach(t => t.items.forEach(item => {
@@ -222,17 +237,16 @@ const BudgetPlanner: React.FC = () => {
     return { spent, catSpend };
   }, [trips, viewMonth, viewYear]);
 
-  // ── Smart fill (3-month avg per category + 10%) ───────────
+  // ── Smart fill (3-period avg per category + 10%) ──────────
   const smartFillAvg = useMemo(() => {
     const catMonthTotals = new Map<string, number[]>();
     for (let i = 1; i <= 3; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const m = d.getMonth() + 1;
-      const y = d.getFullYear();
-      const mTrips = trips.filter(t => {
-        const td = new Date(t.date);
-        return td.getMonth() + 1 === m && td.getFullYear() === y && t.status === 'completed';
-      });
+      let m = _current.month - i;
+      let y = _current.year;
+      while (m <= 0) { m += 12; y--; }
+      const pStart = new Date(y, m - 1, 25, 0, 0, 0, 0).getTime();
+      const pEnd   = new Date(y, m, 24, 23, 59, 59, 999).getTime();
+      const mTrips = trips.filter(t => t.date >= pStart && t.date <= pEnd && t.status === 'completed');
       const monthCatSpend = new Map<string, number>();
       mTrips.forEach(t => t.items.forEach(item => {
         const v = (item.actualPrice ?? item.estimatedPrice) * item.quantity;
@@ -289,19 +303,23 @@ const BudgetPlanner: React.FC = () => {
 
   // ── Spending velocity ──────────────────────────────────────
   const velocity = useMemo(() => {
-    const daysInMonth = new Date(viewYear, viewMonth, 0).getDate();
-    const daysPassed  = isCurrentMonth ? now.getDate() : daysInMonth;
-    const dailyRate   = daysPassed > 0 ? totalSpent / daysPassed : 0;
-    const projected   = dailyRate * daysInMonth;
-    return { dailyRate, projected, daysInMonth, daysPassed };
+    const periodLength = 30; // billing period is always ~30 days (25th → 24th)
+    const periodStartDate = new Date(viewYear, viewMonth - 1, 25);
+    const daysPassed = isCurrentPeriod
+      ? Math.max(1, Math.round((now.getTime() - periodStartDate.getTime()) / (1000 * 60 * 60 * 24)))
+      : periodLength;
+    const dailyRate = daysPassed > 0 ? totalSpent / daysPassed : 0;
+    const projected = dailyRate * periodLength;
+    return { dailyRate, projected, daysInMonth: periodLength, daysPassed };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalSpent, viewMonth, viewYear, isCurrentMonth]);
+  }, [totalSpent, viewMonth, viewYear, isCurrentPeriod]);
 
   // ── Insights engine ────────────────────────────────────────
   const insights = useMemo(() => {
     type InsightType = 'info' | 'warning' | 'success' | 'tip';
     const list: { type: InsightType; icon: string; title: string; body: string }[] = [];
-    const daysLeft = isCurrentMonth ? Math.max(0, new Date(viewYear, viewMonth, 0).getDate() - now.getDate()) : 0;
+    const periodEndDate = new Date(viewYear, viewMonth, 24);
+    const daysLeft = isCurrentPeriod ? Math.max(0, Math.round((periodEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
 
     if (!currentBudget) {
       if (lastMonthData.spent > 0) {
@@ -314,10 +332,10 @@ const BudgetPlanner: React.FC = () => {
     }
 
     // Velocity
-    if (isCurrentMonth && velocity.projected > budgetTotal && budgetTotal > 0) {
-      list.push({ type: 'warning', icon: 'flame', title: 'Spending velocity too high', body: `At ${formatPrice(velocity.dailyRate)}/day you'll reach ${formatPrice(velocity.projected)} — ${formatPrice(velocity.projected - budgetTotal)} over budget by month end.` });
-    } else if (isCurrentMonth && velocity.projected < budgetTotal * 0.75 && budgetTotal > 0 && totalSpent > 0) {
-      list.push({ type: 'success', icon: 'check', title: 'Great pace this month', body: `On track to spend ${formatPrice(velocity.projected)} — well within your ${formatPrice(budgetTotal)} budget. ${formatPrice(budgetTotal - velocity.projected)} projected to save.` });
+    if (isCurrentPeriod && velocity.projected > budgetTotal && budgetTotal > 0) {
+      list.push({ type: 'warning', icon: 'flame', title: 'Spending velocity too high', body: `At ${formatPrice(velocity.dailyRate)}/day you'll reach ${formatPrice(velocity.projected)} — ${formatPrice(velocity.projected - budgetTotal)} over budget by period end.` });
+    } else if (isCurrentPeriod && velocity.projected < budgetTotal * 0.75 && budgetTotal > 0 && totalSpent > 0) {
+      list.push({ type: 'success', icon: 'check', title: 'Great pace this period', body: `On track to spend ${formatPrice(velocity.projected)} — well within your ${formatPrice(budgetTotal)} budget. ${formatPrice(budgetTotal - velocity.projected)} projected to save.` });
     }
 
     // Over-budget categories
@@ -330,7 +348,7 @@ const BudgetPlanner: React.FC = () => {
     });
 
     // Near-limit with days left
-    if (isCurrentMonth && daysLeft > 5) {
+    if (isCurrentPeriod && daysLeft > 5) {
       currentBudget.categoryBudgets.forEach(cb => {
         const spent = categorySpending.get(cb.categoryId) ?? 0;
         const p = cb.amount > 0 ? (spent / cb.amount) * 100 : 0;
@@ -372,7 +390,7 @@ const BudgetPlanner: React.FC = () => {
 
     return list.slice(0, 5);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentBudget, budgetTotal, totalSpent, categorySpending, velocity, isCurrentMonth, lastMonthData, categories, viewMonth, viewYear]);
+  }, [currentBudget, budgetTotal, totalSpent, categorySpending, velocity, isCurrentPeriod, lastMonthData, categories, viewMonth, viewYear]);
 
   // ── Edit state helpers ─────────────────────────────────────
   const initEditState = useCallback(() => {
@@ -437,9 +455,9 @@ const BudgetPlanner: React.FC = () => {
     });
   }, [catBudgets, orderedCategories]);
 
-  // ── Days left in view month ────────────────────────────────
-  const daysLeftInMonth = isCurrentMonth
-    ? Math.max(0, new Date(viewYear, viewMonth, 0).getDate() - now.getDate())
+  // ── Days left in billing period ───────────────────────────
+  const daysLeftInMonth = isCurrentPeriod
+    ? Math.max(0, Math.round((new Date(viewYear, viewMonth, 24).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
 
   // ──────────────────────────────────────────────────────────
@@ -470,11 +488,12 @@ const BudgetPlanner: React.FC = () => {
         <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" aria-label="Previous month">
           <ChevronLeft size={18} />
         </button>
-        <div className="bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-2xl px-8 py-3 text-center min-w-[210px]">
+        <div className="bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-2xl px-6 py-3 text-center min-w-[230px]">
           <p className="text-base font-bold text-gray-100">{MONTHS[viewMonth - 1]} {viewYear}</p>
-          {isCurrentMonth && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-400 mt-0.5"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Current Month</span>}
+          <p className="text-[11px] text-gray-500 mt-0.5">{billingLabel}</p>
+          {isCurrentPeriod && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-400 mt-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Current Period</span>}
         </div>
-        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" aria-label="Next month">
+        <button onClick={nextMonth} disabled={isCurrentPeriod} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer" aria-label="Next period">
           <ChevronRight size={18} />
         </button>
       </div>
@@ -551,8 +570,8 @@ const BudgetPlanner: React.FC = () => {
                           <Target size={11} className={velocity.projected > budgetTotal && budgetTotal > 0 ? 'text-rose-400' : 'text-emerald-400'} />
                           <span className="text-[10px] text-gray-500 uppercase tracking-wider">Projected</span>
                         </div>
-                        <p className={cn('text-sm font-bold font-mono', isCurrentMonth && velocity.dailyRate > 0 ? (velocity.projected > budgetTotal ? 'text-rose-400' : 'text-emerald-400') : 'text-gray-100')}>
-                          {isCurrentMonth && velocity.dailyRate > 0 ? formatPrice(velocity.projected) : '—'}
+                        <p className={cn('text-sm font-bold font-mono', isCurrentPeriod && velocity.dailyRate > 0 ? (velocity.projected > budgetTotal ? 'text-rose-400' : 'text-emerald-400') : 'text-gray-100')}>
+                          {isCurrentPeriod && velocity.dailyRate > 0 ? formatPrice(velocity.projected) : '—'}
                         </p>
                       </div>
                     </div>
@@ -1006,7 +1025,7 @@ const BudgetPlanner: React.FC = () => {
               )}
 
               {/* Velocity card */}
-              {isCurrentMonth && totalSpent > 0 && currentBudget && (
+              {isCurrentPeriod && totalSpent > 0 && currentBudget && (
                 <div className={cn('rounded-2xl border p-5', velocity.projected > budgetTotal ? 'bg-rose-500/8 border-rose-500/20' : 'bg-emerald-500/8 border-emerald-500/20')}>
                   <div className="flex items-center gap-2 mb-3">
                     <Zap size={14} className={velocity.projected > budgetTotal ? 'text-rose-400' : 'text-emerald-400'} />
