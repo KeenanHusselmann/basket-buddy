@@ -127,7 +127,9 @@ const Dashboard: React.FC = () => {
   const monthlyContribution = activePlan?.monthlyContribution ?? 0;
   const totalExpenses       = totalFixed + totalVariable + monthlySpent + totalFuel;
   const netSavings          = totalIncome - totalExpenses;
-  const isOnTrack           = budgetTotal > 0 ? budgetPct < 100 : netSavings >= 0 || totalIncome === 0;
+  // Only flag "Over budget" when a shopping budget is explicitly set and exceeded.
+  // Finance health (income vs expenses) is tracked on the Finance page — don't conflate them here.
+  const isOnTrack           = budgetTotal > 0 ? budgetPct < 100 : true;
 
   // ── Expense segments (donut) ──────────────────────────────
   const segments = useMemo(() => {
