@@ -903,6 +903,11 @@ const VariableTab: React.FC<VariableTabProps> = ({
     return Array.from(map.entries()).sort((a, b) => b[1].total - a[1].total);
   }, [txList]);
 
+  // Manual grocery transactions (category === 'groceries' added directly on Finance screen)
+  const manualGroceryTx = useMemo(() => txList.filter(tx => tx.category === 'groceries'), [txList]);
+  const manualGroceryTotal = useMemo(() => manualGroceryTx.reduce((s, tx) => s + tx.amount, 0), [manualGroceryTx]);
+  const groceryTotalCombined = grocerySpent + manualGroceryTotal;
+
   return (
     <div className="space-y-4">
       {/* Header card */}
@@ -917,7 +922,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
         </button>
       </div>
 
-      {/* Grocery auto row */}
+      {/* Grocery card — combines auto trips + manually added grocery transactions */}
       {(() => {
         const groceryOpen = expanded.has('__grocery__');
         return (
@@ -928,24 +933,48 @@ const VariableTab: React.FC<VariableTabProps> = ({
                 <ShoppingCart size={14} className="text-amber-400 shrink-0" />
                 <span className="text-sm font-semibold text-gray-300">Groceries</span>
                 <span className="text-[10px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full border border-amber-500/20 font-semibold">Auto from trips</span>
+                {manualGroceryTx.length > 0 && (
+                  <span className="text-[10px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full border border-green-500/20 font-semibold">+{manualGroceryTx.length} manual</span>
+                )}
               </div>
-              <span className="text-sm font-bold font-mono tabular-nums text-gray-100">{formatPrice(grocerySpent)}</span>
+              <span className="text-sm font-bold font-mono tabular-nums text-gray-100">{formatPrice(groceryTotalCombined)}</span>
             </button>
             <AnimatePresence>
               {groceryOpen && (
                 <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                  <div className="px-4 py-3 space-y-2 border-t border-white/[0.04]">
+                  <div className="border-t border-white/[0.04]">
+                    {/* Budget progress */}
                     {groceryBudget > 0 && (() => {
-                      const p = Math.min(pct(grocerySpent, groceryBudget), 100);
-                      const over = grocerySpent > groceryBudget;
+                      const p = Math.min(pct(groceryTotalCombined, groceryBudget), 100);
+                      const over = groceryTotalCombined > groceryBudget;
                       return (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center justify-between text-xs"><span className="text-gray-500">Budget: {formatPrice(groceryBudget)}</span><span className={over ? 'text-rose-400 font-semibold' : 'text-gray-500'}>{over ? `Over by ${formatPrice(grocerySpent - groceryBudget)}` : `${formatPrice(groceryBudget - grocerySpent)} remaining`}</span></div>
+                        <div className="px-4 py-3 space-y-1.5 border-b border-white/[0.04]">
+                          <div className="flex items-center justify-between text-xs"><span className="text-gray-500">Budget: {formatPrice(groceryBudget)}</span><span className={over ? 'text-rose-400 font-semibold' : 'text-gray-500'}>{over ? `Over by ${formatPrice(groceryTotalCombined - groceryBudget)}` : `${formatPrice(groceryBudget - groceryTotalCombined)} remaining`}</span></div>
                           <div className="h-1.5 bg-gray-800/60 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${p}%`, backgroundColor: over ? '#f43f5e' : '#10b981' }} /></div>
                         </div>
                       );
                     })()}
-                    <p className="text-xs text-gray-600">Automatically pulled from your completed shopping trips this period.</p>
+                    {/* Auto trips summary row */}
+                    {grocerySpent > 0 && (
+                      <div className="flex items-center justify-between px-4 py-2.5 bg-amber-500/5 border-b border-white/[0.04]">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <ShoppingCart size={12} className="text-amber-400" />
+                          <span>Shopping trips (auto)</span>
+                        </div>
+                        <span className="text-xs font-semibold font-mono text-amber-400">{formatPrice(grocerySpent)}</span>
+                      </div>
+                    )}
+                    {/* Manual grocery transactions */}
+                    {manualGroceryTx.length > 0 && (
+                      <div className="divide-y divide-white/[0.04]">
+                        {manualGroceryTx.sort((a, b) => b.date - a.date).map(tx => (
+                          <TxRow key={tx.id} tx={tx} onEdit={onEdit} onDelete={onDelete} compact />
+                        ))}
+                      </div>
+                    )}
+                    {grocerySpent === 0 && manualGroceryTx.length === 0 && (
+                      <p className="px-4 py-3 text-xs text-gray-600">No grocery spending recorded this period.</p>
+                    )}
                   </div>
                 </motion.div>
               )}
