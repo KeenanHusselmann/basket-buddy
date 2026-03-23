@@ -108,7 +108,7 @@ function getRequelleAvailability(date: Date): DayAvailability {
   return {
     slots: generateSlots(shift.endHour, 17),
     label: `After shift (${shift.label})`,
-    colorClass: 'text-violet-400',
+    colorClass: 'text-green-400',
     isOff: false, isHalfDay: false, shiftCycle: shift.cycle,
   };
 }
@@ -133,11 +133,11 @@ interface ApptTypeMeta {
 
 const APPT_TYPES: ApptTypeMeta[] = [
   { value: 'gp',               label: 'GP / General Practitioner',    icon: '🩺', pool: 'gp',        poolLabel: 'Professional Services',  bg: 'bg-blue-500/10',    text: 'text-blue-400'   },
-  { value: 'specialist',       label: 'Specialist Consultation',      icon: '👨‍⚕️', pool: 'specialist', poolLabel: 'Professional Services',  bg: 'bg-violet-500/10',  text: 'text-violet-400'},
+  { value: 'specialist',       label: 'Specialist Consultation',      icon: '👨‍⚕️', pool: 'specialist', poolLabel: 'Professional Services',  bg: 'bg-green-500/10',  text: 'text-green-400'},
   { value: 'dentist',          label: 'Dental Check / Treatment',     icon: '🦷', pool: 'dental',    poolLabel: 'Dental',                 bg: 'bg-orange-500/10',  text: 'text-orange-400'},
   { value: 'optometrist',      label: 'Optometrist / Optical',        icon: '👁️', pool: 'optical',   poolLabel: 'Optical',                bg: 'bg-cyan-500/10',    text: 'text-cyan-400'   },
-  { value: 'physiotherapy',    label: 'Physiotherapy',                icon: '🏃', pool: 'therapy',   poolLabel: 'Therapeutic',            bg: 'bg-violet-500/10',  text: 'text-violet-400'},
-  { value: 'psychology',       label: 'Psychology / Counselling',     icon: '🧠', pool: 'therapy',   poolLabel: 'Therapeutic',            bg: 'bg-violet-500/10',  text: 'text-violet-400'},
+  { value: 'physiotherapy',    label: 'Physiotherapy',                icon: '🏃', pool: 'therapy',   poolLabel: 'Therapeutic',            bg: 'bg-green-500/10',  text: 'text-green-400'},
+  { value: 'psychology',       label: 'Psychology / Counselling',     icon: '🧠', pool: 'therapy',   poolLabel: 'Therapeutic',            bg: 'bg-green-500/10',  text: 'text-green-400'},
   { value: 'gynecology',       label: 'Gynecology / Maternity',       icon: '🤱', pool: 'specialist', poolLabel: 'Professional Services', bg: 'bg-pink-500/10',    text: 'text-pink-400'   },
   { value: 'pathology',        label: 'Pathology / Blood Tests',      icon: '🔬', pool: 'gp',        poolLabel: 'Professional Services',  bg: 'bg-blue-500/10',    text: 'text-blue-400'   },
   { value: 'radiology',        label: 'Radiology / Imaging',          icon: '🩻', pool: 'hospital',  poolLabel: 'In/Out of Hospital',     bg: 'bg-red-500/10',     text: 'text-red-400'     },
@@ -470,7 +470,7 @@ const ApptCard: React.FC<ApptCardProps> = ({ appt, onEdit, onDelete, onStatusCha
                 </div>
               )}
               {appt.reminderEnabled && (
-                <div className="sm:col-span-2 flex items-center gap-2 text-xs text-violet-400">
+                <div className="sm:col-span-2 flex items-center gap-2 text-xs text-green-400">
                   <Bell className="w-3 h-3" />
                   Reminder: {REMINDER_OPTIONS.find(r => r.value === appt.reminderMinutesBefore)?.label ?? `${appt.reminderMinutesBefore} min before`}
                 </div>
@@ -782,7 +782,7 @@ const MedicalAppointments: React.FC = () => {
                 </div>
               )}
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/50 border border-gray-700/40 rounded-full text-xs text-gray-400">
-                <Activity className="w-3 h-3 text-violet-400" />{past.length} past
+                <Activity className="w-3 h-3 text-green-400" />{past.length} past
               </div>
             </div>
           </div>
@@ -853,7 +853,7 @@ const MedicalAppointments: React.FC = () => {
       {/* ── Requelle's schedule this week ── */}
       <div className="bg-gray-900/70 backdrop-blur-xl border border-gray-700/40 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <Activity className="w-4 h-4 text-purple-500" />
+          <Activity className="w-4 h-4 text-green-500" />
           <h2 className="text-sm font-semibold text-white">Requelle's Schedule This Week</h2>
         </div>
         <div className="grid grid-cols-7 gap-1">

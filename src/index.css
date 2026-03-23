@@ -40,7 +40,7 @@
     @apply bg-gray-950 text-gray-100 transition-colors duration-200;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.12), transparent),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(74,222,128,0.12), transparent),
       radial-gradient(ellipse 50% 30% at 80% 80%, rgba(20,184,166,0.06), transparent);
     background-attachment: fixed;
   }
@@ -51,24 +51,24 @@
   /* ── Glass surfaces ── */
   .glass {
     @apply bg-gray-900/60 backdrop-blur-xl border;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
   .glass-sm {
     @apply bg-gray-800/60 backdrop-blur-md border;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
   .glass-light {
     @apply bg-gray-900/60 backdrop-blur-xl border;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
 
   .glass-border {
-    @apply border border-violet-500/25;
+    @apply border border-green-500/25;
   }
 
   /* ── Neon glow effects ── */
-  .glow-violet {
-    box-shadow: 0 0 24px rgba(139, 92, 246, 0.25), 0 0 8px rgba(139, 92, 246, 0.15);
+  .glow-green {
+    box-shadow: 0 0 24px rgba(74, 222, 128, 0.25), 0 0 8px rgba(74, 222, 128, 0.15);
   }
   .glow-emerald {
     box-shadow: 0 0 24px rgba(52, 211, 153, 0.2), 0 0 8px rgba(52, 211, 153, 0.12);
@@ -88,9 +88,9 @@
     background: linear-gradient(135deg, #1f2937 0%, #111827 50%, #1f2937 100%);
     border: 1px solid rgba(255,255,255,0.08);
   }
-  .metallic-violet {
-    background: linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(109,40,217,0.08) 100%);
-    border: 1px solid rgba(139,92,246,0.25);
+  .metallic-green {
+    background: linear-gradient(135deg, rgba(74,222,128,0.15) 0%, rgba(22,163,74,0.08) 100%);
+    border: 1px solid rgba(74,222,128,0.25);
   }
   .metallic-emerald {
     background: linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(16,185,129,0.06) 100%);
@@ -103,11 +103,11 @@
 
   /* ── Gradient brand ── */
   .gradient-brand {
-    @apply bg-gradient-to-r from-violet-600 to-violet-500;
+    @apply bg-gradient-to-r from-green-600 to-green-500;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-purple-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-green-400;
   }
   .text-gradient-emerald {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400;
@@ -119,25 +119,25 @@
   /* ── Card ── */
   .card {
     @apply bg-gray-900/70 backdrop-blur-xl rounded-2xl border p-4 md:p-6;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
   .card-sm {
     @apply bg-gray-900/70 backdrop-blur-xl rounded-xl border p-3;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
   .card-light {
     @apply bg-gray-900/70 backdrop-blur-xl rounded-2xl border p-4 md:p-6;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
 
   /* ── Buttons ── */
   .btn-primary {
-    @apply px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-medium transition-all duration-200 active:scale-[0.97] shadow-lg shadow-violet-500/20;
+    @apply px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-xl font-medium transition-all duration-200 active:scale-[0.97] shadow-lg shadow-green-500/20;
   }
 
   .btn-secondary {
     @apply px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl font-medium transition-all duration-200 active:scale-[0.97] border;
-    border-color: rgb(139 92 246 / 0.20);
+    border-color: rgb(74 222 128 / 0.20);
   }
 
   .btn-danger {
@@ -145,7 +145,7 @@
   }
 
   .input {
-    @apply w-full px-4 py-2.5 bg-gray-800/60 border border-violet-500/25 rounded-xl text-gray-100 placeholder:text-gray-600 focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 outline-none transition-all duration-200;
+    @apply w-full px-4 py-2.5 bg-gray-800/60 border border-green-500/25 rounded-xl text-gray-100 placeholder:text-gray-600 focus:ring-2 focus:ring-green-500/40 focus:border-green-500/50 outline-none transition-all duration-200;
   }
 
   .badge {
@@ -169,7 +169,7 @@
   }
 
   .badge-purple {
-    @apply badge bg-violet-500/10 text-violet-400 border border-violet-500/20;
+    @apply badge bg-green-500/10 text-green-400 border border-green-500/20;
   }
 
   .no-spinner::-webkit-outer-spin-button,
@@ -191,8 +191,8 @@
 
 /* Neon pulse for active indicators */
 @keyframes neon-pulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(139,92,246,0.5); }
-  50% { opacity: 0.7; box-shadow: 0 0 18px rgba(139,92,246,0.8); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px rgba(74,222,128,0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 18px rgba(74,222,128,0.8); }
 }
 
 .animate-neon-pulse {

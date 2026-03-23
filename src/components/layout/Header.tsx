@@ -132,7 +132,7 @@ const Header: React.FC<HeaderProps> = () => {
   const monthlySpent = grocerySpent + financeSpent + fuelSpent;
 
   return (
-    <header className="h-14 bg-gray-950/80 backdrop-blur-xl border-b border-violet-500/20 flex items-center px-4 gap-3 sticky top-0 z-30">
+    <header className="h-14 bg-gray-950/80 backdrop-blur-xl border-b border-green-500/20 flex items-center px-4 gap-3 sticky top-0 z-30">
 
       {/* Search */}
       <div className="relative flex-1 max-w-md">
@@ -142,8 +142,8 @@ const Header: React.FC<HeaderProps> = () => {
           placeholder="Search items, stores, trips..."
           className={cn(
             'w-full pl-9 pr-10 py-2 rounded-xl text-sm',
-            'bg-gray-800/60 border border-violet-500/25',
-            'focus:border-violet-500/50 focus:bg-gray-800',
+            'bg-gray-800/60 border border-green-500/25',
+            'focus:border-green-500/50 focus:bg-gray-800',
             'text-gray-200 placeholder-gray-600',
             'outline-none transition-all duration-200'
           )}
@@ -154,7 +154,7 @@ const Header: React.FC<HeaderProps> = () => {
       </div>
 
       {/* Quick Stat */}
-      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 border border-violet-500/20 rounded-xl">
+      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 border border-green-500/20 rounded-xl">
         <span className="text-xs text-gray-500">{periodLabel}</span>
         <span className="text-sm font-semibold text-gray-200">
           {formatPrice(monthlySpent)}
@@ -165,7 +165,7 @@ const Header: React.FC<HeaderProps> = () => {
       <div className="relative">
         <button
           onClick={() => setNotifOpen(!notifOpen)}
-          className="relative p-2.5 rounded-xl bg-gray-800/60 border border-violet-500/20 text-gray-500 hover:text-violet-400 hover:border-violet-500/30 transition-all duration-150"
+          className="relative p-2.5 rounded-xl bg-gray-800/60 border border-green-500/20 text-gray-500 hover:text-green-400 hover:border-green-500/30 transition-all duration-150"
         >
           <Bell size={18} />
           {totalNotifs > 0 && (
@@ -179,8 +179,8 @@ const Header: React.FC<HeaderProps> = () => {
         {notifOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-            <div className="fixed top-[3.75rem] left-2 right-2 sm:left-auto sm:right-4 sm:w-80 bg-gray-900 border border-violet-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
-              <div className="p-4 border-b border-violet-500/20">
+            <div className="fixed top-[3.75rem] left-2 right-2 sm:left-auto sm:right-4 sm:w-80 bg-gray-900 border border-green-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="p-4 border-b border-green-500/20">
                 <h3 className="font-semibold text-gray-200">Notifications</h3>
               </div>
               <div className="max-h-64 overflow-y-auto">
@@ -227,10 +227,10 @@ const Header: React.FC<HeaderProps> = () => {
             title="Cloud sync status"
             className={cn(
             'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border',
-            syncStatus === 'saving' && 'bg-blue-500/10 border-blue-500/20 text-violet-400 cursor-wait',
+            syncStatus === 'saving' && 'bg-blue-500/10 border-blue-500/20 text-green-400 cursor-wait',
             syncStatus === 'saved'  && 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
             syncStatus === 'error'  && 'bg-rose-500/10 border-rose-500/20 text-rose-400',
-            syncStatus === 'idle'   && 'bg-gray-800/60 border-violet-500/20 text-gray-500 hover:text-violet-400 hover:border-violet-500/30',
+            syncStatus === 'idle'   && 'bg-gray-800/60 border-green-500/20 text-gray-500 hover:text-green-400 hover:border-green-500/30',
             )}
           >
             {syncStatus === 'saving' && <Loader size={14} className="animate-spin" />}
@@ -245,16 +245,16 @@ const Header: React.FC<HeaderProps> = () => {
           {syncOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setSyncOpen(false)} />
-              <div className="fixed top-[3.75rem] right-2 sm:right-4 sm:w-72 bg-gray-900 border border-violet-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="fixed top-[3.75rem] right-2 sm:right-4 sm:w-72 bg-gray-900 border border-green-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-violet-500/20 flex items-center justify-between">
+                <div className="p-4 border-b border-green-500/20 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Cloud size={15} className="text-violet-400" />
+                    <Cloud size={15} className="text-green-400" />
                     <span className="font-semibold text-sm text-gray-200">Cloud Sync Status</span>
                   </div>
                   <span className={cn(
                     'text-[10px] px-2 py-0.5 rounded-full font-semibold',
-                    syncStatus === 'saving' && 'bg-blue-500/15 text-violet-400',
+                    syncStatus === 'saving' && 'bg-blue-500/15 text-green-400',
                     syncStatus === 'saved'  && 'bg-emerald-500/15 text-emerald-400',
                     syncStatus === 'error'  && 'bg-rose-500/15 text-rose-400',
                     syncStatus === 'idle'   && 'bg-gray-700/60 text-gray-500',
@@ -283,7 +283,7 @@ const Header: React.FC<HeaderProps> = () => {
                 </div>
 
                 {/* Record counts */}
-                <div className="px-4 py-3 border-b border-violet-500/20">
+                <div className="px-4 py-3 border-b border-green-500/20">
                   <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">Data on this device</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
@@ -304,7 +304,7 @@ const Header: React.FC<HeaderProps> = () => {
 
                 {/* Verify results */}
                 {verifyResult && (
-                  <div className="px-4 py-3 border-b border-violet-500/20">
+                  <div className="px-4 py-3 border-b border-green-500/20">
                     <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">Cloud vs. Local verification</p>
                     <div className="space-y-1">
                       {([
@@ -363,7 +363,7 @@ const Header: React.FC<HeaderProps> = () => {
                       <button
                         onClick={() => { mergeSync(); setSyncOpen(false); }}
                         disabled={syncStatus === 'saving'}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
                       >
                         {syncStatus === 'saving' ? <Loader size={12} className="animate-spin" /> : <CloudUpload size={12} />}
                         {syncStatus === 'saving' ? 'Merging…' : 'Merge & Sync'}
@@ -372,7 +372,7 @@ const Header: React.FC<HeaderProps> = () => {
                       <button
                         onClick={() => { syncNow(); setSyncOpen(false); }}
                         disabled={syncStatus === 'saving'}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
                       >
                         {syncStatus === 'saving' ? <Loader size={12} className="animate-spin" /> : <CloudUpload size={12} />}
                         {syncStatus === 'saving' ? 'Saving…' : 'Force Sync'}
@@ -381,7 +381,7 @@ const Header: React.FC<HeaderProps> = () => {
                     <button
                       onClick={handleVerify}
                       disabled={verifying || !user}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-green-500/20"
                     >
                       {verifying ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
                       {verifying ? 'Checking…' : 'Verify'}
@@ -403,7 +403,7 @@ const Header: React.FC<HeaderProps> = () => {
                     {/* Export current data as JSON file */}
                     <button
                       onClick={handleExport}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-green-500/20"
                     >
                       <Download size={12} />
                       Export Backup
@@ -412,7 +412,7 @@ const Header: React.FC<HeaderProps> = () => {
                     {/* Import from a previously exported JSON file */}
                     <button
                       onClick={() => importRef.current?.click()}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-green-500/20"
                     >
                       <UploadCloud size={12} />
                       Import Backup
@@ -429,7 +429,7 @@ const Header: React.FC<HeaderProps> = () => {
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="p-2.5 rounded-xl bg-gray-800/60 border border-violet-500/20 text-gray-500 hover:text-amber-400 hover:border-amber-500/30 transition-all duration-150"
+        className="p-2.5 rounded-xl bg-gray-800/60 border border-green-500/20 text-gray-500 hover:text-amber-400 hover:border-amber-500/30 transition-all duration-150"
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       >
         {isDark ? <Sun size={17} /> : <Moon size={17} />}

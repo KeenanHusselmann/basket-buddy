@@ -40,13 +40,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className={cn(
         'fixed left-0 top-0 bottom-0 z-40 flex flex-col overflow-hidden',
-        'bg-gray-950/95 backdrop-blur-xl border-r border-violet-500/20'
+        'bg-gray-950/95 backdrop-blur-xl border-r border-green-500/20'
       )}
     >
       {/* Logo */}
-      <div className="flex items-center h-16 px-4 border-b border-violet-500/20 flex-shrink-0">
+      <div className="flex items-center h-16 px-4 border-b border-green-500/20 flex-shrink-0">
         <div className="flex items-center gap-3 overflow-hidden min-w-0">
-          <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-violet-600 to-violet-800 rounded-xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-600 to-green-800 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30">
             <ShoppingBag size={17} className="text-white" />
           </div>
           <AnimatePresence>
@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 transition={{ duration: 0.15 }}
                 className="overflow-hidden whitespace-nowrap min-w-0"
               >
-                <h1 className="text-base font-bold bg-gradient-to-r from-violet-400 to-violet-200 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-base font-bold bg-gradient-to-r from-green-400 to-green-200 bg-clip-text text-transparent leading-tight">
                   {APP_NAME}
                 </h1>
                 <p className="text-[10px] text-gray-500 leading-none mt-0.5">Smart Grocery Tracker</p>
@@ -100,21 +100,21 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                     className={cn(
                       'relative flex items-center gap-3 px-2 py-2.5 rounded-xl transition-all duration-150 group mb-0.5',
                       isActive
-                        ? 'bg-violet-600/15 text-violet-300'
+                        ? 'bg-green-600/15 text-green-300'
                         : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
                     )}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="sidebar-active-bar"
-                        className="absolute left-0 top-2 bottom-2 w-0.5 bg-violet-500 rounded-r-full"
+                        className="absolute left-0 top-2 bottom-2 w-0.5 bg-green-500 rounded-r-full"
                         transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                       />
                     )}
                     <div className={cn(
                       'flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150',
                       isActive
-                        ? 'bg-violet-500/20 text-violet-400'
+                        ? 'bg-green-500/20 text-green-400'
                         : 'text-gray-600 group-hover:text-gray-400'
                     )}>
                       <Icon size={17} strokeWidth={isActive ? 2.5 : 1.8} />
@@ -141,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       </nav>
 
       {/* User Section */}
-      <div className="border-t border-violet-500/20 p-2 flex-shrink-0">
+      <div className="border-t border-green-500/20 p-2 flex-shrink-0">
         <AnimatePresence>
           {!collapsed && user && (
             <motion.div
@@ -151,7 +151,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
               transition={{ duration: 0.15 }}
               className="flex items-center gap-3 px-2 py-2 mb-1 overflow-hidden"
             >
-              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center text-white text-[11px] font-bold">
+              <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-green-500 to-green-700 flex items-center justify-center text-white text-[11px] font-bold">
                 {user.displayName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || '?'}
               </div>
               <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         onClick={onToggle}
         className={cn(
           'absolute -right-3 top-[72px] w-6 h-6 rounded-full z-50',
-          'bg-gray-800 border border-violet-500/25',
+          'bg-gray-800 border border-green-500/25',
           'flex items-center justify-center shadow-lg',
           'hover:bg-gray-700 transition-colors text-gray-400'
         )}

@@ -33,10 +33,10 @@ const ALL_FIN_CATS = [...FINANCE_INCOME_CATEGORIES, ...FINANCE_FIXED_CATEGORIES,
 type TabId = 'overview' | 'finance' | 'grocery' | 'fuel' | 'explore';
 
 const TAB_CFG: Record<TabId, { label: string; Icon: React.FC<any>; active: string }> = {
-  overview: { label: 'Overview',  Icon: BarChart3,    active: 'bg-violet-600 shadow-lg shadow-violet-500/25 text-white' },
+  overview: { label: 'Overview',  Icon: BarChart3,    active: 'bg-green-600 shadow-lg shadow-green-500/25 text-white' },
   finance:  { label: 'Finance',   Icon: Wallet,       active: 'bg-emerald-600 shadow-lg shadow-emerald-500/25 text-white' },
   grocery:  { label: 'Grocery',   Icon: ShoppingCart, active: 'bg-amber-500 shadow-lg shadow-amber-500/25 text-white' },
-  fuel:     { label: 'Fuel',      Icon: Fuel,         active: 'bg-purple-600 shadow-lg shadow-purple-500/25 text-white' },
+  fuel:     { label: 'Fuel',      Icon: Fuel,         active: 'bg-green-600 shadow-lg shadow-green-500/25 text-white' },
   explore:  { label: 'Data',      Icon: Search,       active: 'bg-blue-600 shadow-lg shadow-blue-500/25 text-white' },
 };
 
@@ -76,7 +76,7 @@ const KpiCard: React.FC<{
     initial={{ opacity: 0, y: 14 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.3 }}
-    className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-4 relative overflow-hidden"
+    className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 relative overflow-hidden"
   >
     <div className={`absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-${accent}-500/50 to-transparent`} />
     <div className="flex items-start justify-between gap-2 mb-3">
@@ -104,7 +104,7 @@ const Insight: React.FC<{ type: 'good' | 'warn' | 'info'; text: string }> = ({ t
     'flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl border text-xs leading-relaxed',
     type === 'good' ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-300' :
     type === 'warn' ? 'bg-amber-500/8 border-amber-500/20 text-amber-300' :
-                     'bg-violet-500/8 border-violet-500/20 text-violet-300',
+                     'bg-green-500/8 border-green-500/20 text-green-300',
   )}>
     {type === 'good' ? <CheckCircle size={12} className="mt-px flex-shrink-0" /> :
      type === 'warn' ? <AlertTriangle size={12} className="mt-px flex-shrink-0" /> :
@@ -115,7 +115,7 @@ const Insight: React.FC<{ type: 'good' | 'warn' | 'info'; text: string }> = ({ t
 
 // â”€â”€ Chart wrapper card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const ChartCard: React.FC<{ title: string; sub?: string; children: React.ReactNode; className?: string }> = ({ title, sub, children, className }) => (
-  <div className={cn('bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5', className)}>
+  <div className={cn('bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5', className)}>
     <h3 className="text-sm font-semibold text-gray-200">{title}</h3>
     {sub && <p className="text-xs text-gray-500 mt-0.5 mb-4">{sub}</p>}
     {!sub && <div className="mb-4" />}
@@ -302,14 +302,14 @@ const Analytics: React.FC = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 bg-violet-500/10 rounded-xl"><BarChart3 size={20} className="text-violet-400" /></div>
+            <div className="p-2 bg-green-500/10 rounded-xl"><BarChart3 size={20} className="text-green-400" /></div>
             Analytics
           </h1>
           <p className="text-gray-500 text-sm mt-1 ml-12">Your complete financial intelligence</p>
         </div>
 
         {/* Year navigator */}
-        <div className="flex items-center gap-1 bg-gray-900/70 backdrop-blur-xl border border-violet-500/20 rounded-xl px-1 py-1">
+        <div className="flex items-center gap-1 bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-xl px-1 py-1">
           <button onClick={() => setViewYear((y) => y - 1)} aria-label="Previous year" className="p-2 rounded-lg hover:bg-white/8 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"><ChevronLeft size={15} /></button>
           <span className="text-sm font-bold text-gray-200 min-w-[52px] text-center tabular-nums">{viewYear}</span>
           <button onClick={() => setViewYear((y) => y + 1)} aria-label="Next year" className="p-2 rounded-lg hover:bg-white/8 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"><ChevronRight size={15} /></button>
@@ -326,7 +326,7 @@ const Analytics: React.FC = () => {
               onClick={() => setActiveTab(id)}
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer',
-                activeTab === id ? active : 'bg-gray-900/70 text-gray-400 border border-violet-500/20 hover:text-gray-200 hover:border-violet-500/40',
+                activeTab === id ? active : 'bg-gray-900/70 text-gray-400 border border-green-500/20 hover:text-gray-200 hover:border-green-500/40',
               )}
             >
               <Icon size={14} />{label}
@@ -349,9 +349,9 @@ const Analytics: React.FC = () => {
               trend={prevExpenses > 0 ? (totalExpenses <= prevExpenses ? 'up' : 'down') : undefined}
               trendVal={prevExpenses > 0 ? `${Math.abs(Math.round(((totalExpenses-prevExpenses)/prevExpenses)*100))}%` : undefined}
               sub="Fixed + Variable + Groceries + Fuel" delay={0.05} />
-            <KpiCard icon={<PiggyBank size={15} className="text-violet-400" />}    label="Net Saved" value={formatPrice(netSavings)}    accent="violet"  sub={`${savingsRate}% savings rate`} delay={0.1} />
+            <KpiCard icon={<PiggyBank size={15} className="text-green-400" />}    label="Net Saved" value={formatPrice(netSavings)}    accent="violet"  sub={`${savingsRate}% savings rate`} delay={0.1} />
             <KpiCard icon={<ShoppingCart size={15} className="text-amber-400" />}  label="Groceries" value={formatPrice(totalGroceryYTD)} accent="amber" sub={`${totalTripsYTD} trips`} delay={0.15} />
-            <KpiCard icon={<Fuel size={15} className="text-purple-400" />}         label="Fuel"      value={formatPrice(totalFuelCost)} accent="purple"  sub={`${totalFuelLitres.toFixed(0)} L`} delay={0.2} />
+            <KpiCard icon={<Fuel size={15} className="text-green-400" />}         label="Fuel"      value={formatPrice(totalFuelCost)} accent="purple"  sub={`${totalFuelLitres.toFixed(0)} L`} delay={0.2} />
             <KpiCard icon={<Target size={15} className="text-blue-400" />}         label="Goals"     value={`${savingsComplete}/${savingsProgress.length}`} accent="blue" sub="completed" delay={0.25} />
           </div>
 
@@ -359,7 +359,7 @@ const Analytics: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {/* Financial health gauge */}
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 flex flex-col items-center justify-center">
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 flex flex-col items-center justify-center">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 mb-4">Financial Health</p>
               <div className="relative w-28 h-28">
                 <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
@@ -402,7 +402,7 @@ const Analytics: React.FC = () => {
             </div>
 
             {/* Income vs Expenses bar */}
-            <div className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <div className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
               <h3 className="text-sm font-semibold text-gray-200">Income vs Expenses</h3>
               <p className="text-xs text-gray-500 mt-0.5 mb-4">Monthly comparison â€” {viewYear}</p>
               <ResponsiveContainer width="100%" height={210}>
@@ -435,21 +435,21 @@ const Analytics: React.FC = () => {
                 <AreaChart data={monthlyFinance}>
                   <defs>
                     <linearGradient id="ovNetG" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#4ade80" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#4ade80" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={G} vertical={false} />
                   <XAxis dataKey="month" tick={{ fill: AX, fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: AX, fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `N$${(v/1000).toFixed(0)}k`} />
                   <Tooltip content={(props) => <ChartTip {...props} fmtValue={(v: number) => formatPrice(v)} />} />
-                  <Area type="monotone" dataKey="net" name="Net" stroke="#8b5cf6" strokeWidth={2} fill="url(#ovNetG)" dot={{ r: 3, fill: '#8b5cf6', strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="net" name="Net" stroke="#4ade80" strokeWidth={2} fill="url(#ovNetG)" dot={{ r: 3, fill: '#4ade80', strokeWidth: 0 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
 
             {savingsProgress.length > 0 ? (
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                 <h3 className="text-sm font-semibold text-gray-200 mb-4">Savings Goals</h3>
                 <div className="space-y-4 max-h-[200px] overflow-y-auto pr-1">
                   {savingsProgress.map((g, i) => {
@@ -469,7 +469,7 @@ const Analytics: React.FC = () => {
                           <motion.div
                             initial={{ width: 0 }} animate={{ width: `${pct}%` }}
                             transition={{ duration: 0.7, delay: i * 0.05 }}
-                            className={cn('h-full rounded-full', done ? 'bg-emerald-500' : 'bg-violet-500')}
+                            className={cn('h-full rounded-full', done ? 'bg-emerald-500' : 'bg-green-500')}
                           />
                         </div>
                         <p className="text-[10px] text-gray-600 mt-0.5 flex items-center justify-between">
@@ -482,7 +482,7 @@ const Analytics: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 flex items-center justify-center">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 flex items-center justify-center">
                 <div className="text-center">
                   <Target size={32} className="text-gray-700 mx-auto mb-2" />
                   <p className="text-gray-500 text-sm">No savings goals set</p>
@@ -512,7 +512,7 @@ const Analytics: React.FC = () => {
               trend={prevExpenses > 0 ? (totalExpenses <= prevExpenses ? 'up' : 'down') : undefined}
               trendVal={prevExpenses > 0 ? `${Math.abs(Math.round(((totalExpenses-prevExpenses)/prevExpenses)*100))}%` : undefined}
               sub="Fixed + Variable + Groceries + Fuel" delay={0.04} />
-            <KpiCard icon={<PiggyBank size={15} className="text-violet-400" />}    label="Net Saved"    value={formatPrice(netSavings)}
+            <KpiCard icon={<PiggyBank size={15} className="text-green-400" />}    label="Net Saved"    value={formatPrice(netSavings)}
               accent="violet" sub={netSavings >= 0 ? 'positive cashflow' : 'negative cashflow'} delay={0.08} />
             <KpiCard
               icon={savingsRate >= 15 ? <TrendingUp size={15} className="text-emerald-400" /> : <TrendingDown size={15} className="text-amber-400" />}
@@ -539,7 +539,7 @@ const Analytics: React.FC = () => {
           {/* Budget vs Actual + Expense ranking */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {budgetVsActual.length > 0 && (
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                 <h3 className="text-sm font-semibold text-gray-200">Budget vs Actual</h3>
                 <p className="text-xs text-gray-500 mt-0.5 mb-4">Year-to-date planned targets vs real spend</p>
                 <div className="space-y-4 max-h-[340px] overflow-y-auto pr-1">
@@ -576,7 +576,7 @@ const Analytics: React.FC = () => {
             )}
 
             {categoryExpenses.length > 0 && (
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                 <h3 className="text-sm font-semibold text-gray-200">Expense Ranking</h3>
                 <p className="text-xs text-gray-500 mt-0.5 mb-4">Where your money goes this year</p>
                 <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
@@ -626,12 +626,12 @@ const Analytics: React.FC = () => {
               accent="amber" sub={`${activeMths} active months`} delay={0.04} />
             <KpiCard icon={<Calendar size={15} className="text-blue-400" />}      label="Trips"        value={String(totalTripsYTD)}
               accent="blue"  sub={totalTripsYTD > 0 ? `Avg ${formatPrice(avgTripSpend)}` : 'this year'} delay={0.08} />
-            <KpiCard icon={<Package size={15} className="text-violet-400" />}     label="Items"        value={String(items.length)}
+            <KpiCard icon={<Package size={15} className="text-green-400" />}     label="Items"        value={String(items.length)}
               accent="violet" sub="in item library" delay={0.12} />
           </div>
 
           {completedTrips.length === 0 ? (
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center">
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
               <ShoppingCart size={32} className="text-gray-700 mx-auto mb-3" />
               <p className="text-gray-500 text-sm">Complete shopping trips to see grocery analytics</p>
             </div>
@@ -641,7 +641,7 @@ const Analytics: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
                 {/* Monthly spend heatmap */}
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                   <h3 className="text-sm font-semibold text-gray-200">Monthly Heatmap</h3>
                   <p className="text-xs text-gray-500 mt-0.5 mb-4">Spend intensity â€” {viewYear}</p>
                   <div className="grid grid-cols-4 gap-2">
@@ -692,7 +692,7 @@ const Analytics: React.FC = () => {
               {/* Category donut + Store breakdown */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {groceryCategoryBreakdown.length > 0 && (
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                     <h3 className="text-sm font-semibold text-gray-200 mb-4">By Category</h3>
                     <div className="flex items-center gap-4">
                       <div className="flex-shrink-0">
@@ -723,7 +723,7 @@ const Analytics: React.FC = () => {
                 )}
 
                 {storeBreakdown.length > 0 && (
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                     <h3 className="text-sm font-semibold text-gray-200 mb-4">By Store</h3>
                     <div className="space-y-3.5">
                       {storeBreakdown.map((store, i) => {
@@ -764,16 +764,16 @@ const Analytics: React.FC = () => {
       {activeTab === 'fuel' && (
         <div className="space-y-5">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <KpiCard icon={<Fuel size={15} className="text-purple-400" />}     label="Total Cost"    value={formatPrice(totalFuelCost)}                          accent="purple" sub={`${viewYear} YTD`} />
+            <KpiCard icon={<Fuel size={15} className="text-green-400" />}     label="Total Cost"    value={formatPrice(totalFuelCost)}                          accent="purple" sub={`${viewYear} YTD`} />
             <KpiCard icon={<Droplets size={15} className="text-blue-400" />}   label="Total Litres"  value={`${totalFuelLitres.toFixed(1)} L`}                   accent="blue"   sub={`${yearFuel.length} fill-ups`} delay={0.04} />
             <KpiCard icon={<Zap size={15} className="text-amber-400" />}       label="Avg Price / L" value={avgPricePerLitre > 0 ? `N$${avgPricePerLitre.toFixed(2)}` : 'â€”'} accent="amber" delay={0.08} />
-            <KpiCard icon={<Calendar size={15} className="text-violet-400" />} label="Days Since"    value={daysSinceFillup !== null ? `${daysSinceFillup}d` : 'â€”'} accent="violet" sub="last fill-up" delay={0.12} />
+            <KpiCard icon={<Calendar size={15} className="text-green-400" />} label="Days Since"    value={daysSinceFillup !== null ? `${daysSinceFillup}d` : 'â€”'} accent="violet" sub="last fill-up" delay={0.12} />
           </div>
 
           {costPerKm !== null && (
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-4 flex items-center gap-4">
-              <div className="p-3 bg-purple-500/10 rounded-xl flex-shrink-0">
-                <Zap size={18} className="text-purple-400" />
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 flex items-center gap-4">
+              <div className="p-3 bg-green-500/10 rounded-xl flex-shrink-0">
+                <Zap size={18} className="text-green-400" />
               </div>
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">Estimated Cost Per KM</p>
@@ -787,7 +787,7 @@ const Analytics: React.FC = () => {
           )}
 
           {yearFuel.length === 0 ? (
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center">
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
               <Fuel size={32} className="text-gray-700 mx-auto mb-3" />
               <p className="text-gray-500 text-sm">No fuel data for {viewYear}. Log fill-ups on the Fuel page.</p>
             </div>
@@ -825,8 +825,8 @@ const Analytics: React.FC = () => {
               </div>
 
               {/* Fill-up log */}
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
-                <div className="px-5 py-4 border-b border-violet-500/15">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
+                <div className="px-5 py-4 border-b border-green-500/15">
                   <h3 className="text-sm font-semibold text-gray-200">Fill-up Log</h3>
                   <p className="text-xs text-gray-500 mt-0.5">{viewYear} â€” {yearFuel.length} fill-up{yearFuel.length !== 1 ? 's' : ''}</p>
                 </div>

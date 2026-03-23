@@ -54,12 +54,12 @@ const TABS = [
 type TabId = (typeof TABS)[number]['id'];
 
 const TAB_ACCENT: Record<TabId, string> = {
-  overview:  'bg-violet-600 text-white shadow-lg shadow-violet-500/25',
+  overview:  'bg-green-600 text-white shadow-lg shadow-green-500/25',
   income:    'bg-emerald-600 text-white shadow-lg shadow-emerald-500/25',
   fixed:     'bg-blue-600 text-white shadow-lg shadow-blue-500/25',
   variable:  'bg-orange-600 text-white shadow-lg shadow-orange-500/25',
   plan:      'bg-cyan-600 text-white shadow-lg shadow-cyan-500/25',
-  savings:   'bg-purple-600 text-white shadow-lg shadow-purple-500/25',
+  savings:   'bg-green-600 text-white shadow-lg shadow-green-500/25',
 };
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ function pct(value: number, total: number) {
 }
 
 function barColor(spent: number, budget: number) {
-  if (!budget) return '#8b5cf6';
+  if (!budget) return '#4ade80';
   const p = spent / budget;
   if (p > 1) return '#f43f5e';
   if (p >= 0.85) return '#f97316';
@@ -134,7 +134,7 @@ const KpiCard: React.FC<KpiProps> = ({ icon, label, value, sub, accent, delay = 
     initial={{ opacity: 0, y: 12 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
-    className="relative bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-4 overflow-hidden"
+    className="relative bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 overflow-hidden"
   >
     <div className={`absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-${accent}-500/50 to-transparent`} />
     <div className="flex items-center gap-2 mb-2">
@@ -308,7 +308,7 @@ const Finance: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-lg shadow-green-500/20">
             <Wallet size={18} className="text-white" />
           </div>
           <div>
@@ -317,10 +317,10 @@ const Finance: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={openPlan} className="flex items-center gap-1.5 px-3 py-2 border border-violet-500/30 text-violet-400 rounded-xl text-xs font-semibold hover:bg-violet-500/10 transition-colors cursor-pointer">
+          <button onClick={openPlan} className="flex items-center gap-1.5 px-3 py-2 border border-green-500/30 text-green-400 rounded-xl text-xs font-semibold hover:bg-green-500/10 transition-colors cursor-pointer">
             <Target size={13} />{currentPlan ? 'Edit Plan' : 'Set Plan'}
           </button>
-          <button onClick={() => openAdd('income')} className="flex items-center gap-1.5 px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-lg shadow-violet-500/20 cursor-pointer">
+          <button onClick={() => openAdd('income')} className="flex items-center gap-1.5 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-lg shadow-green-500/20 cursor-pointer">
             <Plus size={13} />Add Entry
           </button>
         </div>
@@ -331,10 +331,10 @@ const Finance: React.FC = () => {
         <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" aria-label="Previous period">
           <ChevronLeft size={18} />
         </button>
-        <div className="bg-gray-900/70 backdrop-blur-xl border border-violet-500/20 rounded-2xl px-6 py-3 text-center min-w-[220px]">
+        <div className="bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-2xl px-6 py-3 text-center min-w-[220px]">
           <p className="text-base font-bold text-gray-100">{MONTHS[viewMonth - 1]} {viewYear}</p>
           <p className="text-[11px] text-gray-500 mt-0.5">{billingLabel}</p>
-          {isCurrentPeriod && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-violet-400 mt-1"><span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />Current Period</span>}
+          {isCurrentPeriod && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-400 mt-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Current Period</span>}
         </div>
         <button onClick={nextMonth} disabled={isCurrentPeriod} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer" aria-label="Next period">
           <ChevronRight size={18} />
@@ -357,7 +357,7 @@ const Finance: React.FC = () => {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 overflow-x-auto scrollbar-none bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-1.5">
+      <div className="flex gap-1 overflow-x-auto scrollbar-none bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-green-500/20 p-1.5">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -445,7 +445,7 @@ const Finance: React.FC = () => {
                 return (
                   <button key={t} type="button"
                     onClick={() => { const cats = t === 'income' ? FINANCE_INCOME_CATEGORIES : t === 'fixed' ? FINANCE_FIXED_CATEGORIES : FINANCE_VARIABLE_CATEGORIES; setTxModal(s => ({ ...s, data: { ...s.data, type: t, category: cats[0]?.id || '' } })); }}
-                    className={cn('py-2 rounded-xl text-sm font-semibold capitalize transition-all border cursor-pointer', txModal.data.type === t ? colors[t] : 'border-violet-500/20 text-gray-500 hover:text-gray-300 hover:bg-gray-800/40')}
+                    className={cn('py-2 rounded-xl text-sm font-semibold capitalize transition-all border cursor-pointer', txModal.data.type === t ? colors[t] : 'border-green-500/20 text-gray-500 hover:text-gray-300 hover:bg-gray-800/40')}
                   >
                     {t === 'income' ? '↑ Income' : t === 'fixed' ? '📌 Fixed' : '🔄 Variable'}
                   </button>
@@ -457,7 +457,7 @@ const Finance: React.FC = () => {
           <div>
             <label className="block text-xs font-semibold text-gray-400 mb-2">CATEGORY</label>
             <select value={txModal.data.category} onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, category: e.target.value } }))}
-              className="w-full px-3 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-violet-500 transition-all">
+              className="w-full px-3 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all">
               {formCategories.map(c => <option key={c.id} value={c.id}>{c.icon}  {c.label}</option>)}
             </select>
           </div>
@@ -467,7 +467,7 @@ const Finance: React.FC = () => {
             <input type="text" value={txModal.data.description}
               onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, description: e.target.value } }))}
               placeholder="e.g. Monthly salary, Water bill…"
-              className="w-full px-3 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-violet-500 transition-all" required />
+              className="w-full px-3 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all" required />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -476,30 +476,30 @@ const Finance: React.FC = () => {
               <input type="number" step="0.01" min="0.01" value={txModal.data.amount || ''}
                 onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, amount: parseFloat(e.target.value) || 0 } }))}
                 placeholder="0.00"
-                className="w-full px-3 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-violet-500 transition-all" required />
+                className="w-full px-3 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all" required />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-400 mb-2">DATE</label>
               <input type="date" value={new Date(txModal.data.date || Date.now()).toISOString().split('T')[0]}
                 onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, date: new Date(e.target.value).getTime() } }))}
-                className="w-full px-3 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-violet-500 transition-all" />
+                className="w-full px-3 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all" />
             </div>
           </div>
 
-          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-800/30 border border-violet-500/10 hover:border-violet-500/25 transition-colors">
-            <input type="checkbox" checked={txModal.data.recurring} onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, recurring: e.target.checked } }))} className="w-4 h-4 accent-violet-600" />
+          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl bg-gray-800/30 border border-green-500/10 hover:border-green-500/25 transition-colors">
+            <input type="checkbox" checked={txModal.data.recurring} onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, recurring: e.target.checked } }))} className="w-4 h-4 accent-green-600" />
             <span className="text-sm text-gray-300 flex items-center gap-1.5"><Repeat size={13} className="text-gray-500" />Recurring monthly</span>
           </label>
 
           <div>
             <label className="block text-xs font-semibold text-gray-400 mb-2">NOTES <span className="text-gray-600 font-normal">(optional)</span></label>
             <textarea value={txModal.data.notes || ''} onChange={e => setTxModal(s => ({ ...s, data: { ...s.data, notes: e.target.value } }))} rows={2} placeholder="Any additional context…"
-              className="w-full px-3 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-violet-500 transition-all resize-none" />
+              className="w-full px-3 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-green-500 transition-all resize-none" />
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button type="button" onClick={() => setTxModal(s => ({ ...s, open: false }))} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">{txModal.mode === 'add' ? 'Add Entry' : 'Save Changes'}</button>
+            <button type="button" onClick={() => setTxModal(s => ({ ...s, open: false }))} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">{txModal.mode === 'add' ? 'Add Entry' : 'Save Changes'}</button>
           </div>
         </form>
       </Modal>
@@ -517,14 +517,14 @@ const Finance: React.FC = () => {
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">{CURRENCY}</span>
                   <input type="number" step="0.01" min="0" value={planIncome} onChange={e => setPlanIncome(e.target.value)} placeholder="0.00" className="w-full pl-10 pr-3 py-2 bg-gray-900/70 border border-emerald-500/20 rounded-xl text-sm font-medium outline-none focus:border-emerald-500 transition-colors" /></div>
               </div>
-              <div className="bg-purple-500/8 border border-purple-500/20 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><PiggyBank size={13} className="text-purple-400" /><span className="text-xs font-semibold text-purple-400">Savings Goal</span></div>
+              <div className="bg-green-500/8 border border-green-500/20 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2"><PiggyBank size={13} className="text-green-400" /><span className="text-xs font-semibold text-green-400">Savings Goal</span></div>
                 <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">{CURRENCY}</span>
-                  <input type="number" step="0.01" min="0" value={planSavings} onChange={e => setPlanSavings(e.target.value)} placeholder="0.00" className="w-full pl-10 pr-3 py-2 bg-gray-900/70 border border-purple-500/20 rounded-xl text-sm font-medium outline-none focus:border-purple-500 transition-colors" /></div>
+                  <input type="number" step="0.01" min="0" value={planSavings} onChange={e => setPlanSavings(e.target.value)} placeholder="0.00" className="w-full pl-10 pr-3 py-2 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm font-medium outline-none focus:border-green-500 transition-colors" /></div>
               </div>
             </div>
             {parseFloat(planIncome) > 0 && (
-              <div className="mt-3 flex items-center justify-between bg-gray-800/40 rounded-xl px-4 py-2.5 border border-violet-500/10">
+              <div className="mt-3 flex items-center justify-between bg-gray-800/40 rounded-xl px-4 py-2.5 border border-green-500/10">
                 <span className="text-xs text-gray-500">Spendable Budget</span>
                 <span className="text-sm font-bold text-gray-200 font-mono">{formatPrice(Math.max(0, parseFloat(planIncome) - (parseFloat(planSavings) || 0)))}</span>
               </div>
@@ -534,21 +534,21 @@ const Finance: React.FC = () => {
           {/* Fixed Expenses */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5"><Receipt size={10} className="text-blue-400" />Fixed Expenses</p>
-            <div className="bg-gray-800/30 border border-violet-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            <div className="bg-gray-800/30 border border-green-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
               {FINANCE_FIXED_CATEGORIES.map(cat => (
                 <div key={cat.id} className="flex items-center gap-3 px-4 py-2.5">
                   <span className="text-sm w-6 text-center shrink-0">{cat.icon}</span>
                   <span className="flex-1 text-sm text-gray-300 truncate">{cat.label}</span>
                   <div className="relative w-36 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-violet-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
+                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
                 </div>
               ))}
               {planCustomFixed.map(cat => (
                 <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5">
                   <input type="text" value={cat.icon} onChange={e => setPlanCustomFixed(p => p.map(c => c.id === cat.id ? { ...c, icon: e.target.value } : c))} maxLength={4} className="w-8 text-center text-sm bg-transparent outline-none shrink-0" />
-                  <input type="text" value={cat.label} onChange={e => setPlanCustomFixed(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-violet-500/20 outline-none py-0.5" />
+                  <input type="text" value={cat.label} onChange={e => setPlanCustomFixed(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-green-500/20 outline-none py-0.5" />
                   <div className="relative w-32 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-violet-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
+                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
                   <button type="button" onClick={() => { setPlanCustomFixed(p => p.filter(c => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-gray-600 hover:text-rose-400 shrink-0 cursor-pointer"><X size={13} /></button>
                 </div>
               ))}
@@ -559,12 +559,12 @@ const Finance: React.FC = () => {
           {/* Variable Expenses */}
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5"><ArrowDownCircle size={10} className="text-orange-400" />Variable Expenses</p>
-            <div className="bg-gray-800/30 border border-violet-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
+            <div className="bg-gray-800/30 border border-green-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
               {/* Groceries locked row */}
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-violet-500/5">
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-green-500/5">
                 <span className="text-sm w-6 text-center shrink-0">🛒</span>
                 <span className="flex-1 text-sm text-gray-400 truncate">Groceries</span>
-                <span className="text-xs text-violet-400 bg-violet-500/10 px-2 py-1 rounded-lg border border-violet-500/20">{groceryBudget > 0 ? `Auto · ${formatPrice(groceryBudget)}` : 'Set in Shopping Budget'}</span>
+                <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">{groceryBudget > 0 ? `Auto · ${formatPrice(groceryBudget)}` : 'Set in Shopping Budget'}</span>
               </div>
               {/* Fuel locked row */}
               <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-500/5">
@@ -577,15 +577,15 @@ const Finance: React.FC = () => {
                   <span className="text-sm w-6 text-center shrink-0">{cat.icon}</span>
                   <span className="flex-1 text-sm text-gray-300 truncate">{cat.label}</span>
                   <div className="relative w-36 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-violet-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
+                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
                 </div>
               ))}
               {planCustomVar.map(cat => (
                 <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5">
                   <input type="text" value={cat.icon} onChange={e => setPlanCustomVar(p => p.map(c => c.id === cat.id ? { ...c, icon: e.target.value } : c))} maxLength={4} className="w-8 text-center text-sm bg-transparent outline-none shrink-0" />
-                  <input type="text" value={cat.label} onChange={e => setPlanCustomVar(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-violet-500/20 outline-none py-0.5" />
+                  <input type="text" value={cat.label} onChange={e => setPlanCustomVar(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-green-500/20 outline-none py-0.5" />
                   <div className="relative w-32 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-violet-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
+                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
                   <button type="button" onClick={() => { setPlanCustomVar(p => p.filter(c => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-gray-600 hover:text-rose-400 shrink-0 cursor-pointer"><X size={13} /></button>
                 </div>
               ))}
@@ -603,13 +603,13 @@ const Finance: React.FC = () => {
             const remaining = income - allocated;
             const over = income > 0 && remaining < 0;
             return (
-              <div className="bg-gray-800/40 rounded-2xl p-4 border border-violet-500/10 space-y-2.5">
+              <div className="bg-gray-800/40 rounded-2xl p-4 border border-green-500/10 space-y-2.5">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Budget Summary</p>
                 <div className="space-y-1.5 text-sm">
-                  {[['Fixed', formatPrice(fxd), 'text-blue-400'], ['Variable', formatPrice(vrbl), 'text-orange-400'], ['Groceries (auto)', formatPrice(groceryBudget), 'text-amber-400'], ['Savings Target', formatPrice(savings), 'text-purple-400']].map(([l, v, c]) => (
+                  {[['Fixed', formatPrice(fxd), 'text-blue-400'], ['Variable', formatPrice(vrbl), 'text-orange-400'], ['Groceries (auto)', formatPrice(groceryBudget), 'text-amber-400'], ['Savings Target', formatPrice(savings), 'text-green-400']].map(([l, v, c]) => (
                     <div key={l} className="flex justify-between"><span className="text-gray-500">{l}</span><span className={cn('font-semibold font-mono', c)}>{v}</span></div>
                   ))}
-                  <div className="border-t border-violet-500/10 pt-2 flex justify-between font-semibold">
+                  <div className="border-t border-green-500/10 pt-2 flex justify-between font-semibold">
                     <span className="text-gray-400">Total Allocated</span>
                     <span className={cn('font-mono', over ? 'text-rose-400' : 'text-gray-200')}>{formatPrice(allocated)}</span>
                   </div>
@@ -621,8 +621,8 @@ const Finance: React.FC = () => {
           })()}
 
           <div className="flex gap-3">
-            <button type="button" onClick={() => setPlanModal(false)} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Save Plan</button>
+            <button type="button" onClick={() => setPlanModal(false)} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Save Plan</button>
           </div>
         </form>
       </Modal>
@@ -663,9 +663,9 @@ const OverviewTab: React.FC<OverviewProps> = ({
 
       {/* Spending flow visualization */}
       {(totalIncome > 0 || totalExpenses > 0) && (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
           <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 mb-4">
-            <BarChart2 size={14} className="text-violet-400" /> Period Cash Flow
+            <BarChart2 size={14} className="text-green-400" /> Period Cash Flow
           </h2>
           <div className="space-y-2.5">
             {bars.map(b => (
@@ -702,7 +702,7 @@ const OverviewTab: React.FC<OverviewProps> = ({
 
       {/* Budget plan progress */}
       {currentPlan && (totalIncome > 0 || totalExpenses > 0) && (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 space-y-3">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 space-y-3">
           <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
             <Target size={14} className="text-cyan-400" />Budget Plan Progress
           </h2>
@@ -734,7 +734,7 @@ const OverviewTab: React.FC<OverviewProps> = ({
       )}
 
       {/* Recent transactions */}
-      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
         <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between">
           <h2 className="font-semibold text-gray-200 text-sm">Recent Activity</h2>
           <span className="text-xs text-gray-500">{monthTx.length} entries this period</span>
@@ -754,12 +754,12 @@ const OverviewTab: React.FC<OverviewProps> = ({
 
       {/* Auto-integration notice */}
       {(grocerySpent > 0 || fuelSpent > 0) && (
-        <div className="bg-violet-500/5 border border-violet-500/15 rounded-xl p-4 flex items-start gap-3">
-          <Zap size={14} className="text-violet-400 mt-0.5 shrink-0" />
-          <p className="text-sm text-violet-300">
+        <div className="bg-green-500/5 border border-green-500/15 rounded-xl p-4 flex items-start gap-3">
+          <Zap size={14} className="text-green-400 mt-0.5 shrink-0" />
+          <p className="text-sm text-green-300">
             <strong>{formatPrice(grocerySpent + fuelSpent)}</strong> auto-integrated this period:
             <span className="text-amber-400"> {formatPrice(grocerySpent)} groceries</span> +
-            <span className="text-purple-400"> {formatPrice(fuelSpent)} fuel</span> — pulled directly from your Shopping Trips and Fuel pages.
+            <span className="text-green-400"> {formatPrice(fuelSpent)} fuel</span> — pulled directly from your Shopping Trips and Fuel pages.
           </p>
         </div>
       )}
@@ -807,17 +807,17 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
           <p className={cn('text-3xl font-bold font-mono tabular-nums mt-0.5', c.accent)}>{formatPrice(total)}</p>
           {planTarget > 0 && <p className="text-xs text-gray-500 mt-1">Target: {formatPrice(planTarget)} · {pct(total, planTarget)}% used</p>}
         </div>
-        <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm font-semibold text-gray-300 hover:bg-gray-800/60 transition-colors cursor-pointer">
+        <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm font-semibold text-gray-300 hover:bg-gray-800/60 transition-colors cursor-pointer">
           <Plus size={14} /> Add {type === 'income' ? 'Income' : 'Expense'}
         </button>
       </div>
 
       {/* Category groups */}
       {groups.length === 0 ? (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
           <ClipboardList size={28} className="mx-auto text-gray-700 mb-2" />
           <p className="text-sm text-gray-500 mb-4">No {title.toLowerCase()} entries this period</p>
-          <button onClick={onAdd} className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"><span className="flex items-center gap-1.5"><Plus size={13} /> Add Entry</span></button>
+          <button onClick={onAdd} className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"><span className="flex items-center gap-1.5"><Plus size={13} /> Add Entry</span></button>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -825,7 +825,7 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
             const isOpen = expanded.has(catId);
             const isCustom = customCats.some(c => c.id === catId);
             return (
-              <div key={catId} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+              <div key={catId} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
                   <button onClick={() => toggle(catId)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left cursor-pointer">
                     <ChevronDown size={14} className={cn('text-gray-500 transition-transform duration-200 shrink-0', isOpen && 'rotate-180')} />
@@ -859,12 +859,12 @@ const TransactionTab: React.FC<TransactionTabProps> = ({
       {onAddCustomCat && (
         <div>
           {!addingCat ? (
-            <button onClick={() => setAddingCat(true)} className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 rounded-2xl border border-dashed border-violet-500/20 transition-colors cursor-pointer"><Plus size={12} /> New Category</button>
+            <button onClick={() => setAddingCat(true)} className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 rounded-2xl border border-dashed border-green-500/20 transition-colors cursor-pointer"><Plus size={12} /> New Category</button>
           ) : (
-            <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/70 rounded-2xl border border-dashed border-violet-500/30">
+            <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/70 rounded-2xl border border-dashed border-green-500/30">
               <input type="text" value={newIcon} onChange={e => setNewIcon(e.target.value)} maxLength={4} className="w-8 text-center text-base bg-transparent outline-none shrink-0" />
-              <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }} placeholder="Category name…" autoFocus className="flex-1 text-sm bg-transparent outline-none border-b border-violet-500/20 py-0.5 text-gray-200" />
-              <button onClick={saveNewCat} disabled={!newLabel.trim()} className="p-1 text-violet-400 hover:text-violet-200 disabled:opacity-30 cursor-pointer"><Check size={14} /></button>
+              <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }} placeholder="Category name…" autoFocus className="flex-1 text-sm bg-transparent outline-none border-b border-green-500/20 py-0.5 text-gray-200" />
+              <button onClick={saveNewCat} disabled={!newLabel.trim()} className="p-1 text-green-400 hover:text-green-200 disabled:opacity-30 cursor-pointer"><Check size={14} /></button>
               <button onClick={() => { setAddingCat(false); setNewLabel(''); setNewIcon('📌'); }} className="p-1 text-gray-500 hover:text-rose-400 cursor-pointer"><X size={14} /></button>
             </div>
           )}
@@ -912,7 +912,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
           <p className="text-3xl font-bold font-mono tabular-nums text-orange-400 mt-0.5">{formatPrice(totalAll)}</p>
           {planTarget > 0 && <p className="text-xs text-gray-500 mt-1">Target: {formatPrice(planTarget + groceryBudget)} · {pct(totalAll, planTarget + groceryBudget)}% used</p>}
         </div>
-        <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm font-semibold text-gray-300 hover:bg-gray-800/60 transition-colors cursor-pointer">
+        <button onClick={onAdd} className="flex items-center gap-2 px-4 py-2 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm font-semibold text-gray-300 hover:bg-gray-800/60 transition-colors cursor-pointer">
           <Plus size={14} /> Add Expense
         </button>
       </div>
@@ -958,13 +958,13 @@ const VariableTab: React.FC<VariableTabProps> = ({
       {fuelSpent > 0 && (() => {
         const fuelOpen = expanded.has('__fuel__');
         return (
-          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-purple-500/25 overflow-hidden">
-            <button onClick={() => toggle('__fuel__')} className="w-full px-4 py-3 flex items-center justify-between bg-purple-500/5 hover:bg-purple-500/10 transition-colors cursor-pointer">
+          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/25 overflow-hidden">
+            <button onClick={() => toggle('__fuel__')} className="w-full px-4 py-3 flex items-center justify-between bg-green-500/5 hover:bg-green-500/10 transition-colors cursor-pointer">
               <div className="flex items-center gap-2.5">
                 <ChevronDown size={14} className={cn('text-gray-500 transition-transform duration-200', fuelOpen && 'rotate-180')} />
-                <Fuel size={14} className="text-purple-400 shrink-0" />
+                <Fuel size={14} className="text-green-400 shrink-0" />
                 <span className="text-sm font-semibold text-gray-300">Fuel</span>
-                <span className="text-[10px] bg-purple-500/15 text-purple-400 px-1.5 py-0.5 rounded-full border border-purple-500/20 font-semibold">Auto from Fuel page</span>
+                <span className="text-[10px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full border border-green-500/20 font-semibold">Auto from Fuel page</span>
               </div>
               <span className="text-sm font-bold font-mono tabular-nums text-gray-100">{formatPrice(fuelSpent)}</span>
             </button>
@@ -983,10 +983,10 @@ const VariableTab: React.FC<VariableTabProps> = ({
 
       {/* Manual variable entries */}
       {groups.filter(([cid]) => cid !== 'groceries').length === 0 ? (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
           <ClipboardList size={28} className="mx-auto text-gray-700 mb-2" />
           <p className="text-sm text-gray-500 mb-4">No manual variable expenses this period</p>
-          <button onClick={onAdd} className="px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"><span className="flex items-center gap-1.5"><Plus size={13} /> Add Expense</span></button>
+          <button onClick={onAdd} className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer"><span className="flex items-center gap-1.5"><Plus size={13} /> Add Expense</span></button>
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -994,7 +994,7 @@ const VariableTab: React.FC<VariableTabProps> = ({
             const isOpen = expanded.has(catId);
             const isCustom = customCats.some(c => c.id === catId);
             return (
-              <div key={catId} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+              <div key={catId} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-800/30 hover:bg-gray-800/50 transition-colors">
                   <button onClick={() => toggle(catId)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left cursor-pointer">
                     <ChevronDown size={14} className={cn('text-gray-500 transition-transform duration-200 shrink-0', isOpen && 'rotate-180')} />
@@ -1028,11 +1028,11 @@ const VariableTab: React.FC<VariableTabProps> = ({
       {onAddCustomCat && (
         <div>
           {!addingCat ? (
-            <button onClick={() => setAddingCat(true)} className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 rounded-2xl border border-dashed border-violet-500/20 transition-colors cursor-pointer"><Plus size={12} /> New Category</button>
+            <button onClick={() => setAddingCat(true)} className="w-full flex items-center justify-center gap-1.5 py-2.5 text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 rounded-2xl border border-dashed border-green-500/20 transition-colors cursor-pointer"><Plus size={12} /> New Category</button>
           ) : (
             <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/70 rounded-2xl border border-dashed border-orange-500/30">
               <input type="text" value={newIcon} onChange={e => setNewIcon(e.target.value)} maxLength={4} className="w-8 text-center text-base bg-transparent outline-none shrink-0" />
-              <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }} placeholder="Category name…" autoFocus className="flex-1 text-sm bg-transparent outline-none border-b border-violet-500/20 py-0.5 text-gray-200" />
+              <input type="text" value={newLabel} onChange={e => setNewLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveNewCat(); if (e.key === 'Escape') setAddingCat(false); }} placeholder="Category name…" autoFocus className="flex-1 text-sm bg-transparent outline-none border-b border-green-500/20 py-0.5 text-gray-200" />
               <button onClick={saveNewCat} disabled={!newLabel.trim()} className="p-1 text-orange-400 hover:text-orange-200 disabled:opacity-30 cursor-pointer"><Check size={14} /></button>
               <button onClick={() => { setAddingCat(false); setNewLabel(''); setNewIcon('📋'); }} className="p-1 text-gray-500 hover:text-rose-400 cursor-pointer"><X size={14} /></button>
             </div>
@@ -1057,11 +1057,11 @@ const PlanTab: React.FC<PlanTabProps> = ({
   fixedTx, varTx, grocerySpent, groceryBudget, fuelSpent, onOpenPlan, month, year,
 }) => {
   if (!currentPlan) return (
-    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center">
+    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
       <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-cyan-500/10 flex items-center justify-center"><Target size={24} className="text-cyan-400" /></div>
       <p className="text-base font-semibold text-gray-300">No budget plan set for {MONTHS[month - 1]}</p>
       <p className="text-sm text-gray-500 mt-1 mb-5">Set income goals, expense targets and savings goals</p>
-      <button onClick={onOpenPlan} className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Set Budget Plan</button>
+      <button onClick={onOpenPlan} className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Set Budget Plan</button>
     </div>
   );
 
@@ -1080,10 +1080,10 @@ const PlanTab: React.FC<PlanTabProps> = ({
           <p className="text-xl font-bold text-emerald-400 font-mono">{formatPrice(currentPlan.incomeGoal || 0)}</p>
           <p className="text-xs text-gray-500 mt-1">Actual: <span className="text-gray-300 font-mono">{formatPrice(totalIncome)}</span></p>
         </div>
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-purple-500/20 p-4 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
           <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Savings Goal</p>
-          <p className="text-xl font-bold text-purple-400 font-mono">{formatPrice(currentPlan.savingsGoal || 0)}</p>
+          <p className="text-xl font-bold text-green-400 font-mono">{formatPrice(currentPlan.savingsGoal || 0)}</p>
           {currentPlan.savingsGoal > 0 && (() => {
             const actual = Math.max(0, netSavings);
             const goal = currentPlan.savingsGoal;
@@ -1097,18 +1097,18 @@ const PlanTab: React.FC<PlanTabProps> = ({
             );
           })()}
         </div>
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-4 flex items-center justify-between">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 flex items-center justify-between">
           <div>
             <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">This Period</p>
             <p className="text-sm font-semibold text-gray-300">{MONTHS[month - 1]} {year}</p>
           </div>
-          <button onClick={onOpenPlan} className="p-2 hover:bg-gray-800/60 rounded-xl text-gray-500 hover:text-violet-400 transition-colors cursor-pointer"><Edit3 size={14} /></button>
+          <button onClick={onOpenPlan} className="p-2 hover:bg-gray-800/60 rounded-xl text-gray-500 hover:text-green-400 transition-colors cursor-pointer"><Edit3 size={14} /></button>
         </div>
       </div>
 
       {/* Category targets breakdown */}
       {(currentPlan.categoryTargets?.length > 0 || groceryBudget > 0) && (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.04]">
             <h2 className="font-semibold text-gray-200 text-sm">Actual vs Budget</h2>
             <p className="text-xs text-gray-500 mt-0.5">Category-level spending vs your plan</p>
@@ -1166,12 +1166,12 @@ const PlanTab: React.FC<PlanTabProps> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Fuel size={13} className="text-purple-400" /><span className="text-sm text-gray-300">Fuel</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-semibold">auto</span>
+                    <Fuel size={13} className="text-green-400" /><span className="text-sm text-gray-300">Fuel</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">auto</span>
                   </div>
                   <span className="text-sm font-bold font-mono tabular-nums text-gray-200">{formatPrice(fuelSpent)}</span>
                 </div>
-                <div className="h-2 bg-purple-500/20 rounded-full"><div className="h-full rounded-full bg-purple-500" style={{ width: '100%' }} /></div>
+                <div className="h-2 bg-green-500/20 rounded-full"><div className="h-full rounded-full bg-green-500" style={{ width: '100%' }} /></div>
               </div>
             )}
           </div>
@@ -1223,15 +1223,15 @@ const SavingsTab: React.FC<{
           <h2 className="text-base font-bold text-gray-100">Savings Goals</h2>
           {goals.length > 0 && <p className="text-xs text-gray-500 mt-0.5">{formatPrice(totalSaved)} saved of {formatPrice(totalTarget)} across {goals.length} goal{goals.length !== 1 ? 's' : ''}</p>}
         </div>
-        <button onClick={openAddGoal} className="flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"><Plus size={14} /> New Goal</button>
+        <button onClick={openAddGoal} className="flex items-center gap-1.5 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"><Plus size={14} /> New Goal</button>
       </div>
 
       {goals.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20">
-          <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4"><PiggyBank size={24} className="text-purple-400" /></div>
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20">
+          <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mb-4"><PiggyBank size={24} className="text-green-400" /></div>
           <p className="text-base font-semibold text-gray-300">No savings goals yet</p>
           <p className="text-sm text-gray-500 mt-1 mb-5 max-w-xs">Create a goal like "Emergency Fund" or "New Car" and track your progress.</p>
-          <button onClick={openAddGoal} className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">Create First Goal</button>
+          <button onClick={openAddGoal} className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">Create First Goal</button>
         </div>
       )}
 
@@ -1244,7 +1244,7 @@ const SavingsTab: React.FC<{
           let daysLeft: number|null = null; let deadlineLabel = '';
           if (goal.deadline) { const diff = new Date(goal.deadline).getTime() - Date.now(); daysLeft = Math.ceil(diff / 86400000); deadlineLabel = daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Due today' : `${daysLeft}d left`; }
           return (
-            <div key={goal.id} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+            <div key={goal.id} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
               <div className="px-5 py-4">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl mt-0.5 shrink-0">{goal.emoji}</span>
@@ -1252,7 +1252,7 @@ const SavingsTab: React.FC<{
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-gray-100">{goal.name}</span>
                       {isComplete && <span className="flex items-center gap-1 text-xs bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-semibold"><CheckCircle2 size={10} /> Achieved!</span>}
-                      {(goal.monthlyContribution ?? 0) > 0 && <span className="text-xs bg-violet-500/15 text-violet-400 px-2 py-0.5 rounded-full border border-violet-500/20">{CURRENCY}{goal.monthlyContribution!.toLocaleString()}/mo</span>}
+                      {(goal.monthlyContribution ?? 0) > 0 && <span className="text-xs bg-green-500/15 text-green-400 px-2 py-0.5 rounded-full border border-green-500/20">{CURRENCY}{goal.monthlyContribution!.toLocaleString()}/mo</span>}
                       {goal.deadline && <span className={cn('flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium', daysLeft !== null && daysLeft < 0 ? 'bg-rose-500/15 text-rose-400' : daysLeft !== null && daysLeft <= 30 ? 'bg-amber-500/15 text-amber-400' : 'bg-gray-800/60 text-gray-400')}><Calendar size={10} />{deadlineLabel}</span>}
                     </div>
                     <div className="mt-2.5">
@@ -1260,16 +1260,16 @@ const SavingsTab: React.FC<{
                         <span>{CURRENCY}{saved.toLocaleString()} saved</span>
                         <span>{Math.round(progress)}% of {CURRENCY}{goal.targetAmount.toLocaleString()}</span>
                       </div>
-                      <div className="h-2 bg-gray-800/60 rounded-full overflow-hidden"><div className={cn('h-full rounded-full transition-all duration-500', isComplete ? 'bg-emerald-500' : 'bg-purple-500')} style={{ width: `${progress}%` }} /></div>
+                      <div className="h-2 bg-gray-800/60 rounded-full overflow-hidden"><div className={cn('h-full rounded-full transition-all duration-500', isComplete ? 'bg-emerald-500' : 'bg-green-500')} style={{ width: `${progress}%` }} /></div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => openContribute(goal)} className="p-1.5 text-purple-400 hover:bg-purple-500/15 rounded-lg transition-colors cursor-pointer" title="Add money"><Plus size={14} /></button>
-                    <button onClick={() => openEditGoal(goal)} className="p-1.5 text-gray-500 hover:text-violet-400 hover:bg-violet-500/15 rounded-lg transition-colors cursor-pointer"><Edit3 size={13} /></button>
+                    <button onClick={() => openContribute(goal)} className="p-1.5 text-green-400 hover:bg-green-500/15 rounded-lg transition-colors cursor-pointer" title="Add money"><Plus size={14} /></button>
+                    <button onClick={() => openEditGoal(goal)} className="p-1.5 text-gray-500 hover:text-green-400 hover:bg-green-500/15 rounded-lg transition-colors cursor-pointer"><Edit3 size={13} /></button>
                     <button onClick={() => { if (confirm(`Delete "${goal.name}"?`)) onDelete(goal.id); }} className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"><Trash2 size={13} /></button>
                   </div>
                 </div>
-                <button onClick={() => openContribute(goal)} className="mt-3 w-full py-2 text-sm font-medium text-purple-400 bg-purple-500/10 hover:bg-purple-500/15 rounded-xl transition-colors cursor-pointer border border-purple-500/20">+ Add Money</button>
+                <button onClick={() => openContribute(goal)} className="mt-3 w-full py-2 text-sm font-medium text-green-400 bg-green-500/10 hover:bg-green-500/15 rounded-xl transition-colors cursor-pointer border border-green-500/20">+ Add Money</button>
               </div>
               {goal.contributions.length > 0 && (
                 <>
@@ -1300,16 +1300,16 @@ const SavingsTab: React.FC<{
 
       {/* Add/Edit Goal Modal */}
       <Modal isOpen={goalModal.open} onClose={closeGoalModal} title={goalModal.mode === 'add' ? 'New Savings Goal' : 'Edit Goal'}
-        footer={<div className="flex gap-2"><button onClick={closeGoalModal} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm font-medium text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button><button onClick={saveGoal} disabled={!goalModal.name.trim() || goalModal.targetAmount <= 0} className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">{goalModal.mode === 'add' ? 'Create Goal' : 'Save Changes'}</button></div>}>
+        footer={<div className="flex gap-2"><button onClick={closeGoalModal} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm font-medium text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button><button onClick={saveGoal} disabled={!goalModal.name.trim() || goalModal.targetAmount <= 0} className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">{goalModal.mode === 'add' ? 'Create Goal' : 'Save Changes'}</button></div>}>
         <div className="space-y-4 p-1">
           <div className="flex gap-3">
-            <div className="w-20 shrink-0"><label className="block text-xs font-semibold text-gray-400 mb-1.5">EMOJI</label><input type="text" value={goalModal.emoji} onChange={e => setGoalModal(s => ({ ...s, emoji: e.target.value }))} className="w-full text-center text-2xl bg-gray-800/60 border border-violet-500/20 rounded-xl px-2 py-2 outline-none focus:ring-2 focus:ring-purple-500" maxLength={2} /></div>
-            <div className="flex-1"><label className="block text-xs font-semibold text-gray-400 mb-1.5">GOAL NAME *</label><input type="text" value={goalModal.name} onChange={e => setGoalModal(s => ({ ...s, name: e.target.value }))} placeholder="e.g. Emergency Fund" className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
+            <div className="w-20 shrink-0"><label className="block text-xs font-semibold text-gray-400 mb-1.5">EMOJI</label><input type="text" value={goalModal.emoji} onChange={e => setGoalModal(s => ({ ...s, emoji: e.target.value }))} className="w-full text-center text-2xl bg-gray-800/60 border border-green-500/20 rounded-xl px-2 py-2 outline-none focus:ring-2 focus:ring-green-500" maxLength={2} /></div>
+            <div className="flex-1"><label className="block text-xs font-semibold text-gray-400 mb-1.5">GOAL NAME *</label><input type="text" value={goalModal.name} onChange={e => setGoalModal(s => ({ ...s, name: e.target.value }))} placeholder="e.g. Emergency Fund" className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
           </div>
-          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">TARGET AMOUNT ({CURRENCY}) *</label><input type="number" min={1} value={goalModal.targetAmount || ''} onChange={e => setGoalModal(s => ({ ...s, targetAmount: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
+          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">TARGET AMOUNT ({CURRENCY}) *</label><input type="number" min={1} value={goalModal.targetAmount || ''} onChange={e => setGoalModal(s => ({ ...s, targetAmount: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">DEADLINE (optional)</label><input type="date" value={goalModal.deadline} onChange={e => setGoalModal(s => ({ ...s, deadline: e.target.value }))} className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
-            <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">MONTHLY ({CURRENCY})</label><input type="number" min={0} value={goalModal.monthlyContribution || ''} onChange={e => setGoalModal(s => ({ ...s, monthlyContribution: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
+            <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">DEADLINE (optional)</label><input type="date" value={goalModal.deadline} onChange={e => setGoalModal(s => ({ ...s, deadline: e.target.value }))} className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
+            <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">MONTHLY ({CURRENCY})</label><input type="number" min={0} value={goalModal.monthlyContribution || ''} onChange={e => setGoalModal(s => ({ ...s, monthlyContribution: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
           </div>
           {(() => {
             const { deadline, monthlyContribution, targetAmount } = goalModal;
@@ -1332,11 +1332,11 @@ const SavingsTab: React.FC<{
 
       {/* Contribute Modal */}
       <Modal isOpen={contributeModal.open} onClose={closeContribute} title={`Add Money — ${contributeModal.goalName}`}
-        footer={<div className="flex gap-2"><button onClick={closeContribute} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button><button onClick={saveContribution} disabled={contributeModal.amount <= 0} className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Add Money</button></div>}>
+        footer={<div className="flex gap-2"><button onClick={closeContribute} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button><button onClick={saveContribution} disabled={contributeModal.amount <= 0} className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Add Money</button></div>}>
         <div className="space-y-4 p-1">
-          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">AMOUNT ({CURRENCY}) *</label><input type="number" min={1} value={contributeModal.amount || ''} onChange={e => setContributeModal(s => ({ ...s, amount: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" autoFocus /></div>
-          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">NOTE (optional)</label><input type="text" value={contributeModal.note} onChange={e => setContributeModal(s => ({ ...s, note: e.target.value }))} placeholder="e.g. Monthly transfer" className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
-          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">DATE</label><input type="date" value={contributeModal.date} onChange={e => setContributeModal(s => ({ ...s, date: e.target.value }))} className="w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-500" /></div>
+          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">AMOUNT ({CURRENCY}) *</label><input type="number" min={1} value={contributeModal.amount || ''} onChange={e => setContributeModal(s => ({ ...s, amount: parseFloat(e.target.value) || 0 }))} placeholder="0.00" className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" autoFocus /></div>
+          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">NOTE (optional)</label><input type="text" value={contributeModal.note} onChange={e => setContributeModal(s => ({ ...s, note: e.target.value }))} placeholder="e.g. Monthly transfer" className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
+          <div><label className="block text-xs font-semibold text-gray-400 mb-1.5">DATE</label><input type="date" value={contributeModal.date} onChange={e => setContributeModal(s => ({ ...s, date: e.target.value }))} className="w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-green-500" /></div>
         </div>
       </Modal>
     </div>
@@ -1363,14 +1363,14 @@ const TxRow: React.FC<{
         <p className="text-sm font-medium text-gray-200 truncate">{tx.description || getCatLabel(tx.type, tx.category)}</p>
         <div className="flex items-center gap-1.5 mt-0.5">
           <span className="text-xs text-gray-500">{dateFmt}</span>
-          {tx.recurring && <span className="text-[10px] bg-violet-500/15 text-violet-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-violet-500/20"><Repeat size={8} />recurring</span>}
+          {tx.recurring && <span className="text-[10px] bg-green-500/15 text-green-400 px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border border-green-500/20"><Repeat size={8} />recurring</span>}
         </div>
       </div>
       <span className={cn('text-sm font-bold font-mono tabular-nums shrink-0', typeColor)}>
         {tx.type === 'income' ? '+' : '-'}{formatPrice(tx.amount)}
       </span>
       <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(tx)} className="p-1.5 text-gray-500 hover:text-violet-400 hover:bg-violet-500/15 rounded-lg transition-colors cursor-pointer"><Edit3 size={12} /></button>
+        <button onClick={() => onEdit(tx)} className="p-1.5 text-gray-500 hover:text-green-400 hover:bg-green-500/15 rounded-lg transition-colors cursor-pointer"><Edit3 size={12} /></button>
         <button onClick={() => { if (confirm('Delete this entry?')) onDelete(tx.id); }} className="p-1.5 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"><Trash2 size={12} /></button>
       </div>
     </div>

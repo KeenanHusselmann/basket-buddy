@@ -383,7 +383,7 @@ const ItemDetailCards: React.FC<{ items: ItemStat[]; fmt: (n: number) => string 
               <p className="text-xs text-gray-500">{item.categoryName}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-base font-bold font-mono tabular-nums text-violet-400">{fmt(item.totalSpent)}</p>
+              <p className="text-base font-bold font-mono tabular-nums text-green-400">{fmt(item.totalSpent)}</p>
               <p className="text-[10px] text-gray-600">total</p>
             </div>
           </div>
@@ -484,7 +484,7 @@ const TopStoresCard: React.FC<{ stores: StoreStat[]; fmt: (n: number) => string 
 const TripSummaryCard: React.FC<{ data: { avgTrip: number; totalTrips: number; totalGrocery: number }; fmt: (n: number) => string }> = ({ data, fmt }) => (
   <div className="mt-2 grid grid-cols-3 gap-2">
     {([
-      { label: 'Total Trips', value: String(data.totalTrips), icon: <ShoppingCart size={13} className="text-violet-400" /> },
+      { label: 'Total Trips', value: String(data.totalTrips), icon: <ShoppingCart size={13} className="text-green-400" /> },
       { label: 'Total Spent', value: fmt(data.totalGrocery), icon: <DollarSign size={13} className="text-emerald-400" /> },
       { label: 'Avg per Trip', value: fmt(data.avgTrip), icon: <BarChart2 size={13} className="text-amber-400" /> },
     ] as { label: string; value: string; icon: React.ReactNode }[]).map(c => (
@@ -502,7 +502,7 @@ const FinanceSummaryCard: React.FC<{ data: FinanceSummaryData; fmt: (n: number) 
     {([
       { label: 'Income',      value: fmt(data.totalIncome),   grad: 'from-emerald-600/80 to-emerald-700/80', icon: <ArrowUpCircle size={12} className="text-emerald-200" /> },
       { label: 'Expenses',    value: fmt(data.totalExpenses), grad: 'from-rose-600/80 to-rose-700/80',       icon: <ArrowDownCircle size={12} className="text-rose-200" /> },
-      { label: 'Net Savings', value: fmt(data.netSavings),    grad: 'from-violet-600/80 to-violet-700/80',   icon: <PiggyBank size={12} className="text-violet-200" /> },
+      { label: 'Net Savings', value: fmt(data.netSavings),    grad: 'from-green-600/80 to-green-700/80',   icon: <PiggyBank size={12} className="text-green-200" /> },
       { label: 'Savings Rate',value: `${data.savingsRate}%`,  grad: 'from-blue-600/80 to-blue-700/80',       icon: <Target size={12} className="text-blue-200" /> },
     ] as { label: string; value: string; grad: string; icon: React.ReactNode }[]).map(c => (
       <div key={c.label} className={cn('rounded-xl p-3 bg-gradient-to-br', c.grad)}>
@@ -536,10 +536,10 @@ const SavingsGoalsCard: React.FC<{ goals: SavingsGoalData[]; fmt: (n: number) =>
         <div className="p-3">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5"><span className="text-base">{g.emoji}</span><p className="font-medium text-gray-200 text-xs">{g.name}</p></div>
-            <span className={cn('text-xs font-bold', g.percentComplete >= 100 ? 'text-emerald-400' : g.percentComplete >= 75 ? 'text-violet-400' : 'text-gray-400')}>{g.percentComplete}%</span>
+            <span className={cn('text-xs font-bold', g.percentComplete >= 100 ? 'text-emerald-400' : g.percentComplete >= 75 ? 'text-green-400' : 'text-gray-400')}>{g.percentComplete}%</span>
           </div>
           <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden mb-1.5">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(g.percentComplete, 100)}%` }} transition={{ duration: 0.6 }} className={cn('h-full rounded-full', g.percentComplete >= 100 ? 'bg-emerald-500' : 'bg-violet-500')} />
+            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(g.percentComplete, 100)}%` }} transition={{ duration: 0.6 }} className={cn('h-full rounded-full', g.percentComplete >= 100 ? 'bg-emerald-500' : 'bg-green-500')} />
           </div>
           <div className="flex items-center justify-between text-[10px] text-gray-600">
             <span>{fmt(g.saved)} saved</span><span>{fmt(g.targetAmount)} target</span>
@@ -597,7 +597,7 @@ const BudgetStatusCard: React.FC<{ data: BudgetStatusData; fmt: (n: number) => s
 const TypingDots = () => (
   <div className="flex gap-1 items-center h-5 px-1">
     {[0, 0.15, 0.3].map((delay, i) => (
-      <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.65, delay }} className="w-1.5 h-1.5 bg-violet-400 rounded-full" />
+      <motion.div key={i} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.65, delay }} className="w-1.5 h-1.5 bg-green-400 rounded-full" />
     ))}
   </div>
 );
@@ -657,9 +657,9 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
 
   if (completedTrips.length === 0 && transactions.length === 0) {
     return (
-      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-16 text-center">
-        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-violet-500/10 flex items-center justify-center">
-          <Database size={24} className="text-violet-400" />
+      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-16 text-center">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-green-500/10 flex items-center justify-center">
+          <Database size={24} className="text-green-400" />
         </div>
         <h3 className="text-base font-bold text-white mb-1.5">No Data to Explore Yet</h3>
         <p className="text-gray-500 text-sm max-w-xs mx-auto">Complete shopping trips and log transactions to unlock the Data Explorer.</p>
@@ -673,12 +673,12 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
       {/* COMMAND BANNER */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {([
-          { label: 'Data Points',  value: totalDataPoints.toLocaleString(), icon: <Database size={13} className="text-violet-400" />,     accent: 'violet' },
+          { label: 'Data Points',  value: totalDataPoints.toLocaleString(), icon: <Database size={13} className="text-green-400" />,     accent: 'violet' },
           { label: 'Trips',        value: String(completedTrips.length),    icon: <ShoppingCart size={13} className="text-emerald-400" />, accent: 'emerald' },
           { label: 'Unique Items', value: String(itemStats.length),         icon: <Package size={13} className="text-blue-400" />,         accent: 'blue' },
           { label: 'Transactions', value: String(transactions.length),      icon: <Wallet size={13} className="text-amber-400" />,         accent: 'amber' },
         ] as { label: string; value: string; icon: React.ReactNode; accent: string }[]).map(({ label, value, icon, accent }) => (
-          <div key={label} className="bg-gray-900/70 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3 relative overflow-hidden">
+          <div key={label} className="bg-gray-900/70 backdrop-blur-xl rounded-xl border border-green-500/20 p-3 relative overflow-hidden">
             <div className={`absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-${accent}-500/40 to-transparent`} />
             <div className="flex items-center gap-1.5 mb-1.5">{icon}<p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500">{label}</p></div>
             <p className="text-xl font-bold font-mono tabular-nums text-white">{value}</p>
@@ -693,7 +693,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
         <div className="space-y-4">
 
           {/* SEARCH */}
-          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
             <div className="p-4 border-b border-white/[0.04]">
               <div className="relative">
                 <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
@@ -703,7 +703,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
                   value={searchQ}
                   onChange={e => setSearchQ(e.target.value)}
                   placeholder="Search your purchase history — milk, bread, chicken…"
-                  className="w-full pl-10 pr-10 py-2.5 bg-gray-800/60 rounded-xl text-sm text-gray-100 placeholder-gray-500 border border-violet-500/20 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                  className="w-full pl-10 pr-10 py-2.5 bg-gray-800/60 rounded-xl text-sm text-gray-100 placeholder-gray-500 border border-green-500/20 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
                   aria-label="Search grocery items"
                 />
                 {searchQ && (
@@ -758,7 +758,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
           </div>
 
           {/* DATA PANELS */}
-          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
             <div className="flex items-center gap-1 p-3 border-b border-white/[0.04]">
               {([
                 { id: 'items' as PanelTab,      label: 'Top Items',  icon: <TrendingUp size={11} /> },
@@ -768,7 +768,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
                 <button
                   key={tab.id}
                   onClick={() => setPanelTab(tab.id)}
-                  className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer', panelTab === tab.id ? 'bg-violet-600 text-white shadow-md shadow-violet-500/20' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40')}
+                  className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer', panelTab === tab.id ? 'bg-green-600 text-white shadow-md shadow-green-500/20' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/40')}
                 >
                   {tab.icon}{tab.label}
                 </button>
@@ -885,17 +885,17 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
         </div>
 
         {/* RIGHT: chat assistant */}
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden flex flex-col" style={{ height: 'min(700px, 90vh)' }}>
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden flex flex-col" style={{ height: 'min(700px, 90vh)' }}>
 
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] bg-gradient-to-r from-violet-900/25 to-transparent shrink-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shadow-lg shadow-violet-500/25 shrink-0">
+          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] bg-gradient-to-r from-green-900/25 to-transparent shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-lg shadow-green-500/25 shrink-0">
               <Sparkles size={13} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-white text-sm">Budget Assistant</h2>
-                <span className="px-1.5 py-0.5 bg-violet-500/20 text-violet-300 text-[9px] font-bold uppercase tracking-wider rounded-full border border-violet-500/30">AI</span>
+                <span className="px-1.5 py-0.5 bg-green-500/20 text-green-300 text-[9px] font-bold uppercase tracking-wider rounded-full border border-green-500/30">AI</span>
               </div>
               <p className="text-[10px] text-gray-500">All your data in one conversation</p>
             </div>
@@ -907,7 +907,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
           {/* Chips */}
           <div className="px-3 pt-2.5 pb-2 flex gap-1.5 flex-wrap shrink-0">
             {CHIPS.map(chip => (
-              <button key={chip.label} onClick={() => send(chip.query)} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 hover:bg-violet-900/30 border border-violet-500/15 hover:border-violet-500/30 text-violet-300 text-[10px] font-medium rounded-full transition-all cursor-pointer shrink-0">
+              <button key={chip.label} onClick={() => send(chip.query)} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800/60 hover:bg-green-900/30 border border-green-500/15 hover:border-green-500/30 text-green-300 text-[10px] font-medium rounded-full transition-all cursor-pointer shrink-0">
                 {chip.icon}{chip.label}
               </button>
             ))}
@@ -920,11 +920,11 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
                 <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.17 }} className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                   {msg.role === 'assistant' && (
                     <div className="flex items-start gap-2 max-w-full">
-                      <div className="w-6 h-6 rounded-lg bg-violet-900/50 flex items-center justify-center shrink-0 mt-0.5">
-                        <Bot size={11} className="text-violet-400" />
+                      <div className="w-6 h-6 rounded-lg bg-green-900/50 flex items-center justify-center shrink-0 mt-0.5">
+                        <Bot size={11} className="text-green-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="bg-gray-800/40 rounded-xl rounded-tl-sm p-3 border-l-2 border-violet-500/60">
+                        <div className="bg-gray-800/40 rounded-xl rounded-tl-sm p-3 border-l-2 border-green-500/60">
                           <FormattedText text={msg.text} />
                           {msg.insightType === 'item-detail'    && Array.isArray(msg.data)  && <ItemDetailCards items={msg.data as ItemStat[]} fmt={fmt} />}
                           {msg.insightType === 'top-items'      && msg.data                 && <TopItemsCard items={(msg.data as { items: ItemStat[]; metric: 'count' | 'spend' }).items} metric={(msg.data as any).metric} fmt={fmt} />}
@@ -943,7 +943,7 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
                   )}
                   {msg.role === 'user' && (
                     <div className="max-w-[80%]">
-                      <div className="bg-violet-600 text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5">
+                      <div className="bg-green-600 text-white rounded-2xl rounded-tr-sm px-3.5 py-2.5">
                         <p className="text-sm leading-snug">{msg.text}</p>
                       </div>
                       <p className="text-[9px] text-gray-700 mt-0.5 text-right mr-1">{new Date(msg.timestamp).toLocaleTimeString('en-NA', { hour: '2-digit', minute: '2-digit' })}</p>
@@ -953,8 +953,8 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
               ))}
               {thinking && (
                 <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-violet-900/50 flex items-center justify-center shrink-0">
-                    <Bot size={11} className="text-violet-400" />
+                  <div className="w-6 h-6 rounded-lg bg-green-900/50 flex items-center justify-center shrink-0">
+                    <Bot size={11} className="text-green-400" />
                   </div>
                   <div className="bg-gray-800/40 rounded-xl rounded-tl-sm px-3 py-2.5"><TypingDots /></div>
                 </motion.div>
@@ -972,13 +972,13 @@ const DataExplorer: React.FC<DataExplorerProps> = ({
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Ask anything about your data…"
-                className="flex-1 px-3.5 py-2.5 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+                className="flex-1 px-3.5 py-2.5 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
                 aria-label="Ask the data assistant"
               />
               <button
                 onClick={() => send()}
                 disabled={!chatInput.trim() || thinking}
-                className="p-2.5 bg-violet-600 hover:bg-violet-700 disabled:opacity-35 disabled:cursor-not-allowed text-white rounded-xl transition-colors shrink-0 cursor-pointer"
+                className="p-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-35 disabled:cursor-not-allowed text-white rounded-xl transition-colors shrink-0 cursor-pointer"
                 aria-label="Send message"
               >
                 <Send size={14} />

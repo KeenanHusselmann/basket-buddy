@@ -41,7 +41,7 @@ const CLAIM_CATEGORIES: {
   pool: string;
 }[] = [
   { value: 'gp',         label: 'GP Visit',         icon: '\U0001FA7A', color: '#3b82f6', pool: 'professional' },
-  { value: 'specialist', label: 'Specialist',        icon: '\U0001F468\u200D\u2695\uFE0F', color: '#8b5cf6', pool: 'professional' },
+  { value: 'specialist', label: 'Specialist',        icon: '\U0001F468\u200D\u2695\uFE0F', color: '#4ade80', pool: 'professional' },
   { value: 'hospital',   label: 'Hospital',          icon: '\U0001F3E5', color: '#ef4444', pool: 'hospital'     },
   { value: 'pharmacy',   label: 'Pharmacy / Meds',   icon: '\U0001F48A', color: '#10b981', pool: 'pharmacy'     },
   { value: 'dental',     label: 'Dental',            icon: '\U0001F9B7', color: '#f97316', pool: 'dental'       },
@@ -414,7 +414,7 @@ const MedicalAid: React.FC = () => {
                 <span>{formatPrice(plan?.monthlyContribution ?? 0)}/mo \u00b7 {formatPrice(totalContribs)}/yr</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                <Receipt size={12} className="text-violet-400" />
+                <Receipt size={12} className="text-green-400" />
                 <span>{yearClaims.length} claims this year</span>
               </div>
             </div>
@@ -471,9 +471,9 @@ const MedicalAid: React.FC = () => {
             value: formatPrice(totalContribs),
             sub: `${formatPrice(plan?.monthlyContribution ?? 0)} \u00d7 12 months`,
             Icon: Receipt,
-            color: 'text-violet-400',
-            glow: 'from-violet-500/5',
-            border: 'border-violet-500/20',
+            color: 'text-green-400',
+            glow: 'from-green-500/5',
+            border: 'border-green-500/20',
           },
           {
             label: 'Benefits Used',
@@ -616,8 +616,8 @@ const MedicalAid: React.FC = () => {
                 ))}
               </ul>
             </div>
-            <div className="bg-gradient-to-br from-violet-500/5 to-transparent border border-violet-500/20 rounded-2xl p-4">
-              <p className="text-xs font-bold text-violet-400 mb-2 flex items-center gap-1.5">
+            <div className="bg-gradient-to-br from-green-500/5 to-transparent border border-green-500/20 rounded-2xl p-4">
+              <p className="text-xs font-bold text-green-400 mb-2 flex items-center gap-1.5">
                 <Brain size={12} /> Benefit Builder \u2014 N$530/family
               </p>
               <p className="text-xs text-gray-400">
@@ -628,7 +628,7 @@ const MedicalAid: React.FC = () => {
           </div>
 
           {memberStats.length > 0 && (
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Users size={14} className="text-cyan-500" />
                 <h2 className="text-sm font-semibold text-gray-200">Member Claims Summary \u2014 {viewYear}</h2>
@@ -637,7 +637,7 @@ const MedicalAid: React.FC = () => {
                 {memberStats.map((m, i) => {
                   const pct = totalMABenefits > 0 ? (m.claimed / totalMABenefits) * 100 : 0;
                   const initials = m.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
-                  const colors = ['bg-cyan-500/20 text-cyan-400', 'bg-teal-500/20 text-teal-400', 'bg-violet-500/20 text-violet-400'];
+                  const colors = ['bg-cyan-500/20 text-cyan-400', 'bg-teal-500/20 text-teal-400', 'bg-green-500/20 text-green-400'];
                   return (
                     <div key={m.id} className="flex items-center gap-3 p-3 bg-gray-800/30 rounded-xl hover:bg-gray-800/50 transition-colors">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${colors[i % colors.length]}`}>
@@ -815,7 +815,7 @@ const MedicalAid: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap items-center justify-center gap-5 mt-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded bg-violet-400/60 inline-block" />Contribution</span>
+              <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded bg-green-400/60 inline-block" />Contribution</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded bg-green-500 inline-block" />MA Paid</span>
               <span className="flex items-center gap-1.5"><span className="w-3 h-1.5 rounded bg-orange-400 inline-block" />Self-Paid</span>
             </div>
@@ -862,7 +862,7 @@ const MedicalAid: React.FC = () => {
 
             <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-gray-700/40 p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Activity size={14} className="text-violet-500" />
+                <Activity size={14} className="text-green-500" />
                 <h2 className="text-sm font-semibold text-gray-200">Benefit Pool Utilisation</h2>
               </div>
               <div className="space-y-3">

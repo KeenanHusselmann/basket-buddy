@@ -768,7 +768,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     <span className="flex items-center gap-2 text-sm">
                       Synced latest data from cloud.
                       <button
-                        className="underline font-semibold text-violet-500 ml-1"
+                        className="underline font-semibold text-green-500 ml-1"
                         onClick={() => {
                           const backup = localStorage.getItem(PRE_PULL_BACKUP_KEY);
                           if (backup) {

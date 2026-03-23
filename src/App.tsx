@@ -27,8 +27,8 @@ const LoadingScreen: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-950">
     <div className="text-center">
       <div className="relative w-16 h-16 mx-auto mb-4">
-        <div className="absolute inset-0 rounded-full border-4 border-violet-900" />
-        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-violet-500 animate-spin" />
+        <div className="absolute inset-0 rounded-full border-4 border-green-900" />
+        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-green-500 animate-spin" />
       </div>
       <p className="text-gray-400 font-medium">Loading BasketBuddy...</p>
     </div>

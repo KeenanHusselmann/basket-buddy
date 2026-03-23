@@ -47,7 +47,7 @@ const DEFAULT_ITEM_FORM: ItemFormState = {
 };
 
 const inputCls =
-  'w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2.5 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm outline-none transition-all';
+  'w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2.5 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm outline-none transition-all';
 const labelCls = 'block text-xs font-medium text-gray-400 mb-1.5';
 
 // ──────────────────────────────────────────────────────────────
@@ -337,8 +337,8 @@ const ShoppingLists: React.FC = () => {
       <motion.div variants={card} className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 bg-violet-500/10 rounded-xl">
-              <ListChecks size={20} className="text-violet-400" />
+            <div className="p-2 bg-green-500/10 rounded-xl">
+              <ListChecks size={20} className="text-green-400" />
             </div>
             Shopping Lists
           </h1>
@@ -346,7 +346,7 @@ const ShoppingLists: React.FC = () => {
         </div>
         <div className="flex items-center gap-3">
           {/* Month navigator */}
-          <div className="flex items-center gap-1 bg-gray-900/70 backdrop-blur-xl border border-violet-500/20 rounded-xl px-1 py-1">
+          <div className="flex items-center gap-1 bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-xl px-1 py-1">
             <button
               onClick={prevMonth}
               aria-label="Previous month"
@@ -368,7 +368,7 @@ const ShoppingLists: React.FC = () => {
           </div>
           <button
             onClick={() => { setCreateName(''); setCreateOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
           >
             <Plus size={16} /> New List
           </button>
@@ -386,7 +386,7 @@ const ShoppingLists: React.FC = () => {
           <motion.div
             key={label}
             variants={card}
-            className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300 relative overflow-hidden"
+            className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-green-500/40 transition-all duration-300 relative overflow-hidden"
           >
             <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-${color}-500/60 to-transparent`} />
             <div className={`p-2 bg-${color}-500/10 rounded-xl w-fit mb-3`}>
@@ -403,10 +403,10 @@ const ShoppingLists: React.FC = () => {
         /* Empty state */
         <motion.div
           variants={card}
-          className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center"
+          className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center"
         >
-          <div className="w-16 h-16 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <ListChecks size={32} className="text-violet-400" />
+          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <ListChecks size={32} className="text-green-400" />
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">
             No lists for {MONTH_NAMES[viewMonth - 1]} {viewYear}
@@ -417,7 +417,7 @@ const ShoppingLists: React.FC = () => {
           </p>
           <button
             onClick={() => { setCreateName(''); setCreateOpen(true); }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-medium transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors cursor-pointer"
           >
             <Plus size={16} /> Create First List
           </button>
@@ -434,8 +434,8 @@ const ShoppingLists: React.FC = () => {
                 className={cn(
                   'flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer whitespace-nowrap',
                   activeList?.id === list.id
-                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
-                    : 'bg-gray-800/60 text-gray-400 hover:text-gray-200 hover:bg-gray-700/60 border border-violet-500/20',
+                    ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                    : 'bg-gray-800/60 text-gray-400 hover:text-gray-200 hover:bg-gray-700/60 border border-green-500/20',
                 )}
               >
                 {list.name}
@@ -448,15 +448,15 @@ const ShoppingLists: React.FC = () => {
           <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
 
             {/* ── Quick Budget Panel ── */}
-            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden h-fit lg:sticky lg:top-4">
+            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden h-fit lg:sticky lg:top-4">
               {/* Panel header */}
-              <div className="px-4 py-3 border-b border-violet-500/20 flex items-center justify-between relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+              <div className="px-4 py-3 border-b border-green-500/20 flex items-center justify-between relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
                 <div className="flex items-center gap-2">
-                  <BookmarkCheck size={15} className="text-violet-400" />
+                  <BookmarkCheck size={15} className="text-green-400" />
                   <span className="text-sm font-semibold text-gray-200">Quick Budget</span>
                   {quickPinnedIds.size > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-violet-500/20 text-violet-300 rounded-full border border-violet-500/25">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-green-500/20 text-green-300 rounded-full border border-green-500/25">
                       {quickPinnedIds.size}
                     </span>
                   )}
@@ -497,18 +497,18 @@ const ShoppingLists: React.FC = () => {
                     {/* Empty state */}
                     {quickPinnedItems.length === 0 ? (
                       <div className="px-4 py-10 text-center">
-                        <div className="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                          <Bookmark size={18} className="text-violet-500/50" />
+                        <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                          <Bookmark size={18} className="text-green-500/50" />
                         </div>
                         <p className="text-xs font-medium text-gray-500 mb-1">No items pinned yet</p>
                         <p className="text-[11px] text-gray-700 leading-relaxed">
-                          Click the <Bookmark size={10} className="inline text-violet-500/60 mx-0.5" /> on any item in your list to pin it here for a focused budget view.
+                          Click the <Bookmark size={10} className="inline text-green-500/60 mx-0.5" /> on any item in your list to pin it here for a focused budget view.
                         </p>
                       </div>
                     ) : (
                       <div>
                         {/* Pinned item rows */}
-                        <div className="max-h-[50vh] overflow-y-auto divide-y divide-violet-500/8">
+                        <div className="max-h-[50vh] overflow-y-auto divide-y divide-green-500/8">
                           {quickPinnedItems.map((item) => {
                             const cat = categories.find((c) => c.id === item.categoryId);
                             const lineTotal = item.quantity * item.estimatedPrice;
@@ -538,7 +538,7 @@ const ShoppingLists: React.FC = () => {
                                 <button
                                   onClick={() => toggleQuickPin(item.id)}
                                   aria-label="Remove from quick budget"
-                                  className="flex-shrink-0 p-1 text-violet-500 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                                  className="flex-shrink-0 p-1 text-green-500 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
                                 >
                                   <X size={11} />
                                 </button>
@@ -548,7 +548,7 @@ const ShoppingLists: React.FC = () => {
                         </div>
 
                         {/* Running total */}
-                        <div className="px-4 py-3 border-t border-violet-500/15 bg-gray-800/20">
+                        <div className="px-4 py-3 border-t border-green-500/15 bg-gray-800/20">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-[10px] text-gray-600 uppercase tracking-wider font-semibold">Pinned Total</p>
@@ -568,7 +568,7 @@ const ShoppingLists: React.FC = () => {
                                 <motion.div
                                   animate={{ width: `${pct}%` }}
                                   transition={{ duration: 0.4 }}
-                                  className="h-full bg-gradient-to-r from-violet-600 to-emerald-500 rounded-full"
+                                  className="h-full bg-gradient-to-r from-green-600 to-emerald-500 rounded-full"
                                 />
                               </div>
                             );
@@ -586,10 +586,10 @@ const ShoppingLists: React.FC = () => {
             <motion.div
               key={activeList.id}
               variants={card}
-              className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden"
+              className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden"
             >
               {/* List header */}
-              <div className="px-5 py-4 border-b border-violet-500/20">
+              <div className="px-5 py-4 border-b border-green-500/20">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     {/* Inline rename */}
@@ -602,12 +602,12 @@ const ShoppingLists: React.FC = () => {
                             if (e.key === 'Enter') handleRenameList();
                             if (e.key === 'Escape') setEditingListId(null);
                           }}
-                          className="flex-1 min-w-0 bg-gray-800/60 border border-violet-500/20 rounded-lg px-3 py-1.5 text-white text-base font-semibold outline-none focus:ring-2 focus:ring-violet-500"
+                          className="flex-1 min-w-0 bg-gray-800/60 border border-green-500/20 rounded-lg px-3 py-1.5 text-white text-base font-semibold outline-none focus:ring-2 focus:ring-green-500"
                           autoFocus
                         />
                         <button
                           onClick={handleRenameList}
-                          className="p-1.5 bg-violet-600 rounded-lg text-white hover:bg-violet-700 transition-colors cursor-pointer"
+                          className="p-1.5 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-colors cursor-pointer"
                         >
                           <Check size={14} />
                         </button>
@@ -638,20 +638,20 @@ const ShoppingLists: React.FC = () => {
                     <button
                       onClick={() => { setRenameName(activeList.name); setEditingListId(activeList.id); }}
                       aria-label="Rename list"
-                      className="p-2 bg-gray-800/60 hover:bg-violet-500/10 text-gray-400 hover:text-violet-400 rounded-xl transition-colors cursor-pointer border border-violet-500/20"
+                      className="p-2 bg-gray-800/60 hover:bg-green-500/10 text-gray-400 hover:text-green-400 rounded-xl transition-colors cursor-pointer border border-green-500/20"
                     >
                       <Edit2 size={14} />
                     </button>
                     <button
                       onClick={() => handleDeleteList(activeList.id)}
                       aria-label="Delete list"
-                      className="p-2 bg-gray-800/60 hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 rounded-xl transition-colors cursor-pointer border border-violet-500/20"
+                      className="p-2 bg-gray-800/60 hover:bg-rose-500/10 text-gray-400 hover:text-rose-400 rounded-xl transition-colors cursor-pointer border border-green-500/20"
                     >
                       <Trash2 size={14} />
                     </button>
                     <button
                       onClick={openAddItem}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
                     >
                       <Plus size={14} /> Add Item
                     </button>
@@ -670,7 +670,7 @@ const ShoppingLists: React.FC = () => {
                         initial={{ width: 0 }}
                         animate={{ width: `${activePct}%` }}
                         transition={{ duration: 0.7, ease: 'easeOut' }}
-                        className="h-full bg-gradient-to-r from-violet-600 to-violet-400 rounded-full"
+                        className="h-full bg-gradient-to-r from-green-600 to-green-400 rounded-full"
                       />
                     </div>
                   </div>
@@ -684,7 +684,7 @@ const ShoppingLists: React.FC = () => {
                   <p className="text-gray-500 text-sm mb-4">No items yet. Add your first bulk item.</p>
                   <button
                     onClick={openAddItem}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
                   >
                     <Plus size={14} /> Add First Item
                   </button>
@@ -692,7 +692,7 @@ const ShoppingLists: React.FC = () => {
               ) : (
                 <div>
                   {groupedItems.map(({ catId, catName, catIcon, catColor, items: catItems, catTotal, budgetedAmount, hasBudget }) => (
-                    <div key={catId} className="border-b border-violet-500/10 last:border-0">
+                    <div key={catId} className="border-b border-green-500/10 last:border-0">
                       {/* Category header */}
                       <button
                         type="button"
@@ -785,8 +785,8 @@ const ShoppingLists: React.FC = () => {
                               aria-label={item.checked ? 'Uncheck item' : 'Check item'}
                               className="flex-shrink-0 w-5 h-5 rounded-md border-2 transition-all cursor-pointer flex items-center justify-center"
                               style={{
-                                borderColor: item.checked ? '#8b5cf6' : '#4b5563',
-                                backgroundColor: item.checked ? '#8b5cf6' : 'transparent',
+                                borderColor: item.checked ? '#4ade80' : '#4b5563',
+                                backgroundColor: item.checked ? '#4ade80' : 'transparent',
                               }}
                             >
                               {item.checked && <Check size={11} className="text-white" />}
@@ -835,8 +835,8 @@ const ShoppingLists: React.FC = () => {
                                 className={cn(
                                   'p-1.5 rounded-lg transition-colors cursor-pointer',
                                   quickPinnedIds.has(item.id)
-                                    ? 'text-violet-400 bg-violet-500/15 hover:bg-violet-500/25'
-                                    : 'text-gray-500 hover:text-violet-400 hover:bg-violet-500/10',
+                                    ? 'text-green-400 bg-green-500/15 hover:bg-green-500/25'
+                                    : 'text-gray-500 hover:text-green-400 hover:bg-green-500/10',
                                 )}
                               >
                                 {quickPinnedIds.has(item.id)
@@ -846,7 +846,7 @@ const ShoppingLists: React.FC = () => {
                               <button
                                 onClick={() => handleEditItem(item)}
                                 aria-label="Edit item"
-                                className="p-1.5 text-gray-500 hover:text-violet-400 rounded-lg hover:bg-violet-500/10 transition-colors cursor-pointer"
+                                className="p-1.5 text-gray-500 hover:text-green-400 rounded-lg hover:bg-green-500/10 transition-colors cursor-pointer"
                               >
                                 <Edit2 size={13} />
                               </button>
@@ -868,7 +868,7 @@ const ShoppingLists: React.FC = () => {
                   ))}
 
                   {/* Footer totals */}
-                  <div className="px-5 py-4 flex items-center justify-between bg-gray-800/20 border-t border-violet-500/10">
+                  <div className="px-5 py-4 flex items-center justify-between bg-gray-800/20 border-t border-green-500/10">
                     <span className="text-sm text-gray-500">
                       {activeList.items.filter((i) => i.checked).length} of {activeList.items.length} items checked
                     </span>
@@ -882,7 +882,7 @@ const ShoppingLists: React.FC = () => {
 
                   {/* ── Category budget overview bars ── */}
                   {activeBudget && groupedItems.some((g) => g.hasBudget) && (
-                    <div className="border-t border-violet-500/20 px-5 py-4 space-y-3 bg-gray-900/40">
+                    <div className="border-t border-green-500/20 px-5 py-4 space-y-3 bg-gray-900/40">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                         Budget Overview — {MONTH_NAMES[viewMonth - 1]} {viewYear}
                       </p>
@@ -922,7 +922,7 @@ const ShoppingLists: React.FC = () => {
                                     ? 'bg-gradient-to-r from-rose-600 to-rose-400'
                                     : pct > 80
                                     ? 'bg-gradient-to-r from-amber-600 to-amber-400'
-                                    : 'bg-gradient-to-r from-violet-600 to-emerald-500',
+                                    : 'bg-gradient-to-r from-green-600 to-emerald-500',
                                 )}
                               />
                             </div>
@@ -941,7 +941,7 @@ const ShoppingLists: React.FC = () => {
                         if (totalBudgeted === 0) return null;
                         const over = totalListed > totalBudgeted;
                         return (
-                          <div className="pt-2 border-t border-violet-500/10 flex items-center justify-between">
+                          <div className="pt-2 border-t border-green-500/10 flex items-center justify-between">
                             <span className="text-xs text-gray-500">Total (budgeted categories)</span>
                             <span className="flex items-center gap-2 text-sm font-bold font-mono tabular-nums">
                               <span className={over ? 'text-rose-400' : 'text-emerald-400'}>
@@ -1013,14 +1013,14 @@ const ShoppingLists: React.FC = () => {
           <div className="flex justify-end gap-3 pt-1">
             <button
               onClick={() => { setCreateOpen(false); setCreateName(''); }}
-              className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-violet-500/20"
+              className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-green-500/20"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateList}
               disabled={!createName.trim()}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Create List
             </button>
@@ -1058,7 +1058,7 @@ const ShoppingLists: React.FC = () => {
 
             {/* Autocomplete dropdown */}
             {showSuggestions && searchResults.length > 0 && (
-              <div className="mt-1 bg-gray-800/95 border border-violet-500/20 rounded-xl overflow-hidden shadow-xl">
+              <div className="mt-1 bg-gray-800/95 border border-green-500/20 rounded-xl overflow-hidden shadow-xl">
                 {searchResults.map((si) => {
                   const cat = categories.find((c) => c.id === si.categoryId);
                   return (
@@ -1066,7 +1066,7 @@ const ShoppingLists: React.FC = () => {
                       key={si.id}
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); handleSelectLibraryItem(si); }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-violet-500/10 transition-colors text-left cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-green-500/10 transition-colors text-left cursor-pointer"
                     >
                       <span className="text-base">{cat?.icon ?? '📦'}</span>
                       <div className="flex-1 min-w-0">
@@ -1145,14 +1145,14 @@ const ShoppingLists: React.FC = () => {
           <div className="flex justify-end gap-3 pt-1">
             <button
               onClick={closeItemModal}
-              className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-violet-500/20"
+              className="px-4 py-2 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-green-500/20"
             >
               Cancel
             </button>
             <button
               onClick={handleAddOrUpdateItem}
               disabled={!itemForm.itemName.trim()}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {editingItemId ? 'Update Item' : 'Add Item'}
             </button>

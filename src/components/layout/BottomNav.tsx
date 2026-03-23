@@ -55,7 +55,7 @@ const BottomNav: React.FC = () => {
             transition={{ type: 'spring', stiffness: 400, damping: 40 }}
             className={cn(
               'fixed bottom-0 left-0 right-0 z-50 lg:hidden',
-              'bg-gray-900/95 backdrop-blur-2xl border-t border-violet-500/25',
+              'bg-gray-900/95 backdrop-blur-2xl border-t border-green-500/25',
               'rounded-t-2xl pb-safe'
             )}
             style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
@@ -91,8 +91,8 @@ const BottomNav: React.FC = () => {
                     className={cn(
                       'flex flex-col items-center gap-2 p-4 rounded-2xl transition-all duration-200',
                       isActive
-                        ? 'bg-violet-600/20 border border-violet-500/30 text-violet-300'
-                        : 'bg-white/5 border border-violet-500/20 text-gray-400 hover:bg-white/10 hover:text-gray-200'
+                        ? 'bg-green-600/20 border border-green-500/30 text-green-300'
+                        : 'bg-white/5 border border-green-500/20 text-gray-400 hover:bg-white/10 hover:text-gray-200'
                     )}
                   >
                     <Icon size={22} />
@@ -108,7 +108,7 @@ const BottomNav: React.FC = () => {
       {/* Bottom Nav Bar */}
       <nav className={cn(
         'fixed bottom-0 left-0 right-0 z-40 lg:hidden',
-        'bg-gray-950/90 backdrop-blur-2xl border-t border-violet-500/20',
+        'bg-gray-950/90 backdrop-blur-2xl border-t border-green-500/20',
         'flex items-stretch'
       )}
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -127,19 +127,19 @@ const BottomNav: React.FC = () => {
             >
               <div className={cn(
                 'flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200',
-                isActive ? 'text-violet-400' : 'text-gray-500 hover:text-gray-300'
+                isActive ? 'text-green-400' : 'text-gray-500 hover:text-gray-300'
               )}>
                 <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
                 <span className={cn(
                   'text-[10px] font-medium leading-none',
-                  isActive ? 'text-violet-400' : 'text-gray-500'
+                  isActive ? 'text-green-400' : 'text-gray-500'
                 )}>
                   {item.label}
                 </span>
                 {isActive && (
                   <motion.div
                     layoutId="bottom-nav-dot"
-                    className="absolute -bottom-px left-0 right-0 h-0.5 bg-violet-500 rounded-t-full"
+                    className="absolute -bottom-px left-0 right-0 h-0.5 bg-green-500 rounded-t-full"
                     transition={{ type: 'spring', stiffness: 600, damping: 40 }}
                   />
                 )}
@@ -155,12 +155,12 @@ const BottomNav: React.FC = () => {
         >
           <div className={cn(
             'flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200',
-            isMoreActive ? 'text-violet-400' : 'text-gray-500 hover:text-gray-300'
+            isMoreActive ? 'text-green-400' : 'text-gray-500 hover:text-gray-300'
           )}>
             <MoreHorizontal size={20} strokeWidth={isMoreActive ? 2.5 : 1.8} />
             <span className={cn(
               'text-[10px] font-medium leading-none',
-              isMoreActive ? 'text-violet-400' : 'text-gray-500'
+              isMoreActive ? 'text-green-400' : 'text-gray-500'
             )}>
               More
             </span>

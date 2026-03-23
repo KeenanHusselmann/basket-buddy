@@ -106,7 +106,7 @@ const BudgetGauge: React.FC<{
               <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">{label}</p>
               <p className={cn('text-sm font-bold font-mono tabular-nums', cls)}>{value}</p>
             </div>
-            {i < arr.length - 1 && <div className="w-px h-8 bg-violet-500/20" />}
+            {i < arr.length - 1 && <div className="w-px h-8 bg-green-500/20" />}
           </React.Fragment>
         ))}
       </div>
@@ -433,7 +433,7 @@ const BudgetPlanner: React.FC = () => {
     if (!entries.length) return [{ name: 'No allocation', value: 1, color: '#374151' }];
     return entries.map(([catId, v]) => {
       const cat = orderedCategories.find(c => c.id === catId);
-      return { name: cat?.name ?? catId, value: parseFloat(v), color: cat?.color ?? '#8b5cf6' };
+      return { name: cat?.name ?? catId, value: parseFloat(v), color: cat?.color ?? '#4ade80' };
     });
   }, [catBudgets, orderedCategories]);
 
@@ -470,9 +470,9 @@ const BudgetPlanner: React.FC = () => {
         <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" aria-label="Previous month">
           <ChevronLeft size={18} />
         </button>
-        <div className="bg-gray-900/70 backdrop-blur-xl border border-violet-500/20 rounded-2xl px-8 py-3 text-center min-w-[210px]">
+        <div className="bg-gray-900/70 backdrop-blur-xl border border-green-500/20 rounded-2xl px-8 py-3 text-center min-w-[210px]">
           <p className="text-base font-bold text-gray-100">{MONTHS[viewMonth - 1]} {viewYear}</p>
-          {isCurrentMonth && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-violet-400 mt-0.5"><span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />Current Month</span>}
+          {isCurrentMonth && <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-green-400 mt-0.5"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Current Month</span>}
         </div>
         <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer" aria-label="Next month">
           <ChevronRight size={18} />
@@ -480,7 +480,7 @@ const BudgetPlanner: React.FC = () => {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-1 bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-1.5">
+      <div className="flex gap-1 bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-green-500/20 p-1.5">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -504,7 +504,7 @@ const BudgetPlanner: React.FC = () => {
             <div className="space-y-5">
               {!currentBudget ? (
                 /* No budget state */
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
                     <Wallet size={26} className="text-emerald-400" />
                   </div>
@@ -524,7 +524,7 @@ const BudgetPlanner: React.FC = () => {
               ) : (
                 <>
                   {/* Gauge card */}
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-6 relative overflow-hidden">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-6 relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
                     <BudgetGauge pct={budgetPct} spent={totalSpent} budget={budgetTotal} remaining={remaining} />
 
@@ -532,14 +532,14 @@ const BudgetPlanner: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-white/[0.04]">
                       <div className="bg-gray-800/40 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
-                          <ShoppingCart size={11} className="text-violet-400" />
+                          <ShoppingCart size={11} className="text-green-400" />
                           <span className="text-[10px] text-gray-500 uppercase tracking-wider">Trips</span>
                         </div>
                         <p className="text-sm font-bold font-mono text-gray-100">{monthTrips.length}</p>
                       </div>
                       <div className="bg-gray-800/40 rounded-xl p-3 text-center">
                         <div className="flex items-center justify-center gap-1 mb-1">
-                          <Calendar size={11} className="text-violet-400" />
+                          <Calendar size={11} className="text-green-400" />
                           <span className="text-[10px] text-gray-500 uppercase tracking-wider">{daysLeftInMonth > 0 ? 'Daily Rate' : 'Avg/day'}</span>
                         </div>
                         <p className="text-sm font-bold font-mono text-gray-100">
@@ -566,7 +566,7 @@ const BudgetPlanner: React.FC = () => {
                     const hasAnyCategories = (currentBudget?.categoryBudgets.length ?? 0) > 0 || unbudgetedWithItems.length > 0;
                     if (!hasAnyCategories) return null;
                     return (
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                     <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between">
                       <h2 className="text-sm font-semibold text-gray-200">Category Breakdown</h2>
                       <span className="text-xs text-gray-500">
@@ -646,7 +646,7 @@ const BudgetPlanner: React.FC = () => {
                                   {catalogueEst > 0 && !spent && <span className="text-xs font-mono text-gray-600">{formatPrice(catalogueEst)} est.</span>}
                                   <button
                                     onClick={openBudgetTab}
-                                    className="text-[10px] px-2 py-0.5 rounded-lg bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors cursor-pointer"
+                                    className="text-[10px] px-2 py-0.5 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors cursor-pointer"
                                   >Set budget</button>
                                 </div>
                               </div>
@@ -678,7 +678,7 @@ const BudgetPlanner: React.FC = () => {
                   })()}
 
                   {/* 6-month trend chart */}
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                     <h2 className="text-sm font-semibold text-gray-200 mb-4 flex items-center gap-2">
                       <BarChart3 size={14} className="text-emerald-400" />6-Month Trend
                     </h2>
@@ -693,7 +693,7 @@ const BudgetPlanner: React.FC = () => {
                         <Bar dataKey="spent"  name="Spent"  radius={[3, 3, 0, 0]}>
                           {monthHistory.map((entry, i) => (
                             <Cell key={i} fill={
-                              entry.month === viewMonth && entry.year === viewYear ? '#8b5cf6' :
+                              entry.month === viewMonth && entry.year === viewYear ? '#4ade80' :
                               entry.budget > 0 && entry.spent > entry.budget ? '#f43f5e' : '#10b981'
                             } />
                           ))}
@@ -701,7 +701,7 @@ const BudgetPlanner: React.FC = () => {
                       </BarChart>
                     </ResponsiveContainer>
                     <div className="flex items-center gap-5 mt-3 justify-center">
-                      {[['#374151', 'Budget'], ['#10b981', 'Under budget'], ['#f43f5e', 'Over budget'], ['#8b5cf6', 'Current']].map(([color, label]) => (
+                      {[['#374151', 'Budget'], ['#10b981', 'Under budget'], ['#f43f5e', 'Over budget'], ['#4ade80', 'Current']].map(([color, label]) => (
                         <div key={label} className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />
                           <span className="text-[10px] text-gray-500">{label}</span>
@@ -719,14 +719,14 @@ const BudgetPlanner: React.FC = () => {
             <form onSubmit={saveBudget} className="space-y-4">
 
               {/* Smart fill strip */}
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-4">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5">
-                  <Sparkles size={10} className="text-violet-400" />Smart Fill
+                  <Sparkles size={10} className="text-green-400" />Smart Fill
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" disabled={Object.keys(smartFillAvg).length === 0}
                     onClick={() => applySmartFill('avg3')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/15 hover:bg-violet-500/25 border border-violet-500/25 text-violet-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-30">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/15 hover:bg-green-500/25 border border-green-500/25 text-green-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-30">
                     <BarChart3 size={11} />3-Month Avg + 10%
                   </button>
                   <button type="button" disabled={lastMonthData.spent === 0}
@@ -741,7 +741,7 @@ const BudgetPlanner: React.FC = () => {
                   </button>
                   <button type="button"
                     onClick={() => { setCatBudgets({}); setTotalInput(''); setEditDirty(false); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800/60 hover:bg-gray-700/60 border border-violet-500/15 text-gray-400 rounded-xl text-xs font-semibold transition-colors cursor-pointer">
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800/60 hover:bg-gray-700/60 border border-green-500/15 text-gray-400 rounded-xl text-xs font-semibold transition-colors cursor-pointer">
                     Clear All
                   </button>
                 </div>
@@ -751,7 +751,7 @@ const BudgetPlanner: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
                 {/* Live donut chart */}
-                <div className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 flex flex-col items-center justify-center min-h-[280px]">
+                <div className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 flex flex-col items-center justify-center min-h-[280px]">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Allocation Preview</p>
                   {catTotal > 0 ? (
                     <>
@@ -791,7 +791,7 @@ const BudgetPlanner: React.FC = () => {
                 </div>
 
                 {/* Category inputs */}
-                <div className="lg:col-span-3 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                <div className="lg:col-span-3 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                   <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Category Budgets</p>
@@ -830,7 +830,7 @@ const BudgetPlanner: React.FC = () => {
                               onBlur={() => setSelectedCat(null)}
                               className={cn(
                                 'w-full pl-7 pr-2 py-1.5 bg-gray-800/60 border rounded-lg text-xs text-right text-gray-200 outline-none focus:ring-1 focus:ring-emerald-500 transition-all',
-                                budgetVal > 0 && spent > budgetVal ? 'border-rose-500/40' : 'border-violet-500/20',
+                                budgetVal > 0 && spent > budgetVal ? 'border-rose-500/40' : 'border-green-500/20',
                               )}
                             />
                           </div>
@@ -867,7 +867,7 @@ const BudgetPlanner: React.FC = () => {
                                   onBlur={() => setSelectedCat(null)}
                                   className={cn(
                                     'w-full pl-7 pr-2 py-1.5 bg-gray-800/60 border rounded-lg text-xs text-right text-gray-200 outline-none focus:ring-1 focus:ring-emerald-500 transition-all',
-                                    budgetVal > 0 && spent > budgetVal ? 'border-rose-500/40' : 'border-violet-500/20',
+                                    budgetVal > 0 && spent > budgetVal ? 'border-rose-500/40' : 'border-green-500/20',
                                   )}
                                 />
                               </div>
@@ -881,7 +881,7 @@ const BudgetPlanner: React.FC = () => {
               </div>
 
               {/* Total + status */}
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                 <div className="flex items-center gap-3 px-5 py-3.5 border-b border-white/[0.04]">
                   <span className="text-sm text-gray-400 flex-1">Category Total <span className="text-xs text-gray-600">(auto)</span></span>
                   <span className="text-base font-bold font-mono text-gray-100 tabular-nums">{formatPrice(catTotal)}</span>
@@ -895,7 +895,7 @@ const BudgetPlanner: React.FC = () => {
                       value={totalInput}
                       onChange={e => { setTotalInput(e.target.value); setEditDirty(true); }}
                       placeholder={catTotal > 0 ? catTotal.toFixed(2) : 'e.g. 5000.00'}
-                      className="w-full pl-9 pr-3 py-2 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-right font-semibold text-gray-200 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                      className="w-full pl-9 pr-3 py-2 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-right font-semibold text-gray-200 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                     />
                   </div>
                 </div>
@@ -949,7 +949,7 @@ const BudgetPlanner: React.FC = () => {
               <div className="flex gap-3">
                 <button type="button"
                   onClick={() => { initEditState(); setActiveTab('overview'); }}
-                  className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">
+                  className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">
                   Cancel
                 </button>
                 <button type="submit" disabled={effectiveBudget <= 0}
@@ -966,7 +966,7 @@ const BudgetPlanner: React.FC = () => {
 
               {/* Budget health score */}
               {currentBudget && (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 relative overflow-hidden">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 relative overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
                   <div className="flex items-end justify-between gap-4">
                     <div>
@@ -1029,7 +1029,7 @@ const BudgetPlanner: React.FC = () => {
 
               {/* Personalized insight cards */}
               {insights.length === 0 ? (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
                   <Sparkles size={24} className="mx-auto text-gray-700 mb-2" />
                   <p className="text-sm text-gray-500">No insights yet — spend more this month or set a budget to see personalised recommendations.</p>
                 </div>
@@ -1040,11 +1040,11 @@ const BudgetPlanner: React.FC = () => {
                       info:    'bg-blue-500/8 border-blue-500/20',
                       warning: 'bg-amber-500/8 border-amber-500/20',
                       success: 'bg-emerald-500/8 border-emerald-500/20',
-                      tip:     'bg-violet-500/8 border-violet-500/20',
+                      tip:     'bg-green-500/8 border-green-500/20',
                     };
                     const IconNode = () => {
                       switch (insight.icon) {
-                        case 'sparkles':   return <Sparkles    size={14} className="text-violet-400" />;
+                        case 'sparkles':   return <Sparkles    size={14} className="text-green-400" />;
                         case 'flame':      return <Flame       size={14} className="text-orange-400" />;
                         case 'check':      return <CheckCircle2 size={14} className="text-emerald-400" />;
                         case 'alert':      return <AlertTriangle size={14} className="text-amber-400" />;
@@ -1076,10 +1076,10 @@ const BudgetPlanner: React.FC = () => {
               )}
 
               {/* ── Scenario Simulator ──────────────────────── */}
-              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+              <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                 <div className="px-5 py-4 border-b border-white/[0.04]">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <Sliders size={14} className="text-violet-400" />
+                    <Sliders size={14} className="text-green-400" />
                     <h2 className="text-sm font-semibold text-gray-200">What-If Scenario</h2>
                   </div>
                   <p className="text-xs text-gray-500">Slide to explore how a different budget would change your position.</p>
@@ -1092,7 +1092,7 @@ const BudgetPlanner: React.FC = () => {
                       <button key={p.val} type="button"
                         onClick={() => setScenarioPct(p.val)}
                         className={cn('px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer',
-                          scenarioPct === p.val ? 'bg-violet-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200 border border-violet-500/15'
+                          scenarioPct === p.val ? 'bg-green-600 text-white' : 'bg-gray-800/60 text-gray-400 hover:text-gray-200 border border-green-500/15'
                         )}>
                         {p.label}
                       </button>
@@ -1110,7 +1110,7 @@ const BudgetPlanner: React.FC = () => {
                     <input
                       type="range" min={-30} max={30} step={5} value={scenarioPct}
                       onChange={e => setScenarioPct(parseInt(e.target.value))}
-                      className="w-full accent-violet-600 cursor-pointer"
+                      className="w-full accent-green-600 cursor-pointer"
                     />
                     <div className="flex justify-between text-[10px] text-gray-600">
                       <span>−30% (tight)</span><span>0%</span><span>+30% (generous)</span>
@@ -1166,7 +1166,7 @@ const BudgetPlanner: React.FC = () => {
 
               {/* Monthly history table */}
               {monthHistory.some(h => h.spent > 0 || h.budget > 0) && (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                   <div className="px-5 py-4 border-b border-white/[0.04]">
                     <h2 className="text-sm font-semibold text-gray-200">Monthly History</h2>
                   </div>
@@ -1186,7 +1186,7 @@ const BudgetPlanner: React.FC = () => {
                           const c   = pct === null ? '#9ca3af' : pct >= 100 ? '#f43f5e' : pct >= 85 ? '#f97316' : '#10b981';
                           const isView = h.month === viewMonth && h.year === viewYear;
                           return (
-                            <tr key={idx} className={cn('transition-colors', isView ? 'bg-violet-500/8' : 'hover:bg-gray-800/20')}>
+                            <tr key={idx} className={cn('transition-colors', isView ? 'bg-green-500/8' : 'hover:bg-gray-800/20')}>
                               <td className="px-5 py-2.5 font-medium text-gray-300">
                                 {h.label}{h.year !== now.getFullYear() ? ` ${h.year}` : ''}{isView ? ' ← now' : ''}
                               </td>

@@ -26,7 +26,7 @@ const FUEL_TYPES: { value: FuelType; label: string; shortLabel: string; color: s
   { value: 'petrol-93', label: 'Petrol 93', shortLabel: 'P93', color: '#ef4444', bg: 'bg-red-500/15 text-red-300' },
   { value: 'petrol-95', label: 'Petrol 95', shortLabel: 'P95', color: '#f97316', bg: 'bg-orange-500/15 text-orange-300' },
   { value: 'diesel',    label: 'Diesel',    shortLabel: 'DSL', color: '#3b82f6', bg: 'bg-blue-500/15 text-blue-300' },
-  { value: 'other',     label: 'Other',     shortLabel: 'OTH', color: '#8b5cf6', bg: 'bg-violet-500/15 text-violet-300' },
+  { value: 'other',     label: 'Other',     shortLabel: 'OTH', color: '#4ade80', bg: 'bg-green-500/15 text-green-300' },
 ];
 const ftConf = (t: FuelType) => FUEL_TYPES.find(f => f.value === t) ?? FUEL_TYPES[3];
 
@@ -343,12 +343,12 @@ const FuelPage: React.FC = () => {
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Date *</label>
                   <input type="date" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
+                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Fuel Type *</label>
                   <select value={form.fuelType} onChange={e => setForm({ ...form, fuelType: e.target.value as FuelType })}
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all">
+                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all">
                     {FUEL_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </div>
@@ -362,7 +362,7 @@ const FuelPage: React.FC = () => {
                   <input type="text" required value={form.stationName} onChange={e => setForm({ ...form, stationName: e.target.value })}
                     placeholder="e.g. Engen Main St, Total CBD…"
                     list="stations-datalist"
-                    className="w-full pl-9 pr-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
                   <datalist id="stations-datalist">
                     {stationStats.map(s => <option key={s.name} value={s.name} />)}
                   </datalist>
@@ -391,7 +391,7 @@ const FuelPage: React.FC = () => {
                         else
                           setForm(f => ({ ...f, [key]: val }));
                       }}
-                      className="w-full px-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-right text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
+                      className="w-full px-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-right text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
                   </div>
                 ))}
               </div>
@@ -402,20 +402,20 @@ const FuelPage: React.FC = () => {
                   <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Odometer (km)</label>
                   <input type="number" min="0" value={form.odometer} onChange={e => setForm({ ...form, odometer: e.target.value })}
                     placeholder="Optional — enables efficiency"
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
+                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notes</label>
                   <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
                     placeholder="Optional"
-                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
+                    className="w-full px-3 py-2.5 bg-gray-800/50 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 transition-all" />
                 </div>
               </div>
 
               {/* Tip: odometer */}
               {!form.odometer && (
                 <p className="text-[10px] text-gray-600 flex items-center gap-1.5">
-                  <Gauge size={10} className="text-violet-400" />
+                  <Gauge size={10} className="text-green-400" />
                   Adding odometer readings unlocks km/L efficiency tracking in the Efficiency tab.
                 </p>
               )}
@@ -423,7 +423,7 @@ const FuelPage: React.FC = () => {
               {/* Actions */}
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={closeForm}
-                  className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">
+                  className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">
                   Cancel
                 </button>
                 <button type="submit"
@@ -460,7 +460,7 @@ const FuelPage: React.FC = () => {
       </div>
 
       {/* ── KPI summary strip ───────────────────────────── */}
-      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5 relative overflow-hidden">
+      <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 relative overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Chip
@@ -489,7 +489,7 @@ const FuelPage: React.FC = () => {
             label="YTD Cost"
             value={ytdCost > 0 ? formatPrice(ytdCost) : '—'}
             sub={`${now.getFullYear()} total`}
-            cls="text-violet-400"
+            cls="text-green-400"
           />
         </div>
 
@@ -516,7 +516,7 @@ const FuelPage: React.FC = () => {
       </div>
 
       {/* ── Tabs ────────────────────────────────────────── */}
-      <div className="flex gap-1 bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-1.5">
+      <div className="flex gap-1 bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-green-500/20 p-1.5">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button key={id}
             onClick={() => { setActiveTab(id); if (id !== 'fillups') closeForm(); }}
@@ -540,7 +540,7 @@ const FuelPage: React.FC = () => {
           {activeTab === 'overview' && (
             <div className="space-y-5">
               {fuelFillups.length === 0 ? (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-16 text-center">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-16 text-center">
                   <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
                     <FuelIcon size={26} className="text-amber-400" />
                   </div>
@@ -553,7 +553,7 @@ const FuelPage: React.FC = () => {
               ) : (
                 <>
                   {/* 6-month bar chart */}
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                     <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 mb-4">
                       <BarChart3 size={14} className="text-amber-400" />6-Month Cost History
                     </h2>
@@ -575,7 +575,7 @@ const FuelPage: React.FC = () => {
 
                   {/* Price/L trend */}
                   {priceTrendData.length > 2 && (
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                       <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
                           <TrendingUp size={14} className="text-amber-400" />Price per Litre — Trend
@@ -604,7 +604,7 @@ const FuelPage: React.FC = () => {
 
                   {/* Station snapshot */}
                   {stationStats.length > 0 && (
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                       <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between">
                         <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
                           <MapPin size={14} className="text-amber-400" />Station Snapshot
@@ -651,7 +651,7 @@ const FuelPage: React.FC = () => {
             <div className="space-y-4">
 
               {/* Month navigator */}
-              <div className="flex items-center justify-between bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 px-4 py-3">
+              <div className="flex items-center justify-between bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 px-4 py-3">
                 <button onClick={prevMonth} aria-label="Previous month"
                   className="p-2 rounded-xl hover:bg-gray-800/60 text-gray-400 hover:text-gray-200 transition-colors cursor-pointer">
                   <ChevronLeft size={18} />
@@ -673,7 +673,7 @@ const FuelPage: React.FC = () => {
 
               {/* Fill-up list */}
               {monthFillups.length === 0 ? (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
                   <FuelIcon size={26} className="mx-auto text-gray-700 mb-3" />
                   <p className="text-sm text-gray-500 mb-4">No fill-ups for {MONTHS_FULL[viewMonth]}</p>
                   {!showForm && (
@@ -684,7 +684,7 @@ const FuelPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                   {/* Table header (sm+) */}
                   <div className="hidden sm:grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-5 py-2.5 bg-gray-800/30 text-[10px] font-bold uppercase tracking-widest text-gray-500 border-b border-white/[0.04]">
                     <span>Station / Type</span>
@@ -769,7 +769,7 @@ const FuelPage: React.FC = () => {
                   label="Avg km/L"
                   value={avgKmPerL > 0 ? `${avgKmPerL.toFixed(1)} km/L` : '—'}
                   sub={avgKmPerL > 0 ? `${efficiencyRows.length} readings` : 'Add odometer to track'}
-                  cls="text-violet-400"
+                  cls="text-green-400"
                 />
                 <Chip
                   icon={<Activity size={11} />}
@@ -795,9 +795,9 @@ const FuelPage: React.FC = () => {
               </div>
 
               {efficiencyRows.length === 0 ? (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 flex items-center gap-5">
-                  <div className="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center shrink-0">
-                    <Gauge size={22} className="text-violet-400" />
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center shrink-0">
+                    <Gauge size={22} className="text-green-400" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-gray-300 mb-1">Odometer readings needed</p>
@@ -811,36 +811,36 @@ const FuelPage: React.FC = () => {
                 <>
                   {/* km/L chart */}
                   {efficiencyChartData.length > 1 && (
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                       <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2 mb-4">
-                        <Gauge size={14} className="text-violet-400" />Fuel Efficiency Trend
+                        <Gauge size={14} className="text-green-400" />Fuel Efficiency Trend
                         <span className="ml-auto text-xs font-normal text-gray-600">Avg: {avgKmPerL.toFixed(1)} km/L</span>
                       </h2>
                       <ResponsiveContainer width="100%" height={180}>
                         <AreaChart data={efficiencyChartData}>
                           <defs>
                             <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%"  stopColor="#8b5cf6" stopOpacity={0.25} />
-                              <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                              <stop offset="5%"  stopColor="#4ade80" stopOpacity={0.25} />
+                              <stop offset="95%" stopColor="#4ade80" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
                           <XAxis dataKey="date" stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                           <YAxis stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} width={36} domain={['auto', 'auto']} />
                           <Tooltip content={<DarkTip />} />
-                          <Area type="monotone" dataKey="km/L" stroke="#8b5cf6" strokeWidth={2}
-                            fill="url(#kmGrad)" dot={{ r: 3, fill: '#8b5cf6' }} activeDot={{ r: 5, fill: '#8b5cf6' }} />
+                          <Area type="monotone" dataKey="km/L" stroke="#4ade80" strokeWidth={2}
+                            fill="url(#kmGrad)" dot={{ r: 3, fill: '#4ade80' }} activeDot={{ r: 5, fill: '#4ade80' }} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
                   {/* Efficiency table */}
-                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                  <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                     <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between">
                       <h2 className="text-sm font-semibold text-gray-200">Trip-by-Trip Efficiency</h2>
                       <span className="text-xs text-gray-600">
-                        Overall avg: <span className="text-violet-400 font-bold">{avgKmPerL.toFixed(1)} km/L</span>
+                        Overall avg: <span className="text-green-400 font-bold">{avgKmPerL.toFixed(1)} km/L</span>
                       </span>
                     </div>
                     <div className="overflow-x-auto">
@@ -886,7 +886,7 @@ const FuelPage: React.FC = () => {
           {activeTab === 'analytics' && (
             <div className="space-y-5">
               {fuelFillups.length === 0 ? (
-                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center">
+                <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
                   <BarChart3 size={26} className="mx-auto text-gray-700 mb-3" />
                   <p className="text-sm text-gray-500">Add fill-ups to see analytics</p>
                 </div>
@@ -895,7 +895,7 @@ const FuelPage: React.FC = () => {
                   {/* Fuel type donut + 6-month table */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Donut */}
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
                       <h2 className="text-sm font-semibold text-gray-200 mb-3">
                         Fuel Type Mix — {MONTHS_SHORT[viewMonth]}
                       </h2>
@@ -930,7 +930,7 @@ const FuelPage: React.FC = () => {
                     </div>
 
                     {/* 6-month summary table */}
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                       <div className="px-5 py-4 border-b border-white/[0.04] flex items-center justify-between">
                         <h2 className="text-sm font-semibold text-gray-200">6-Month Summary</h2>
                         <span className="text-xs text-gray-600">YTD: <span className="text-amber-400 font-bold font-mono">{formatPrice(ytdCost)}</span></span>
@@ -965,7 +965,7 @@ const FuelPage: React.FC = () => {
 
                   {/* All-time station leaderboard */}
                   {stationStats.length > 0 && (
-                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+                    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
                       <div className="px-5 py-4 border-b border-white/[0.04]">
                         <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
                           <MapPin size={14} className="text-amber-400" />Station Leaderboard

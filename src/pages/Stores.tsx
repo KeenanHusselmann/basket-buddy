@@ -94,7 +94,7 @@ const Stores: React.FC = () => {
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20"
         >
           <Plus size={16} /> Add Store
         </button>
@@ -117,7 +117,7 @@ const Stores: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden hover:shadow-md transition-shadow group"
+              className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden hover:shadow-md transition-shadow group"
             >
               {/* Color Bar */}
               <div className="h-2" style={{ backgroundColor: store.color }} />
@@ -134,7 +134,7 @@ const Stores: React.FC = () => {
                     <div>
                       <h3 className="font-semibold text-gray-200">{store.name}</h3>
                       {store.isCustom && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-violet-500/10 text-violet-500 rounded-full font-medium">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-green-500/10 text-green-500 rounded-full font-medium">
                           Custom
                         </span>
                       )}
@@ -143,7 +143,7 @@ const Stores: React.FC = () => {
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => openEdit(store)}
-                      className="p-1.5 text-gray-400 hover:text-violet-400 rounded-lg hover:bg-white/5"
+                      className="p-1.5 text-gray-400 hover:text-green-400 rounded-lg hover:bg-white/5"
                     >
                       <Edit3 size={14} />
                     </button>
@@ -178,7 +178,7 @@ const Stores: React.FC = () => {
                 </div>
 
                 {totalSpent > 0 && (
-                  <div className="mt-3 pt-3 border-t border-violet-500/20">
+                  <div className="mt-3 pt-3 border-t border-green-500/20">
                     <p className="text-xs text-gray-400">Total spent</p>
                     <p className="text-sm font-semibold text-gray-200">{formatPrice(totalSpent)}</p>
                   </div>
@@ -188,7 +188,7 @@ const Stores: React.FC = () => {
                 {hasDetails && (
                   <button
                     onClick={() => setExpandedStore(isExpanded ? null : store.id)}
-                    className="mt-3 w-full flex items-center justify-between text-xs text-gray-400 hover:text-violet-400 transition-colors pt-3 border-t border-violet-500/20"
+                    className="mt-3 w-full flex items-center justify-between text-xs text-gray-400 hover:text-green-400 transition-colors pt-3 border-t border-green-500/20"
                   >
                     <span className="font-medium">Shopping Details</span>
                     {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -199,7 +199,7 @@ const Stores: React.FC = () => {
                 {!hasDetails && (
                   <button
                     onClick={() => openEdit(store)}
-                    className="mt-3 w-full text-xs text-gray-600 hover:text-violet-400 transition-colors pt-3 border-t border-violet-500/20 text-left flex items-center gap-1.5"
+                    className="mt-3 w-full text-xs text-gray-600 hover:text-green-400 transition-colors pt-3 border-t border-green-500/20 text-left flex items-center gap-1.5"
                   >
                     <Plus size={11} /> Add shopping details
                   </button>
@@ -218,14 +218,14 @@ const Stores: React.FC = () => {
                       <div className="mt-3 space-y-2">
                         {store.address && (
                           <div className="flex items-start gap-2 text-xs text-gray-400">
-                            <MapPin size={12} className="flex-shrink-0 mt-0.5 text-violet-400" />
+                            <MapPin size={12} className="flex-shrink-0 mt-0.5 text-green-400" />
                             <span>{store.address}</span>
                           </div>
                         )}
                         {store.phone && (
                           <div className="flex items-center gap-2 text-xs text-gray-400">
                             <Phone size={12} className="flex-shrink-0 text-green-400" />
-                            <a href={`tel:${store.phone}`} className="hover:text-violet-400 transition-colors">{store.phone}</a>
+                            <a href={`tel:${store.phone}`} className="hover:text-green-400 transition-colors">{store.phone}</a>
                           </div>
                         )}
                         {store.openingHours && (
@@ -236,12 +236,12 @@ const Stores: React.FC = () => {
                         )}
                         {store.website && (
                           <div className="flex items-center gap-2 text-xs">
-                            <Globe size={12} className="flex-shrink-0 text-violet-400" />
+                            <Globe size={12} className="flex-shrink-0 text-green-400" />
                             <a
                               href={store.website.startsWith('http') ? store.website : `https://${store.website}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-violet-400 hover:text-violet-500 transition-colors flex items-center gap-1 truncate"
+                              className="text-green-400 hover:text-green-500 transition-colors flex items-center gap-1 truncate"
                             >
                               {store.website.replace(/^https?:\/\//, '')}
                               <ExternalLink size={10} />
@@ -250,7 +250,7 @@ const Stores: React.FC = () => {
                         )}
                         {store.loyaltyCard && (
                           <div className="flex items-start gap-2 text-xs text-gray-400">
-                            <CreditCard size={12} className="flex-shrink-0 mt-0.5 text-purple-400" />
+                            <CreditCard size={12} className="flex-shrink-0 mt-0.5 text-green-400" />
                             <span>{store.loyaltyCard}</span>
                           </div>
                         )}
@@ -274,8 +274,8 @@ const Stores: React.FC = () => {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'Edit Store' : 'Add New Store'}
         footer={
           <div className="flex gap-3">
-            <button type="button" form="store-form" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
-            <button type="submit" form="store-form" className="flex-1 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-600 transition-colors">{editId ? 'Save Changes' : 'Add Store'}</button>
+            <button type="button" form="store-form" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+            <button type="submit" form="store-form" className="flex-1 py-2.5 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">{editId ? 'Save Changes' : 'Add Store'}</button>
           </div>
         }
       >
@@ -287,7 +287,7 @@ const Stores: React.FC = () => {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g., Pick n Pay"
-              className="w-full px-4 py-2.5 bg-gray-800/40 border border-violet-500/20 rounded-xl text-gray-200 outline-none focus:border-violet-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-green-500/20 rounded-xl text-gray-200 outline-none focus:border-green-500 transition-colors"
               required
             />
           </div>
@@ -303,7 +303,7 @@ const Stores: React.FC = () => {
                   className={cn(
                     'w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all',
                     form.icon === icon
-                      ? 'bg-violet-500/10 ring-2 ring-violet-500 scale-110'
+                      ? 'bg-green-500/10 ring-2 ring-green-500 scale-110'
                       : 'bg-gray-800/40 hover:bg-white/8'
                   )}
                 >
@@ -332,7 +332,7 @@ const Stores: React.FC = () => {
           </div>
 
           {/* Shopping Details */}
-          <div className="border-t border-violet-500/20 pt-4">
+          <div className="border-t border-green-500/20 pt-4">
             <p className="text-sm font-medium text-gray-300 mb-3">
               Shopping Details{' '}
               <span className="text-xs text-gray-400 font-normal">(optional)</span>
@@ -340,13 +340,13 @@ const Stores: React.FC = () => {
             <div className="space-y-3">
               {/* Address */}
               <div className="flex items-start gap-2">
-                <MapPin size={15} className="flex-shrink-0 mt-2.5 text-violet-400" />
+                <MapPin size={15} className="flex-shrink-0 mt-2.5 text-green-400" />
                 <input
                   type="text"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   placeholder="Store address"
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors"
                 />
               </div>
               {/* Phone */}
@@ -357,18 +357,18 @@ const Stores: React.FC = () => {
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="Phone number"
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors"
                 />
               </div>
               {/* Website */}
               <div className="flex items-start gap-2">
-                <Globe size={15} className="flex-shrink-0 mt-2.5 text-violet-400" />
+                <Globe size={15} className="flex-shrink-0 mt-2.5 text-green-400" />
                 <input
                   type="text"
                   value={form.website}
                   onChange={(e) => setForm({ ...form, website: e.target.value })}
                   placeholder="Website (e.g. www.store.co.za)"
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors"
                 />
               </div>
               {/* Opening Hours */}
@@ -379,18 +379,18 @@ const Stores: React.FC = () => {
                   onChange={(e) => setForm({ ...form, openingHours: e.target.value })}
                   placeholder="Opening hours (e.g. Mon–Fri 8am–8pm)"
                   rows={2}
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors resize-none"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors resize-none"
                 />
               </div>
               {/* Loyalty Card */}
               <div className="flex items-start gap-2">
-                <CreditCard size={15} className="flex-shrink-0 mt-2.5 text-purple-400" />
+                <CreditCard size={15} className="flex-shrink-0 mt-2.5 text-green-400" />
                 <input
                   type="text"
                   value={form.loyaltyCard}
                   onChange={(e) => setForm({ ...form, loyaltyCard: e.target.value })}
                   placeholder="Loyalty card / rewards info"
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors"
                 />
               </div>
               {/* Notes */}
@@ -401,7 +401,7 @@ const Stores: React.FC = () => {
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Notes or tips about this store"
                   rows={2}
-                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors resize-none"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500 transition-colors resize-none"
                 />
               </div>
             </div>

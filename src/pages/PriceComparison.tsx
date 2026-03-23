@@ -110,13 +110,13 @@ const PriceComparison: React.FC = () => {
             placeholder="Search items to compare..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500"
           />
         </div>
         <select
           value={filterCat}
           onChange={(e) => setFilterCat(e.target.value)}
-          className="px-3 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500"
+          className="px-3 py-2.5 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-green-500"
         >
           <option value="all">All Categories</option>
           {categories.map((c) => (
@@ -126,7 +126,7 @@ const PriceComparison: React.FC = () => {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as any)}
-          className="px-3 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500"
+          className="px-3 py-2.5 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-green-500"
         >
           <option value="savings">Most Savings</option>
           <option value="name">Name A-Z</option>
@@ -135,7 +135,7 @@ const PriceComparison: React.FC = () => {
 
       {/* Comparison Cards */}
       {comparisons.length === 0 ? (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
           <ArrowLeftRight className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
           <p className="text-gray-500 font-medium mb-1">No comparisons available</p>
           <p className="text-gray-400 text-sm">Add items with prices at different stores to compare</p>
@@ -155,7 +155,7 @@ const PriceComparison: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03 }}
-                className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden"
+                className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden"
               >
                 {/* Item Header */}
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
@@ -198,7 +198,7 @@ const PriceComparison: React.FC = () => {
                             )}>
                               {formatPrice(effectivePrice)}
                               {hasCombo && effectivePrice < p.normalPrice && (
-                                <span className="ml-1 text-[9px] font-bold text-purple-500">/unit</span>
+                                <span className="ml-1 text-[9px] font-bold text-green-500">/unit</span>
                               )}
                             </span>
                             {p.isCheapest && comp.prices.length > 1 && (

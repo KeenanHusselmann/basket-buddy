@@ -47,13 +47,13 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-violet-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-950 via-gray-900 to-green-900 p-4">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-violet-500/50/10"
+            className="absolute rounded-full bg-green-500/50/10"
             style={{
               width: Math.random() * 300 + 100,
               height: Math.random() * 300 + 100,
@@ -86,12 +86,12 @@ const Login: React.FC = () => {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-500 to-violet-700 rounded-2xl shadow-2xl shadow-violet-500/30 mb-4"
+            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl shadow-2xl shadow-green-500/30 mb-4"
           >
             <span className="text-4xl">🛒</span>
           </motion.div>
           <h1 className="text-3xl font-bold text-white mb-1">{APP_NAME}</h1>
-          <p className="text-violet-300">Smart Grocery Budget Tracker</p>
+          <p className="text-green-300">Smart Grocery Budget Tracker</p>
           <div className="flex items-center justify-center gap-1.5 mt-2">
             <span className="text-xs text-gray-400">Made for</span>
             <span className="text-xs font-medium text-namibia-sun">🇳🇦 Namibia</span>
@@ -99,7 +99,7 @@ const Login: React.FC = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white/10 backdrop-blur-xl border border-violet-500/35 rounded-3xl p-8 shadow-2xl">
+        <div className="bg-white/10 backdrop-blur-xl border border-green-500/35 rounded-3xl p-8 shadow-2xl">
           <h2 className="text-xl font-semibold text-white mb-6">
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h2>
@@ -123,7 +123,7 @@ const Login: React.FC = () => {
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-violet-500/35 rounded-xl text-white placeholder-gray-400 focus:border-violet-500 outline-none transition-colors"
+                  className="w-full pl-10 pr-4 py-3 bg-white/10 border border-green-500/35 rounded-xl text-white placeholder-gray-400 focus:border-green-500 outline-none transition-colors"
                   required={isSignUp}
                 />
               </div>
@@ -136,7 +136,7 @@ const Login: React.FC = () => {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-violet-500/35 rounded-xl text-white placeholder-gray-400 focus:border-violet-500 outline-none transition-colors"
+                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-green-500/35 rounded-xl text-white placeholder-gray-400 focus:border-green-500 outline-none transition-colors"
                 required
               />
             </div>
@@ -148,7 +148,7 @@ const Login: React.FC = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 py-3 bg-white/10 border border-violet-500/35 rounded-xl text-white placeholder-gray-400 focus:border-violet-500 outline-none transition-colors"
+                className="w-full pl-10 pr-12 py-3 bg-white/10 border border-green-500/35 rounded-xl text-white placeholder-gray-400 focus:border-green-500 outline-none transition-colors"
                 required
               />
               <button
@@ -165,8 +165,8 @@ const Login: React.FC = () => {
               disabled={loading}
               className={cn(
                 'w-full py-3 rounded-xl font-semibold text-white transition-all duration-200',
-                'bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400',
-                'shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50',
+                'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400',
+                'shadow-lg shadow-green-500/30 hover:shadow-green-500/50',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 'active:scale-[0.98]'
               )}
@@ -194,7 +194,7 @@ const Login: React.FC = () => {
             <button
               onClick={handleGoogle}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-white/10 border border-violet-500/35 rounded-xl text-white hover:bg-white/20 transition-all duration-200 active:scale-[0.98]"
+              className="w-full flex items-center justify-center gap-3 py-3 bg-white/10 border border-green-500/35 rounded-xl text-white hover:bg-white/20 transition-all duration-200 active:scale-[0.98]"
             >
               <Chrome size={18} />
               <span className="text-sm font-medium">Google</span>
@@ -216,7 +216,7 @@ const Login: React.FC = () => {
                 setIsSignUp(!isSignUp);
                 setError('');
               }}
-              className="text-violet-400 hover:text-violet-300 font-medium"
+              className="text-green-400 hover:text-green-300 font-medium"
             >
               {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>

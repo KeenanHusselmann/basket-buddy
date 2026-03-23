@@ -45,7 +45,7 @@ type ActivityItem = {
 const ChartTip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-gray-900/95 border border-violet-500/30 rounded-xl px-3 py-2.5 shadow-2xl text-[11px]">
+    <div className="bg-gray-900/95 border border-green-500/30 rounded-xl px-3 py-2.5 shadow-2xl text-[11px]">
       <p className="text-gray-500 mb-1.5 font-medium">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} className="font-mono tabular-nums font-semibold" style={{ color: p.color }}>
@@ -171,8 +171,8 @@ const Dashboard: React.FC = () => {
       items.push({
         id: `trip-${trip.id}`, type: 'trip',
         icon: <ShoppingCart size={14} />,
-        bg: store?.color ? `${store.color}20` : 'rgb(139 92 246 / 0.15)',
-        color: store?.color ?? '#8b5cf6',
+        bg: store?.color ? `${store.color}20` : 'rgb(74 222 128 / 0.15)',
+        color: store?.color ?? '#4ade80',
         title: trip.name,
         sub: `${store?.name ?? 'Unknown'} · ${trip.items.length} items`,
         amount: trip.status === 'completed' ? trip.totalSpent : trip.items.reduce((s, i) => s + i.estimatedPrice * i.quantity, 0),
@@ -251,15 +251,15 @@ const Dashboard: React.FC = () => {
 
       {/* ══ HERO ════════════════════════════════════════════ */}
       <motion.div variants={card} className="relative overflow-hidden rounded-2xl">
-        <div className="absolute -left-20 -top-12 w-72 h-40 bg-violet-600/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute -left-20 -top-12 w-72 h-40 bg-green-600/10 blur-[60px] rounded-full pointer-events-none" />
         <div className="absolute right-0 -bottom-8 w-56 h-32 bg-fuchsia-500/8 blur-[60px] rounded-full pointer-events-none" />
 
-        <div className="relative bg-gray-900/80 backdrop-blur-xl border border-violet-500/20 rounded-2xl px-6 py-5">
+        <div className="relative bg-gray-900/80 backdrop-blur-xl border border-green-500/20 rounded-2xl px-6 py-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
             {/* Avatar + greeting */}
             <div className="flex items-center gap-4">
               <div className="relative flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-800 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-800 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/30">
                   <Sparkles size={20} className="text-white" />
                 </div>
                 <div className={cn(
@@ -284,8 +284,8 @@ const Dashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-white font-mono tabular-nums tracking-tight leading-none">{timeStr}</p>
                 <p className="text-[11px] text-gray-500 mt-0.5">{dateStr}</p>
               </div>
-              <div className="hidden md:block w-px h-10 bg-violet-500/20" />
-              <div className="flex items-center gap-0.5 bg-gray-800/70 border border-violet-500/20 rounded-xl p-1">
+              <div className="hidden md:block w-px h-10 bg-green-500/20" />
+              <div className="flex items-center gap-0.5 bg-gray-800/70 border border-green-500/20 rounded-xl p-1">
                 <button onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-lg hover:bg-white/8 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer">
                   <ChevronLeft size={14} />
                 </button>
@@ -305,7 +305,7 @@ const Dashboard: React.FC = () => {
       {/* ══ KPI CARDS ════════════════════════════════════════ */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {/* Groceries */}
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-emerald-500/30 transition-all duration-300 relative overflow-hidden">
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-emerald-500/30 transition-all duration-300 relative overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
           <div className="flex items-start justify-between mb-3">
             <div className="p-2 bg-emerald-500/10 rounded-xl"><Wallet size={16} className="text-emerald-400" /></div>
@@ -327,7 +327,7 @@ const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Total Expenses */}
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-rose-500/30 transition-all duration-300 relative overflow-hidden">
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-rose-500/30 transition-all duration-300 relative overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-rose-500/50 to-transparent" />
           <div className="mb-3"><div className="p-2 bg-rose-500/10 rounded-xl w-fit"><Receipt size={16} className="text-rose-400" /></div></div>
           <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">Expenses</p>
@@ -336,11 +336,11 @@ const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Net */}
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-green-500/40 transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
           <div className="mb-3">
-            <div className={cn('p-2 rounded-xl w-fit', totalIncome === 0 ? 'bg-gray-700/30' : netSavings >= 0 ? 'bg-violet-500/10' : 'bg-rose-500/10')}>
-              {netSavings >= 0 ? <TrendingUp size={16} className={totalIncome === 0 ? 'text-gray-600' : 'text-violet-400'} /> : <TrendingDown size={16} className="text-rose-400" />}
+            <div className={cn('p-2 rounded-xl w-fit', totalIncome === 0 ? 'bg-gray-700/30' : netSavings >= 0 ? 'bg-green-500/10' : 'bg-rose-500/10')}>
+              {netSavings >= 0 ? <TrendingUp size={16} className={totalIncome === 0 ? 'text-gray-600' : 'text-green-400'} /> : <TrendingDown size={16} className="text-rose-400" />}
             </div>
           </div>
           <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">
@@ -355,7 +355,7 @@ const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Fuel */}
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-amber-500/30 transition-all duration-300 relative overflow-hidden">
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-amber-500/30 transition-all duration-300 relative overflow-hidden">
           <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
           <div className="flex items-start justify-between mb-3">
             <div className="p-2 bg-amber-500/10 rounded-xl"><Fuel size={16} className="text-amber-400" /></div>
@@ -370,7 +370,7 @@ const Dashboard: React.FC = () => {
       {/* ══ CHARTS ROW ═══════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* 6-month Area Chart */}
-        <motion.div variants={card} className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+        <motion.div variants={card} className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-sm font-bold text-white">Income vs Expenses</h2>
@@ -412,7 +412,7 @@ const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Donut — expense breakdown */}
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
           <h2 className="text-sm font-bold text-white">Breakdown</h2>
           <p className="text-[11px] text-gray-600 mt-0.5 mb-4">{periodLabel}</p>
           {segments.length === 0 ? (
@@ -458,7 +458,7 @@ const Dashboard: React.FC = () => {
       {/* ══ ACTIVITY + SIDEBAR ═══════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Activity feed */}
-        <motion.div variants={card} className="lg:col-span-3 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+        <motion.div variants={card} className="lg:col-span-3 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.05]">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold text-white">Recent Activity</h2>
@@ -469,7 +469,7 @@ const Dashboard: React.FC = () => {
                 <button key={f} onClick={() => setFeedFilter(f)}
                   className={cn(
                     'px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer capitalize',
-                    feedFilter === f ? 'bg-violet-600 text-white' : 'text-gray-600 hover:text-gray-300 hover:bg-white/5',
+                    feedFilter === f ? 'bg-green-600 text-white' : 'text-gray-600 hover:text-gray-300 hover:bg-white/5',
                   )}>
                   {f}
                 </button>
@@ -482,7 +482,7 @@ const Dashboard: React.FC = () => {
                 <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-14 text-center">
                   <Activity className="mx-auto text-gray-700 mb-3" size={26} />
                   <p className="text-xs text-gray-600 mb-4">No activity in this period</p>
-                  <Link to="/trips" className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-medium transition-colors">
+                  <Link to="/trips" className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-medium transition-colors">
                     <ShoppingCart size={13} /> Start Shopping
                   </Link>
                 </motion.div>
@@ -512,7 +512,7 @@ const Dashboard: React.FC = () => {
         {/* Right widgets */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           {/* Top categories */}
-          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
             <h2 className="text-sm font-bold text-white mb-4">Top Grocery Categories</h2>
             {topCategories.length === 0 ? (
               <p className="text-[11px] text-gray-600 text-center py-3">Complete a trip to see breakdown</p>
@@ -541,19 +541,19 @@ const Dashboard: React.FC = () => {
           </motion.div>
 
           {/* Quick actions */}
-          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
             <h2 className="text-sm font-bold text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { to: '/trips',         icon: ShoppingCart, label: 'New Trip',   cls: 'text-violet-400' },
+                { to: '/trips',         icon: ShoppingCart, label: 'New Trip',   cls: 'text-green-400' },
                 { to: '/finance',       icon: DollarSign,   label: 'Add Tx',     cls: 'text-emerald-400' },
                 { to: '/fuel',          icon: Fuel,         label: 'Log Fuel',   cls: 'text-amber-400' },
                 { to: '/budget',        icon: Wallet,       label: 'Budget',     cls: 'text-blue-400' },
-                { to: '/shopping-list', icon: ListChecks,   label: 'Lists',      cls: 'text-violet-400' },
+                { to: '/shopping-list', icon: ListChecks,   label: 'Lists',      cls: 'text-green-400' },
                 { to: '/analytics',     icon: BarChart3,    label: 'Analytics',  cls: 'text-fuchsia-400' },
               ].map(({ to, icon: Icon, label, cls }) => (
                 <Link key={to} to={to}
-                  className="flex flex-col items-center justify-center gap-1.5 h-16 bg-gray-800/40 hover:bg-gray-700/60 border border-white/[0.05] hover:border-violet-500/30 rounded-xl transition-all">
+                  className="flex flex-col items-center justify-center gap-1.5 h-16 bg-gray-800/40 hover:bg-gray-700/60 border border-white/[0.05] hover:border-green-500/30 rounded-xl transition-all">
                   <Icon size={15} className={cls} />
                   <span className="text-[10px] font-medium text-gray-600 text-center leading-tight">{label}</span>
                 </Link>
@@ -563,7 +563,7 @@ const Dashboard: React.FC = () => {
 
           {/* Restock alerts */}
           {restockAlerts.length > 0 && (
-            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-sm font-bold text-white">Restock Alerts</h2>
                 <span className="w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{restockAlerts.length}</span>
@@ -584,11 +584,11 @@ const Dashboard: React.FC = () => {
 
           {/* Next appointment */}
           {nextAppt && (
-            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5">
               <h2 className="text-sm font-bold text-white mb-3">Next Appointment</h2>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-violet-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <HeartPulse size={15} className="text-violet-400" />
+                <div className="w-9 h-9 bg-green-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <HeartPulse size={15} className="text-green-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-200 truncate">{nextAppt.type}</p>
@@ -596,7 +596,7 @@ const Dashboard: React.FC = () => {
                     {new Date(nextAppt.date).toLocaleDateString('en-NA', { weekday: 'short', day: 'numeric', month: 'short' })}
                   </p>
                 </div>
-                <Link to="/medical" className="text-[11px] text-violet-400 hover:text-violet-300 transition-colors flex-shrink-0">View</Link>
+                <Link to="/medical" className="text-[11px] text-green-400 hover:text-green-300 transition-colors flex-shrink-0">View</Link>
               </div>
             </motion.div>
           )}
@@ -605,7 +605,7 @@ const Dashboard: React.FC = () => {
 
       {/* ══ MEDICAL AID STRIP ════════════════════════════════ */}
       {activePlan && (
-        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 px-5 py-4">
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 px-5 py-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 bg-rose-500/10 rounded-xl flex items-center justify-center">
@@ -621,7 +621,7 @@ const Dashboard: React.FC = () => {
                 <p className="text-[10px] text-gray-600 uppercase tracking-wider">Monthly</p>
                 <p className="text-base font-bold text-white font-mono tabular-nums">{formatPrice(activePlan.monthlyContribution)}</p>
               </div>
-              <Link to="/medical" className="text-[11px] text-violet-400 hover:text-violet-300 transition-colors">Details →</Link>
+              <Link to="/medical" className="text-[11px] text-green-400 hover:text-green-300 transition-colors">Details →</Link>
             </div>
           </div>
         </motion.div>

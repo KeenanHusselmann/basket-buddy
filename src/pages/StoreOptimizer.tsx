@@ -81,7 +81,7 @@ const StoreOptimizer: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
-          <Sparkles className="text-violet-500" size={24} /> Smart Cart Optimizer
+          <Sparkles className="text-green-500" size={24} /> Smart Cart Optimizer
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
           Build your list and we'll find the cheapest store combination
@@ -91,8 +91,8 @@ const StoreOptimizer: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Shopping List */}
         <div className="space-y-4">
-          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
-            <div className="px-5 py-4 border-b border-violet-500/20">
+          <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
+            <div className="px-5 py-4 border-b border-green-500/20">
               <h2 className="font-semibold text-gray-200">Your Shopping List</h2>
             </div>
 
@@ -101,7 +101,7 @@ const StoreOptimizer: React.FC = () => {
               <select
                 value={addItemId}
                 onChange={(e) => setAddItemId(e.target.value)}
-                className="flex-1 px-3 py-2 bg-gray-800/60 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500"
+                className="flex-1 px-3 py-2 bg-gray-800/60 border border-green-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-green-500"
               >
                 <option value="">Select an item...</option>
                 {items
@@ -119,14 +119,14 @@ const StoreOptimizer: React.FC = () => {
               <button
                 onClick={addItem}
                 disabled={!addItemId}
-                className="px-4 py-2 bg-violet-500/50 text-white rounded-xl text-sm font-medium hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-green-500/50 text-white rounded-xl text-sm font-medium hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Plus size={16} />
               </button>
             </div>
 
             {/* Item List */}
-            <div className="divide-y divide-violet-500/10 dark:divide-gray-800">
+            <div className="divide-y divide-green-500/10 dark:divide-gray-800">
               {selectedItems.length === 0 ? (
                 <div className="p-8 text-center">
                   <ShoppingCart className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={40} />
@@ -172,7 +172,7 @@ const StoreOptimizer: React.FC = () => {
                 {!optimized ? (
                   <button
                     onClick={() => setOptimized(false)}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-violet-600 to-violet-500 text-white rounded-xl font-medium hover:from-violet-500 hover:to-violet-400 transition-all shadow-lg shadow-violet-500/20"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-xl font-medium hover:from-green-500 hover:to-green-400 transition-all shadow-lg shadow-green-500/20"
                   >
                     <Zap size={18} /> Optimize My Cart
                   </button>
@@ -211,7 +211,7 @@ const StoreOptimizer: React.FC = () => {
                   </div>
                 </div>
                 {nonOptimizedCost > result.totalCost && (
-                  <div className="mt-3 pt-3 border-t border-violet-500/35 text-sm opacity-80">
+                  <div className="mt-3 pt-3 border-t border-green-500/35 text-sm opacity-80">
                     vs {formatPrice(nonOptimizedCost)} buying at most expensive stores
                   </div>
                 )}
@@ -228,7 +228,7 @@ const StoreOptimizer: React.FC = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.1 }}
-                    className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden"
+                    className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden"
                   >
                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -259,14 +259,14 @@ const StoreOptimizer: React.FC = () => {
               {!optimized && (
                 <button
                   onClick={createTrips}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-violet-500/50 text-white rounded-xl font-medium hover:bg-violet-600 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-green-500/50 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
                 >
                   <ShoppingCart size={18} /> Create Shopping Trips from Plan
                 </button>
               )}
             </>
           ) : (
-            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
+            <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-12 text-center">
               <Zap className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
               <p className="text-gray-500 font-medium mb-1">Add items to see the magic</p>
               <p className="text-gray-400 text-sm">

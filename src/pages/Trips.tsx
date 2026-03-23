@@ -25,19 +25,19 @@ const cardVariant = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0 } 
 
 // ── Helpers ───────────────────────────────────────────────────
 const inputCls =
-  'w-full bg-gray-800/60 border border-violet-500/20 rounded-xl px-3 py-2.5 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm outline-none transition-all';
+  'w-full bg-gray-800/60 border border-green-500/20 rounded-xl px-3 py-2.5 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm outline-none transition-all';
 const labelCls = 'block text-xs font-medium text-gray-400 mb-1.5';
 
 type TripStatus = 'planned' | 'in-progress' | 'completed';
 
 const STATUS_META: Record<TripStatus, { label: string; color: string; bg: string; border: string; dot: string }> = {
-  planned:       { label: 'Planned',  color: 'text-violet-300',  bg: 'bg-violet-500/15',  border: 'border-violet-500/30',  dot: 'bg-violet-400'  },
+  planned:       { label: 'Planned',  color: 'text-green-300',  bg: 'bg-green-500/15',  border: 'border-green-500/30',  dot: 'bg-green-400'  },
   'in-progress': { label: 'Shopping', color: 'text-blue-300',    bg: 'bg-blue-500/15',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   completed:     { label: 'Complete', color: 'text-emerald-300', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
 };
 
 const ACCENT_GRADIENT: Record<TripStatus, string> = {
-  planned:       'from-violet-500/60 via-violet-500/30 to-transparent',
+  planned:       'from-green-500/60 via-green-500/30 to-transparent',
   'in-progress': 'from-blue-500/60 via-blue-400/30 to-transparent',
   completed:     'from-emerald-500/60 via-emerald-500/30 to-transparent',
 };
@@ -198,8 +198,8 @@ const Trips: React.FC = () => {
       <motion.div variants={cardVariant} className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 bg-violet-500/10 rounded-xl">
-              <ShoppingCart size={20} className="text-violet-400" />
+            <div className="p-2 bg-green-500/10 rounded-xl">
+              <ShoppingCart size={20} className="text-green-400" />
             </div>
             Shopping Trips
           </h1>
@@ -210,7 +210,7 @@ const Trips: React.FC = () => {
             setTripForm({ name: '', storeId: stores[0]?.id || '', budget: '', date: new Date().toISOString().split('T')[0] });
             setTripModal(true);
           }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors shadow-lg shadow-violet-500/20 cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors shadow-lg shadow-green-500/20 cursor-pointer"
         >
           <Plus size={16} /> New Trip
         </button>
@@ -227,7 +227,7 @@ const Trips: React.FC = () => {
           <motion.div
             key={label}
             variants={cardVariant}
-            className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300 relative overflow-hidden"
+            className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20 hover:border-green-500/40 transition-all duration-300 relative overflow-hidden"
           >
             <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-${color}-500/60 to-transparent`} />
             <div className={`p-2 bg-${color}-500/10 rounded-xl w-fit mb-3`}>
@@ -248,8 +248,8 @@ const Trips: React.FC = () => {
             className={cn(
               'px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer whitespace-nowrap',
               filter === status
-                ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/20'
-                : 'bg-gray-900/70 text-gray-400 border border-violet-500/20 hover:text-gray-200 hover:border-violet-500/40',
+                ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                : 'bg-gray-900/70 text-gray-400 border border-green-500/20 hover:text-gray-200 hover:border-green-500/40',
             )}
           >
             {status === 'all' ? 'All' : status === 'in-progress' ? 'Shopping' : status.charAt(0).toUpperCase() + status.slice(1)}
@@ -262,10 +262,10 @@ const Trips: React.FC = () => {
       {filteredTrips.length === 0 ? (
         <motion.div
           variants={cardVariant}
-          className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-14 text-center"
+          className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center"
         >
-          <div className="w-16 h-16 bg-violet-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <ShoppingCart size={32} className="text-violet-400" />
+          <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <ShoppingCart size={32} className="text-green-400" />
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">
             No trips{filter !== 'all' ? ` with status "${filter}"` : ' yet'}
@@ -278,7 +278,7 @@ const Trips: React.FC = () => {
               setTripForm({ name: '', storeId: stores[0]?.id || '', budget: '', date: new Date().toISOString().split('T')[0] });
               setTripModal(true);
             }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-medium transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition-colors cursor-pointer"
           >
             <Plus size={16} /> Create First Trip
           </button>
@@ -323,7 +323,7 @@ const Trips: React.FC = () => {
                   'bg-gray-900/70 backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300',
                   status === 'in-progress'
                     ? 'border-blue-500/40 shadow-lg shadow-blue-500/5'
-                    : 'border-violet-500/20',
+                    : 'border-green-500/20',
                 )}
               >
                 {/* Status accent line */}
@@ -340,8 +340,8 @@ const Trips: React.FC = () => {
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center text-lg flex-shrink-0 border"
                     style={{
-                      backgroundColor: store?.color ? `${store.color}18` : '#8b5cf618',
-                      borderColor:     store?.color ? `${store.color}30` : '#8b5cf630',
+                      backgroundColor: store?.color ? `${store.color}18` : '#4ade8018',
+                      borderColor:     store?.color ? `${store.color}30` : '#4ade8030',
                     }}
                   >
                     {store?.icon ?? <Store size={20} className="text-gray-400" />}
@@ -385,7 +385,7 @@ const Trips: React.FC = () => {
                           <div
                             className={cn(
                               'h-full rounded-full transition-all duration-700',
-                              budgetOver ? 'bg-rose-500' : budgetPct > 80 ? 'bg-amber-500' : 'bg-violet-500',
+                              budgetOver ? 'bg-rose-500' : budgetPct > 80 ? 'bg-amber-500' : 'bg-green-500',
                             )}
                             style={{ width: `${budgetPct}%` }}
                           />
@@ -429,14 +429,14 @@ const Trips: React.FC = () => {
                       transition={{ duration: 0.22, ease: 'easeInOut' }}
                       style={{ overflow: 'hidden' }}
                     >
-                      <div className="border-t border-violet-500/15">
+                      <div className="border-t border-green-500/15">
 
                         {/* Action toolbar */}
                         <div className="px-5 py-3 flex flex-wrap items-center gap-2 bg-gray-800/20">
                           {status !== 'completed' && (
                             <button
                               onClick={() => openAddItemForTrip(trip.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
                             >
                               <Plus size={12} /> Add Item
                             </button>
@@ -484,7 +484,7 @@ const Trips: React.FC = () => {
                         ) : (
                           <div>
                             {grouped.map(({ catId, catName, catIcon, catColor, catItems }) => (
-                              <div key={catId} className="border-t border-violet-500/8 first:border-0">
+                              <div key={catId} className="border-t border-green-500/8 first:border-0">
                                 {/* Category sub-header */}
                                 <div
                                   className="px-5 py-2 flex items-center gap-2"
@@ -555,7 +555,7 @@ const Trips: React.FC = () => {
                                             placeholder={ti.estimatedPrice.toFixed(2)}
                                             value={ti.actualPrice !== undefined ? ti.actualPrice : ''}
                                             onChange={(e) => setActualPrice(trip.id, ti.id, e.target.value)}
-                                            className="w-20 px-2 py-1 text-right text-sm bg-gray-800/60 border border-violet-500/20 rounded-lg outline-none focus:ring-1 focus:ring-violet-500 text-gray-100 tabular-nums"
+                                            className="w-20 px-2 py-1 text-right text-sm bg-gray-800/60 border border-green-500/20 rounded-lg outline-none focus:ring-1 focus:ring-green-500 text-gray-100 tabular-nums"
                                           />
                                         </div>
                                       ) : (
@@ -582,7 +582,7 @@ const Trips: React.FC = () => {
                                               setEditItemModal(true);
                                             }}
                                             aria-label="Edit item"
-                                            className="p-1.5 text-gray-500 hover:text-violet-400 rounded-lg hover:bg-violet-500/10 transition-colors cursor-pointer"
+                                            className="p-1.5 text-gray-500 hover:text-green-400 rounded-lg hover:bg-green-500/10 transition-colors cursor-pointer"
                                           >
                                             <Pencil size={13} />
                                           </button>
@@ -602,7 +602,7 @@ const Trips: React.FC = () => {
                             ))}
 
                             {/* Footer total */}
-                            <div className="px-5 py-3.5 bg-gray-800/30 border-t border-violet-500/10 flex items-center justify-between">
+                            <div className="px-5 py-3.5 bg-gray-800/30 border-t border-green-500/10 flex items-center justify-between">
                               <div className="flex items-center gap-4 text-xs text-gray-500">
                                 {trip.budget > 0 && (
                                   <span>
@@ -653,14 +653,14 @@ const Trips: React.FC = () => {
             <button
               type="button"
               onClick={() => setTripModal(false)}
-              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-violet-500/20"
+              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-green-500/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               form="trip-form"
-              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+              className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
             >
               Create Trip
             </button>
@@ -730,14 +730,14 @@ const Trips: React.FC = () => {
             <button
               type="button"
               onClick={() => setAddItemModal(false)}
-              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-violet-500/20"
+              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-green-500/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               form="add-item-form"
-              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+              className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
             >
               Add to Trip
             </button>
@@ -828,14 +828,14 @@ const Trips: React.FC = () => {
             <button
               type="button"
               onClick={() => { setEditItemModal(false); setEditingTripItem(null); }}
-              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-violet-500/20"
+              className="flex-1 py-2.5 bg-gray-800/60 hover:bg-gray-700/60 text-gray-300 rounded-xl text-sm font-medium transition-colors cursor-pointer border border-green-500/20"
             >
               Cancel
             </button>
             <button
               type="submit"
               form="edit-item-form"
-              className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
+              className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer"
             >
               Save Changes
             </button>
