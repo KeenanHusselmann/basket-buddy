@@ -169,7 +169,7 @@ const FloatingCalculator: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 20 }}
             transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-            className="fixed bottom-24 right-6 z-50 w-72 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
+            className="fixed bottom-24 right-6 z-50 w-72 rounded-2xl shadow-2xl overflow-hidden border border-violet-500/20"
           >
             {/* Header */}
             <div className="bg-gray-800 dark:bg-gray-900 px-4 py-2.5 flex items-center justify-between">
@@ -217,7 +217,7 @@ const FloatingCalculator: React.FC = () => {
                           : 'bg-indigo-600'
                       ),
                     btn.type === 'equals' &&
-                      'bg-brand-500 hover:bg-brand-600 text-white col-span-1'
+                      'bg-violet-500/50 hover:bg-violet-600 text-white col-span-1'
                   )}
                 >
                   {btn.label}

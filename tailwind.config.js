@@ -31,6 +31,20 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
+      opacity: {
+        '2':  '0.02',
+        '3':  '0.03',
+        '4':  '0.04',
+        '6':  '0.06',
+        '7':  '0.07',
+        '8':  '0.08',
+        '9':  '0.09',
+        '12': '0.12',
+        '15': '0.15',
+        '18': '0.18',
+        '22': '0.22',
+        '35': '0.35',
+      },
       animation: {
         'slide-in': 'slideIn 0.3s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',

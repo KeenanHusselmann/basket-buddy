@@ -35,6 +35,10 @@ import type {
   FinancePlan,
   SavingsGoal,
   FuelFillup,
+  MedicalAidPlan,
+  MedicalAidClaim,
+  MedicalAppointment,
+  ShoppingList,
 } from '../types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -59,6 +63,10 @@ export interface UserAppData {
   financePlans: FinancePlan[];
   savingsGoals: SavingsGoal[];
   fuelFillups: FuelFillup[];
+  medicalAidPlans: MedicalAidPlan[];
+  medicalAidClaims: MedicalAidClaim[];
+  medicalAppointments: MedicalAppointment[];
+  shoppingLists: ShoppingList[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -75,6 +83,8 @@ function subCol(uid: string, name: string) {
 const SUBCOLLECTIONS: Array<keyof UserAppData> = [
   'stores', 'categories', 'items', 'prices', 'trips', 'budgets', 'reminders',
   'transactions', 'financePlans', 'savingsGoals', 'fuelFillups',
+  'medicalAidPlans', 'medicalAidClaims', 'medicalAppointments',
+  'shoppingLists',
 ];
 
 /** Recursively remove undefined values — Firestore rejects them */
@@ -229,6 +239,8 @@ export interface CloudCounts {
   stores: number; categories: number; items: number; prices: number;
   trips: number; budgets: number; reminders: number; transactions: number;
   financePlans: number; savingsGoals: number; fuelFillups: number;
+  medicalAidPlans: number; medicalAidClaims: number; medicalAppointments: number;
+  shoppingLists: number;
 }
 
 /**
@@ -243,9 +255,13 @@ export async function verifyCloudCounts(uid: string): Promise<CloudCounts | null
       SUBCOLLECTIONS.map((name) => getCountFromServer(subCol(uid, name)))
     );
     const [stores, categories, items, prices, trips, budgets, reminders,
-           transactions, financePlans, savingsGoals, fuelFillups] = results.map((r) => r.data().count);
+           transactions, financePlans, savingsGoals, fuelFillups,
+           medicalAidPlans, medicalAidClaims, medicalAppointments,
+           shoppingLists] = results.map((r) => r.data().count);
     return { stores, categories, items, prices, trips, budgets, reminders,
-             transactions, financePlans, savingsGoals, fuelFillups };
+             transactions, financePlans, savingsGoals, fuelFillups,
+             medicalAidPlans, medicalAidClaims, medicalAppointments,
+             shoppingLists };
   } catch (e) {
     console.error('[Firestore] verifyCloudCounts failed:', e);
     return null;
@@ -261,13 +277,16 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
       storesSnap, categoriesSnap, itemsSnap,
       pricesSnap, tripsSnap, budgetsSnap, remindersSnap,
       transactionsSnap, financePlansSnap, savingsGoalsSnap, fuelFillupsSnap,
+      medicalAidPlansSnap, medicalAidClaimsSnap, medicalAppointmentsSnap,
+      shoppingListsSnap,
     ] = await Promise.all(SUBCOLLECTIONS.map((name) => getDocs(subCol(uid, name))));
 
     const totalDocs =
       storesSnap.size + categoriesSnap.size + itemsSnap.size +
       pricesSnap.size + tripsSnap.size + budgetsSnap.size + remindersSnap.size +
       transactionsSnap.size + financePlansSnap.size + savingsGoalsSnap.size +
-      fuelFillupsSnap.size;
+      fuelFillupsSnap.size + medicalAidPlansSnap.size + medicalAidClaimsSnap.size +
+      medicalAppointmentsSnap.size + shoppingListsSnap.size;
 
     if (totalDocs === 0) {
       console.log('[Firestore] No app data found for', uid);
@@ -286,6 +305,10 @@ export async function loadUserData(uid: string): Promise<UserAppData | null> {
       financePlans: financePlansSnap.docs.map((d) => d.data() as FinancePlan),
       savingsGoals: savingsGoalsSnap.docs.map((d) => d.data() as SavingsGoal),
       fuelFillups:  fuelFillupsSnap.docs.map((d) => d.data() as FuelFillup),
+      medicalAidPlans:  medicalAidPlansSnap.docs.map((d) => d.data() as MedicalAidPlan),
+      medicalAidClaims: medicalAidClaimsSnap.docs.map((d) => d.data() as MedicalAidClaim),
+      medicalAppointments: medicalAppointmentsSnap.docs.map((d) => d.data() as MedicalAppointment),
+      shoppingLists: shoppingListsSnap.docs.map((d) => d.data() as ShoppingList),
     };
 
     console.log(
@@ -359,7 +382,11 @@ export async function fastSaveUserData(
     ['transactions', data.transactions as any || []],
     ['financePlans', data.financePlans as any || []],
     ['savingsGoals', data.savingsGoals as any || []],
-    ['fuelFillups',  data.fuelFillups  as any || []],
+    ['fuelFillups',       data.fuelFillups       as any || []],
+    ['medicalAidPlans',   data.medicalAidPlans   as any || []],
+    ['medicalAidClaims',  data.medicalAidClaims  as any || []],
+    ['medicalAppointments', data.medicalAppointments as any || []],
+    ['shoppingLists',     data.shoppingLists     as any || []],
   ];
 
   for (const [col, items] of entries) {

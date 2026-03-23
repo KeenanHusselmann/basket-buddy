@@ -78,7 +78,7 @@ const PriceComparison: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Price Comparison</h1>
+        <h1 className="text-2xl font-bold text-gray-100">Price Comparison</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
           Compare prices across stores to find the best deals
         </p>
@@ -110,13 +110,13 @@ const PriceComparison: React.FC = () => {
             placeholder="Search items to compare..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500"
           />
         </div>
         <select
           value={filterCat}
           onChange={(e) => setFilterCat(e.target.value)}
-          className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-brand-500"
+          className="px-3 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500"
         >
           <option value="all">All Categories</option>
           {categories.map((c) => (
@@ -126,7 +126,7 @@ const PriceComparison: React.FC = () => {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as any)}
-          className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-brand-500"
+          className="px-3 py-2.5 bg-gray-900/70 border border-violet-500/20 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500"
         >
           <option value="savings">Most Savings</option>
           <option value="name">Name A-Z</option>
@@ -135,7 +135,7 @@ const PriceComparison: React.FC = () => {
 
       {/* Comparison Cards */}
       {comparisons.length === 0 ? (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
+        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-12 text-center">
           <ArrowLeftRight className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
           <p className="text-gray-500 font-medium mb-1">No comparisons available</p>
           <p className="text-gray-400 text-sm">Add items with prices at different stores to compare</p>
@@ -155,13 +155,13 @@ const PriceComparison: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03 }}
-                className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+                className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden"
               >
                 {/* Item Header */}
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span>{cat?.icon || '📦'}</span>
-                    <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">{comp.itemName}</h3>
+                    <h3 className="font-semibold text-sm text-gray-200">{comp.itemName}</h3>
                   </div>
                   {savings > 0 && (
                     <span className="text-xs font-medium px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
@@ -183,7 +183,7 @@ const PriceComparison: React.FC = () => {
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: store?.color }} />
-                            <span className="text-gray-600 dark:text-gray-400">{p.storeName}</span>
+                            <span className="text-gray-400">{p.storeName}</span>
                             {p.isOnSpecial && (
                               <Star size={10} className="text-amber-500 fill-amber-500" />
                             )}
@@ -194,7 +194,7 @@ const PriceComparison: React.FC = () => {
                             )}
                             <span className={cn(
                               'font-semibold',
-                              p.isCheapest ? 'text-green-600 dark:text-green-400' : 'text-gray-700 dark:text-gray-300'
+                              p.isCheapest ? 'text-green-600 dark:text-green-400' : 'text-gray-300'
                             )}>
                               {formatPrice(effectivePrice)}
                               {hasCombo && effectivePrice < p.normalPrice && (
@@ -206,7 +206,7 @@ const PriceComparison: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${barWidth}%` }}

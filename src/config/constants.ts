@@ -106,17 +106,20 @@ export const STORE_COLORS = [
 
 // ── Nav Items ────────────────────────────────────────────────
 export const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', path: '/', icon: 'LayoutDashboard' },
-  { id: 'trips', label: 'Shopping Trips', path: '/trips', icon: 'ShoppingCart' },
-  { id: 'fuel', label: 'Fuel & Transport', path: '/fuel', icon: 'Fuel' },
-  { id: 'items', label: 'Items & Prices', path: '/items', icon: 'Package' },
-  { id: 'stores', label: 'Stores', path: '/stores', icon: 'Store' },
-  { id: 'compare', label: 'Price Compare', path: '/compare', icon: 'ArrowLeftRight' },
-  { id: 'optimizer', label: 'Smart Cart', path: '/optimizer', icon: 'Sparkles' },
-  { id: 'budget', label: 'Budget Planner', path: '/budget', icon: 'Wallet' },
-  { id: 'finance', label: 'Home Budget', path: '/finance', icon: 'PiggyBank' },
-  { id: 'analytics', label: 'Analytics', path: '/analytics', icon: 'BarChart3' },
+  { id: 'dashboard', label: 'Dashboard',     path: '/',          icon: 'LayoutDashboard', group: 'main' },
+  { id: 'trips',        label: 'Shopping',      path: '/trips',          icon: 'ShoppingCart',    group: 'main' },
+  { id: 'shopping-list', label: 'Shopping Lists', path: '/shopping-list',  icon: 'ClipboardList',   group: 'main' },
+  { id: 'finance',   label: 'Finance',       path: '/finance',   icon: 'PiggyBank',       group: 'main' },
+  { id: 'analytics', label: 'Analytics',     path: '/analytics', icon: 'BarChart3',       group: 'main' },
+  { id: 'budget',    label: 'Budget Planner',path: '/budget',    icon: 'Wallet',          group: 'more' },
+  { id: 'fuel',      label: 'Fuel & Transport', path: '/fuel',   icon: 'Fuel',            group: 'more' },
+  { id: 'medical',   label: 'Medical',       path: '/medical',   icon: 'HeartPulse',      group: 'more' },
+  { id: 'items',     label: 'Item Library',  path: '/items',     icon: 'Package',         group: 'more' },
+  { id: 'stores',    label: 'Stores',        path: '/stores',    icon: 'Store',           group: 'more' },
 ];
+
+export const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((i) => i.group === 'main');
+export const MORE_NAV_ITEMS   = NAV_ITEMS.filter((i) => i.group === 'more');
 
 // ── Personal Finance Categories ──────────────────────────────
 export const FINANCE_INCOME_CATEGORIES = [

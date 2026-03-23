@@ -1,490 +1,632 @@
 // ==========================================
-// BasketBuddy - Dashboard Page
+// BasketBuddy - Dashboard v4
+// Clean, real-time, chart-forward redesign
 // ==========================================
 
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-  ShoppingCart, TrendingDown, TrendingUp, Wallet, Tag,
-  AlertTriangle, ArrowRight, Clock, CheckCircle2, Sparkles, Package,
-  Receipt, ArrowDownCircle, Fuel, ChevronLeft, ChevronRight,
+  AreaChart, Area, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
+import {
+  ShoppingCart, Wallet, Receipt, Fuel, TrendingUp, TrendingDown,
+  ChevronLeft, ChevronRight, Sparkles, HeartPulse, Activity,
+  Package, ArrowUpCircle, DollarSign, AlertCircle, CheckCircle,
+  BarChart3, ListChecks,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
-import { formatPrice, formatRelativeDate, calcPercentage, getBudgetColor, daysUntilRestock, cn } from '../utils/helpers';
-import { CURRENCY } from '../config/constants';
+import { formatPrice, formatRelativeDate, calcPercentage, cn } from '../utils/helpers';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+// ── Variants ────────────────────────────────────────────────
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.055 } } };
+const card      = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } } };
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+];
+
+type ActivityItem = {
+  id: string;
+  type: 'trip' | 'transaction' | 'fuel';
+  icon: React.ReactNode;
+  bg: string;
+  color: string;
+  title: string;
+  sub: string;
+  amount: number;
+  amountCls: string;
+  date: number;
 };
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
+
+// Custom Recharts tooltip
+const ChartTip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-gray-900/95 border border-violet-500/30 rounded-xl px-3 py-2.5 shadow-2xl text-[11px]">
+      <p className="text-gray-500 mb-1.5 font-medium">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <p key={i} className="font-mono tabular-nums font-semibold" style={{ color: p.color }}>
+          {p.name}: {formatPrice(p.value)}
+        </p>
+      ))}
+    </div>
+  );
 };
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { trips, items, prices, stores, budgets, reminders, categories, transactions, fuelFillups } = useApp();
+  const {
+    trips, stores, categories, budgets,
+    transactions, fuelFillups, reminders,
+    medicalAidPlans, medicalAppointments,
+  } = useApp();
 
-  const now = new Date();
+  // ── Live clock ────────────────────────────────────────────
+  const [tick, setTick] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setTick(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-  // Billing period: 25th of month → 24th of next month.
-  // Days 1–24 = still in previous month's period; days 25–31 = new period started.
-  const _currentBillingPeriod = (() => {
-    const d = now.getDate();
-    const m = now.getMonth() + 1;
-    const y = now.getFullYear();
+  const now = useMemo(() => new Date(), []);
+
+  // ── Billing period ────────────────────────────────────────
+  const _current = useMemo(() => {
+    const d = now.getDate(), m = now.getMonth() + 1, y = now.getFullYear();
     if (d <= 24) return m === 1 ? { month: 12, year: y - 1 } : { month: m - 1, year: y };
     return { month: m, year: y };
-  })();
-  const [viewMonth, setViewMonth] = useState(_currentBillingPeriod.month);
-  const [viewYear,  setViewYear]  = useState(_currentBillingPeriod.year);
+  }, [now]);
 
-  const isOnCurrentPeriod =
-    viewMonth === _currentBillingPeriod.month && viewYear === _currentBillingPeriod.year;
+  const [viewMonth, setViewMonth] = useState(_current.month);
+  const [viewYear,  setViewYear]  = useState(_current.year);
+  const isCurrentPeriod = viewMonth === _current.month && viewYear === _current.year;
 
-  const prevMonth = () => {
+  const prevMonth = useCallback(() => {
     if (viewMonth === 1) { setViewMonth(12); setViewYear((y) => y - 1); }
     else setViewMonth((m) => m - 1);
-  };
-  const nextMonth = () => {
-    if (isOnCurrentPeriod) return;
+  }, [viewMonth]);
+
+  const nextMonth = useCallback(() => {
+    if (isCurrentPeriod) return;
     if (viewMonth === 12) { setViewMonth(1); setViewYear((y) => y + 1); }
     else setViewMonth((m) => m + 1);
-  };
+  }, [viewMonth, isCurrentPeriod]);
 
-  // Period date range: e.g. "February" = Feb 25 00:00 → Mar 24 23:59
-  const periodStart = useMemo(
-    () => new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime(),
-    [viewMonth, viewYear]
-  );
-  const periodEnd = useMemo(
-    () => new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime(),
-    [viewMonth, viewYear]
-  );
+  const periodStart = useMemo(() => new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime(), [viewMonth, viewYear]);
+  const periodEnd   = useMemo(() => new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime(), [viewMonth, viewYear]);
 
-  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const billingPeriodLabel = (() => {
-    const startDate = new Date(viewYear, viewMonth - 1, 25);
-    const endDate   = new Date(viewYear, viewMonth, 24);
+  const periodLabel = useMemo(() => {
+    const s = new Date(viewYear, viewMonth - 1, 25);
+    const e = new Date(viewYear, viewMonth, 24);
     const fmt = (d: Date) => d.toLocaleDateString('en-NA', { day: 'numeric', month: 'short' });
-    const endYear = endDate.getFullYear();
-    return `${fmt(startDate)} – ${fmt(endDate)}${endYear !== viewYear ? ` ${endYear}` : `, ${viewYear}`}`;
-  })();
+    return `${fmt(s)} – ${fmt(e)}${e.getFullYear() !== viewYear ? ` ${e.getFullYear()}` : `, ${viewYear}`}`;
+  }, [viewMonth, viewYear]);
 
-  // Stats — all filtered by billing period date range
-  const monthTrips = useMemo(() =>
-    trips.filter((t) => t.date >= periodStart && t.date <= periodEnd),
-    [trips, periodStart, periodEnd]
-  );
-  const completedTrips = monthTrips.filter((t) => t.status === 'completed');
-  const plannedTrips = trips.filter((t) => t.status === 'planned');
-  const monthlySpent = completedTrips.reduce((s, t) => s + t.totalSpent, 0);
+  // ── Period data ───────────────────────────────────────────
+  const monthTrips = useMemo(() => trips.filter((t) => t.date >= periodStart && t.date <= periodEnd), [trips, periodStart, periodEnd]);
+  const completedTrips = useMemo(() => monthTrips.filter((t) => t.status === 'completed'), [monthTrips]);
+  const monthlySpent   = useMemo(() => completedTrips.reduce((s, t) => s + t.totalSpent, 0), [completedTrips]);
 
   const currentBudget = budgets.find((b) => b.month === viewMonth && b.year === viewYear);
-  const budgetTotal = currentBudget?.totalBudget || 0;
-  const budgetPct = budgetTotal > 0 ? calcPercentage(monthlySpent, budgetTotal) : 0;
+  const budgetTotal   = currentBudget?.totalBudget ?? 0;
+  const budgetPct     = budgetTotal > 0 ? calcPercentage(monthlySpent, budgetTotal) : 0;
 
-  // Personal finance: fixed + variable expenses in this billing period
-  const monthTransactions = useMemo(() =>
-    transactions.filter((t) => t.date >= periodStart && t.date <= periodEnd),
-    [transactions, periodStart, periodEnd]
-  );
-  const totalFixed    = monthTransactions.filter((t) => t.type === 'fixed').reduce((s, t) => s + t.amount, 0);
-  const totalVariable = monthTransactions.filter((t) => t.type === 'variable').reduce((s, t) => s + t.amount, 0);
+  const monthTx = useMemo(() => transactions.filter((t) => t.date >= periodStart && t.date <= periodEnd), [transactions, periodStart, periodEnd]);
+  const totalIncome   = useMemo(() => monthTx.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0), [monthTx]);
+  const totalFixed    = useMemo(() => monthTx.filter((t) => t.type === 'fixed').reduce((s, t) => s + t.amount, 0), [monthTx]);
+  const totalVariable = useMemo(() => monthTx.filter((t) => t.type === 'variable').reduce((s, t) => s + t.amount, 0), [monthTx]);
 
-  // Fuel: fillups in this billing period
-  const monthFillups = useMemo(() =>
-    fuelFillups.filter((f) => f.date >= periodStart && f.date <= periodEnd),
-    [fuelFillups, periodStart, periodEnd]
-  );
-  const totalFuel = monthFillups.reduce((s, f) => s + f.totalCost, 0);
+  const monthFuel   = useMemo(() => fuelFillups.filter((f) => f.date >= periodStart && f.date <= periodEnd), [fuelFillups, periodStart, periodEnd]);
+  const totalFuel   = useMemo(() => monthFuel.reduce((s, f) => s + f.totalCost, 0), [monthFuel]);
+  const avgPerLitre = monthFuel.length > 0 ? monthFuel.reduce((s, f) => s + f.pricePerLitre, 0) / monthFuel.length : 0;
 
-  const totalExpenses = totalFixed + totalVariable + monthlySpent + totalFuel;
+  const activePlan          = medicalAidPlans?.find((p) => p.active) ?? null;
+  const monthlyContribution = activePlan?.monthlyContribution ?? 0;
+  const totalExpenses       = totalFixed + totalVariable + monthlySpent + totalFuel;
+  const netSavings          = totalIncome - totalExpenses;
+  const isOnTrack           = budgetTotal > 0 ? budgetPct < 100 : netSavings >= 0 || totalIncome === 0;
 
-  // Specials count
-  const activeSpecials = prices.filter(
-    (p) => p.isOnSpecial && p.specialPrice && (!p.specialEndDate || p.specialEndDate > Date.now())
-  );
+  // ── Expense segments (donut) ──────────────────────────────
+  const segments = useMemo(() => {
+    const raw = [
+      { label: 'Fixed',       val: totalFixed,          color: '#3b82f6' },
+      { label: 'Variable',    val: totalVariable,       color: '#f97316' },
+      { label: 'Groceries',   val: monthlySpent,        color: '#10b981' },
+      { label: 'Fuel',        val: totalFuel,           color: '#f59e0b' },
+      { label: 'Medical Aid', val: monthlyContribution, color: '#f43f5e' },
+    ].filter((s) => s.val > 0);
+    const total = raw.reduce((s, r) => s + r.val, 0);
+    return raw.map((r) => ({ ...r, pct: total > 0 ? (r.val / total) * 100 : 0 }));
+  }, [totalFixed, totalVariable, monthlySpent, totalFuel, monthlyContribution]);
 
-  // Restock alerts
-  const restockAlerts = reminders.filter(
-    (r) => r.enabled && daysUntilRestock(r.lastPurchased, r.frequency) <= 3
-  );
-
-  // Recent trips
-  const recentTrips = [...trips]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 5);
-
-  // Top spending categories this month
-  const catSpending = new Map<string, number>();
-  completedTrips.forEach((trip) => {
-    trip.items.forEach((ti) => {
-      const prev = catSpending.get(ti.categoryId) || 0;
-      catSpending.set(ti.categoryId, prev + (ti.actualPrice || ti.estimatedPrice) * ti.quantity);
+  // ── 6-month trend chart ───────────────────────────────────
+  const trendData = useMemo(() => {
+    return Array.from({ length: 6 }, (_, i) => {
+      const d     = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const m     = d.getMonth() + 1;
+      const y     = d.getFullYear();
+      const start = new Date(y, m - 1, 1).getTime();
+      const end   = new Date(y, m, 0, 23, 59, 59, 999).getTime();
+      const income = transactions.filter((t) => t.type === 'income' && t.date >= start && t.date <= end).reduce((s, t) => s + t.amount, 0);
+      const expenses =
+        transactions.filter((t) => (t.type === 'fixed' || t.type === 'variable') && t.date >= start && t.date <= end).reduce((s, t) => s + t.amount, 0) +
+        trips.filter((t) => t.status === 'completed' && t.date >= start && t.date <= end).reduce((s, t) => s + t.totalSpent, 0) +
+        fuelFillups.filter((f) => f.date >= start && f.date <= end).reduce((s, f) => s + f.totalCost, 0);
+      return { month: MONTH_NAMES[m - 1].slice(0, 3), income, expenses };
     });
-  });
-  const topCategories = Array.from(catSpending.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([catId, amount]) => {
-      const cat = categories.find((c) => c.id === catId);
-      return { id: catId, name: cat?.name || catId, icon: cat?.icon || '📦', color: cat?.color || '#666', amount };
+  }, [transactions, trips, fuelFillups, now]);
+
+  const chartHasData = trendData.some((d) => d.income > 0 || d.expenses > 0);
+
+  // ── Activity feed ─────────────────────────────────────────
+  const [feedFilter, setFeedFilter] = useState<'all' | 'trips' | 'transactions' | 'fuel'>('all');
+
+  const activityFeed = useMemo(() => {
+    const items: ActivityItem[] = [];
+    monthTrips.forEach((trip) => {
+      const store = stores.find((s) => s.id === trip.storeId);
+      items.push({
+        id: `trip-${trip.id}`, type: 'trip',
+        icon: <ShoppingCart size={14} />,
+        bg: store?.color ? `${store.color}20` : 'rgb(139 92 246 / 0.15)',
+        color: store?.color ?? '#8b5cf6',
+        title: trip.name,
+        sub: `${store?.name ?? 'Unknown'} · ${trip.items.length} items`,
+        amount: trip.status === 'completed' ? trip.totalSpent : trip.items.reduce((s, i) => s + i.estimatedPrice * i.quantity, 0),
+        amountCls: 'text-rose-400', date: trip.date,
+      });
     });
+    monthTx.forEach((tx) => {
+      items.push({
+        id: `tx-${tx.id}`, type: 'transaction',
+        icon: tx.type === 'income' ? <ArrowUpCircle size={14} /> : <Receipt size={14} />,
+        bg: tx.type === 'income' ? 'rgb(16 185 129 / 0.15)' : 'rgb(244 63 94 / 0.15)',
+        color: tx.type === 'income' ? '#10b981' : '#f43f5e',
+        title: tx.description, sub: tx.category,
+        amount: tx.amount,
+        amountCls: tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400', date: tx.date,
+      });
+    });
+    monthFuel.forEach((f) => {
+      items.push({
+        id: `fuel-${f.id}`, type: 'fuel',
+        icon: <Fuel size={14} />,
+        bg: 'rgb(245 158 11 / 0.15)', color: '#f59e0b',
+        title: `${f.litres}L @ ${formatPrice(f.pricePerLitre)}`,
+        sub: f.stationName,
+        amount: f.totalCost, amountCls: 'text-amber-400', date: f.date,
+      });
+    });
+    items.sort((a, b) => b.date - a.date);
+    const filtered =
+      feedFilter === 'trips'        ? items.filter((i) => i.type === 'trip') :
+      feedFilter === 'transactions' ? items.filter((i) => i.type === 'transaction') :
+      feedFilter === 'fuel'         ? items.filter((i) => i.type === 'fuel') : items;
+    return filtered.slice(0, 10);
+  }, [monthTrips, monthTx, monthFuel, stores, feedFilter]);
 
-  const greeting = () => {
-    const hour = now.getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
+  // ── Top grocery categories ────────────────────────────────
+  const topCategories = useMemo(() => {
+    const map = new Map<string, number>();
+    completedTrips.forEach((t) =>
+      t.items.forEach((i) => map.set(i.categoryId, (map.get(i.categoryId) ?? 0) + (i.actualPrice ?? i.estimatedPrice) * i.quantity)),
+    );
+    return Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1]).slice(0, 5)
+      .map(([id, amount]) => {
+        const cat = categories.find((c) => c.id === id);
+        return { id, amount, name: cat?.name ?? id, icon: cat?.icon ?? '📦', color: cat?.color ?? '#6b7280' };
+      });
+  }, [completedTrips, categories]);
 
+  // ── Restock alerts ────────────────────────────────────────
+  const restockAlerts = useMemo(() =>
+    reminders
+      .filter((r) => r.enabled)
+      .map((r) => ({ ...r, daysUntil: r.frequency - Math.floor((Date.now() - r.lastPurchased) / 86400000) }))
+      .filter((r) => r.daysUntil <= 3)
+      .slice(0, 4),
+  [reminders]);
+
+  // ── Next appointment ──────────────────────────────────────
+  const nextAppt = useMemo(() =>
+    (medicalAppointments ?? [])
+      .filter((a) => a.status === 'upcoming' && a.date >= Date.now())
+      .sort((a, b) => a.date - b.date)[0] ?? null,
+  [medicalAppointments]);
+
+  // ── Time / greeting ──────────────────────────────────────
+  const h = tick.getHours();
+  const greeting  = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.displayName?.split(' ')[0] ?? 'there';
+  const timeStr   = tick.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const dateStr   = tick.toLocaleDateString('en-NA', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // ─────────────────────────────────────────────────────────
   return (
-    <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-      {/* Welcome */}
-      <motion.div variants={item} className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {greeting()}, {user?.displayName?.split(' ')[0] || 'there'} 👋
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-0.5">
-            Overview for {MONTH_NAMES[viewMonth - 1]} {viewYear}
-            <span className="ml-1.5 text-xs text-gray-400">({billingPeriodLabel})</span>
-          </p>
-        </div>
-        {/* Billing period navigator */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={prevMonth}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            <ChevronLeft size={18} className="text-gray-600 dark:text-gray-400" />
-          </button>
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 min-w-[110px] text-center">
-            {MONTH_NAMES[viewMonth - 1]} {viewYear}
-          </span>
-          <button
-            onClick={nextMonth}
-            disabled={isOnCurrentPeriod}
-            className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight size={18} className="text-gray-600 dark:text-gray-400" />
-          </button>
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 max-w-7xl mx-auto">
+
+      {/* ══ HERO ════════════════════════════════════════════ */}
+      <motion.div variants={card} className="relative overflow-hidden rounded-2xl">
+        <div className="absolute -left-20 -top-12 w-72 h-40 bg-violet-600/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="absolute right-0 -bottom-8 w-56 h-32 bg-fuchsia-500/8 blur-[60px] rounded-full pointer-events-none" />
+
+        <div className="relative bg-gray-900/80 backdrop-blur-xl border border-violet-500/20 rounded-2xl px-6 py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+            {/* Avatar + greeting */}
+            <div className="flex items-center gap-4">
+              <div className="relative flex-shrink-0">
+                <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-800 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30">
+                  <Sparkles size={20} className="text-white" />
+                </div>
+                <div className={cn(
+                  'absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-gray-900',
+                  isOnTrack ? 'bg-emerald-500' : 'bg-rose-500',
+                )} />
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{greeting}</p>
+                <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">{firstName}</h1>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {isOnTrack
+                    ? <><CheckCircle size={11} className="text-emerald-500" /><span className="text-[11px] text-emerald-400 font-medium">On track</span></>
+                    : <><AlertCircle size={11} className="text-rose-500" /><span className="text-[11px] text-rose-400 font-medium">Over budget</span></>}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: live clock + period nav */}
+            <div className="flex items-center gap-4 sm:flex-shrink-0">
+              <div className="hidden md:block text-right">
+                <p className="text-2xl font-bold text-white font-mono tabular-nums tracking-tight leading-none">{timeStr}</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">{dateStr}</p>
+              </div>
+              <div className="hidden md:block w-px h-10 bg-violet-500/20" />
+              <div className="flex items-center gap-0.5 bg-gray-800/70 border border-violet-500/20 rounded-xl p-1">
+                <button onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-lg hover:bg-white/8 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer">
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="text-sm font-semibold text-gray-200 px-2 min-w-[110px] text-center">
+                  {MONTH_NAMES[viewMonth - 1].slice(0, 3)} {viewYear}
+                </span>
+                <button onClick={nextMonth} disabled={isCurrentPeriod} aria-label="Next month" className="p-2 rounded-lg hover:bg-white/8 text-gray-500 hover:text-gray-200 transition-colors disabled:opacity-25 disabled:cursor-not-allowed cursor-pointer">
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+          <p className="text-[11px] text-gray-600 mt-4 pl-16 sm:pl-0">{periodLabel}</p>
         </div>
       </motion.div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {/* Monthly Spent */}
-        <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
-              <Wallet size={20} className="text-green-600 dark:text-green-400" />
-            </div>
+      {/* ══ KPI CARDS ════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        {/* Groceries */}
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-emerald-500/30 transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2 bg-emerald-500/10 rounded-xl"><Wallet size={16} className="text-emerald-400" /></div>
             {budgetTotal > 0 && (
-              <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full',
-                budgetPct >= 100 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                budgetPct >= 80 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              )}>
-                {budgetPct}% of budget
-              </span>
+              <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
+                budgetPct >= 100 ? 'bg-rose-500/15 text-rose-400' : budgetPct >= 80 ? 'bg-amber-500/15 text-amber-400' : 'bg-emerald-500/15 text-emerald-400',
+              )}>{budgetPct}%</span>
             )}
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatPrice(monthlySpent)}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {budgetTotal > 0
-              ? `of ${formatPrice(budgetTotal)} budget`
-              : `${completedTrips.length} trips this month`}
-          </p>
+          <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">Groceries</p>
+          <p className="text-2xl font-bold text-white font-mono tabular-nums">{formatPrice(monthlySpent)}</p>
+          <p className="text-[11px] text-gray-600 mt-0.5">{budgetTotal > 0 ? `of ${formatPrice(budgetTotal)}` : `${completedTrips.length} trips`}</p>
           {budgetTotal > 0 && (
-            <div className="mt-3 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min(budgetPct, 100)}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full rounded-full"
-                style={{ backgroundColor: getBudgetColor(monthlySpent, budgetTotal) }}
-              />
+            <div className="mt-3 h-1 bg-gray-800 rounded-full overflow-hidden">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(budgetPct, 100)}%` }} transition={{ duration: 0.9, ease: 'easeOut' }}
+                className={cn('h-full rounded-full', budgetPct >= 100 ? 'bg-rose-500' : budgetPct >= 80 ? 'bg-amber-400' : 'bg-emerald-500')} />
             </div>
           )}
         </motion.div>
 
-        {/* Planned Trips */}
-        <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-              <ShoppingCart size={20} className="text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{plannedTrips.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Planned trips</p>
-          <Link to="/trips" className="inline-flex items-center gap-1 text-xs text-brand-500 font-medium mt-3 hover:text-brand-600">
-            View all <ArrowRight size={12} />
-          </Link>
+        {/* Total Expenses */}
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-rose-500/30 transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-rose-500/50 to-transparent" />
+          <div className="mb-3"><div className="p-2 bg-rose-500/10 rounded-xl w-fit"><Receipt size={16} className="text-rose-400" /></div></div>
+          <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">Expenses</p>
+          <p className="text-2xl font-bold text-white font-mono tabular-nums">{formatPrice(totalExpenses)}</p>
+          <p className="text-[11px] text-gray-600 mt-0.5">total this period</p>
         </motion.div>
 
-        {/* Active Specials */}
-        <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
-              <Tag size={20} className="text-amber-600 dark:text-amber-400" />
+        {/* Net */}
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-violet-500/40 transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
+          <div className="mb-3">
+            <div className={cn('p-2 rounded-xl w-fit', totalIncome === 0 ? 'bg-gray-700/30' : netSavings >= 0 ? 'bg-violet-500/10' : 'bg-rose-500/10')}>
+              {netSavings >= 0 ? <TrendingUp size={16} className={totalIncome === 0 ? 'text-gray-600' : 'text-violet-400'} /> : <TrendingDown size={16} className="text-rose-400" />}
             </div>
-            {activeSpecials.length > 0 && (
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
-              </span>
-            )}
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeSpecials.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Active specials tracked</p>
-          <Link to="/items" className="inline-flex items-center gap-1 text-xs text-brand-500 font-medium mt-3 hover:text-brand-600">
-            Manage prices <ArrowRight size={12} />
-          </Link>
+          <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">
+            {totalIncome === 0 ? 'Net' : netSavings >= 0 ? 'Surplus' : 'Deficit'}
+          </p>
+          <p className={cn('text-2xl font-bold font-mono tabular-nums', totalIncome === 0 ? 'text-gray-600' : netSavings >= 0 ? 'text-emerald-400' : 'text-rose-400')}>
+            {totalIncome === 0 ? '—' : formatPrice(Math.abs(netSavings))}
+          </p>
+          <p className="text-[11px] text-gray-600 mt-0.5">
+            {totalIncome === 0 ? 'no income data' : netSavings >= 0 ? `left after expenses` : `over budget`}
+          </p>
         </motion.div>
 
-        {/* Items Tracked */}
-        <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
-              <Package size={20} className="text-purple-600 dark:text-purple-400" />
-            </div>
+        {/* Fuel */}
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20 hover:border-amber-500/30 transition-all duration-300 relative overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
+          <div className="flex items-start justify-between mb-3">
+            <div className="p-2 bg-amber-500/10 rounded-xl"><Fuel size={16} className="text-amber-400" /></div>
+            {monthFuel.length > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">{monthFuel.length}×</span>}
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{items.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Items in {stores.length} stores</p>
-          <Link to="/compare" className="inline-flex items-center gap-1 text-xs text-brand-500 font-medium mt-3 hover:text-brand-600">
-            Compare prices <ArrowRight size={12} />
-          </Link>
+          <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">Fuel</p>
+          <p className="text-2xl font-bold text-white font-mono tabular-nums">{formatPrice(totalFuel)}</p>
+          <p className="text-[11px] text-gray-600 mt-0.5">{avgPerLitre > 0 ? `avg ${formatPrice(avgPerLitre)}/L` : 'no fillups'}</p>
         </motion.div>
       </div>
 
-      {/* Total Expenses Card */}
-      <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <h2 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-            <Receipt size={16} className="text-rose-500" />
-            Total Monthly Expenses
-          </h2>
-          <Link to="/finance" className="text-xs text-brand-500 font-medium hover:text-brand-600 flex items-center gap-1">
-            Home Budget <ArrowRight size={12} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-gray-100 dark:divide-gray-800">
-          {/* Fixed */}
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-xs text-gray-500 font-medium">Fixed</span>
+      {/* ══ CHARTS ROW ═══════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* 6-month Area Chart */}
+        <motion.div variants={card} className="lg:col-span-2 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-sm font-bold text-white">Income vs Expenses</h2>
+              <p className="text-[11px] text-gray-600 mt-0.5">6-month trend</p>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalFixed)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Rent, insurance…</p>
-          </div>
-          {/* Variable */}
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-xs text-gray-500 font-medium">Variable</span>
+            <div className="flex items-center gap-4 text-[11px] text-gray-500">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Income</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block" />Expenses</span>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalVariable)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Fuel, utilities…</p>
           </div>
-          {/* Groceries */}
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-gray-500 font-medium">Groceries</span>
+          {!chartHasData ? (
+            <div className="h-48 flex flex-col items-center justify-center text-gray-700">
+              <BarChart3 size={28} className="mb-2" />
+              <p className="text-xs">Add transactions to see the trend</p>
             </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(monthlySpent)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">From shopping trips</p>
-          </div>
-          {/* Fuel */}
-          <div className="p-5">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-xs text-gray-500 font-medium">Fuel</span>
-            </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{formatPrice(totalFuel)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{monthFillups.length} fill-up{monthFillups.length !== 1 ? 's' : ''}</p>
-            <Link to="/fuel" className="inline-flex items-center gap-1 text-xs text-brand-500 font-medium mt-1 hover:text-brand-600">
-              View <ArrowRight size={12} />
-            </Link>
-          </div>
-          {/* Total */}
-          <div className="p-5 bg-rose-50 dark:bg-rose-900/10">
-            <div className="flex items-center gap-1.5 mb-1">
-              <ArrowDownCircle size={12} className="text-rose-500" />
-              <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">Total Out</span>
-            </div>
-            <p className="text-xl font-bold text-rose-600 dark:text-rose-400">{formatPrice(totalExpenses)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">All categories combined</p>
-          </div>
-        </div>
-      </motion.div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={trendData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gIncome"  x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gExpense" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#f43f5e" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff06" />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#4b5563' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: '#4b5563' }} axisLine={false} tickLine={false}
+                  tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`} />
+                <Tooltip content={<ChartTip />} />
+                <Area type="monotone" dataKey="income"   name="Income"   stroke="#10b981" strokeWidth={2} fill="url(#gIncome)"  dot={false} activeDot={{ r: 4, fill: '#10b981' }} />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#f43f5e" strokeWidth={2} fill="url(#gExpense)" dot={false} activeDot={{ r: 4, fill: '#f43f5e' }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Trips */}
-        <motion.div variants={item} className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800 dark:text-gray-200">Recent Shopping Trips</h2>
-            <Link to="/trips" className="text-xs text-brand-500 font-medium hover:text-brand-600">View All</Link>
-          </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            {recentTrips.length === 0 ? (
-              <div className="p-8 text-center">
-                <ShoppingCart className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={40} />
-                <p className="text-gray-500 text-sm">No trips yet. Plan your first shopping trip!</p>
-                <Link to="/trips" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">
-                  <ShoppingCart size={14} /> New Trip
-                </Link>
+        {/* Donut — expense breakdown */}
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+          <h2 className="text-sm font-bold text-white">Breakdown</h2>
+          <p className="text-[11px] text-gray-600 mt-0.5 mb-4">{periodLabel}</p>
+          {segments.length === 0 ? (
+            <div className="h-48 flex flex-col items-center justify-center text-gray-700">
+              <DollarSign size={28} className="mb-2" />
+              <p className="text-xs text-center">No expenses yet</p>
+            </div>
+          ) : (
+            <>
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={156}>
+                  <PieChart>
+                    <Pie data={segments} cx="50%" cy="50%" innerRadius={46} outerRadius={70}
+                      paddingAngle={3} dataKey="val" startAngle={90} endAngle={-270} strokeWidth={0}>
+                      {segments.map((seg, i) => <Cell key={i} fill={seg.color} />)}
+                    </Pie>
+                    <Tooltip content={<ChartTip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <p className="text-[10px] text-gray-500">Total</p>
+                  <p className="text-sm font-bold text-white font-mono tabular-nums">
+                    {formatPrice(segments.reduce((s, r) => s + r.val, 0))}
+                  </p>
+                </div>
               </div>
-            ) : (
-              recentTrips.map((trip) => {
-                const store = stores.find((s) => s.id === trip.storeId);
-                return (
-                  <div key={trip.id} className="px-5 py-3 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                      style={{ backgroundColor: `${store?.color}20`, color: store?.color }}
-                    >
-                      {store?.icon || '🛒'}
+              <div className="mt-3 space-y-1.5">
+                {segments.map((seg, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span className="flex items-center gap-2 text-[11px] text-gray-400">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: seg.color }} />
+                      {seg.label}
+                    </span>
+                    <span className="text-[11px] font-mono text-gray-300 tabular-nums">{formatPrice(seg.val)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </motion.div>
+      </div>
+
+      {/* ══ ACTIVITY + SIDEBAR ═══════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+        {/* Activity feed */}
+        <motion.div variants={card} className="lg:col-span-3 bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.05]">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-white">Recent Activity</h2>
+              <span className="text-[10px] text-gray-600">{periodLabel}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {(['all', 'trips', 'transactions', 'fuel'] as const).map((f) => (
+                <button key={f} onClick={() => setFeedFilter(f)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer capitalize',
+                    feedFilter === f ? 'bg-violet-600 text-white' : 'text-gray-600 hover:text-gray-300 hover:bg-white/5',
+                  )}>
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="divide-y divide-white/[0.04] max-h-[420px] overflow-y-auto">
+            <AnimatePresence mode="popLayout">
+              {activityFeed.length === 0 ? (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-14 text-center">
+                  <Activity className="mx-auto text-gray-700 mb-3" size={26} />
+                  <p className="text-xs text-gray-600 mb-4">No activity in this period</p>
+                  <Link to="/trips" className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-medium transition-colors">
+                    <ShoppingCart size={13} /> Start Shopping
+                  </Link>
+                </motion.div>
+              ) : (
+                activityFeed.map((a) => (
+                  <motion.div key={a.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="px-5 py-3.5 flex items-center gap-3 hover:bg-white/[0.025] transition-colors">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: a.bg, color: a.color }}>
+                      {a.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{trip.name}</p>
-                      <p className="text-xs text-gray-400">
-                        {store?.name} · {trip.items.length} items · {formatRelativeDate(trip.createdAt)}
-                      </p>
+                      <p className="text-sm font-medium text-gray-200 truncate">{a.title}</p>
+                      <p className="text-[11px] text-gray-600 truncate">{a.sub}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                        {formatPrice(trip.status === 'completed' ? trip.totalSpent : trip.items.reduce((s, i) => s + i.estimatedPrice * i.quantity, 0))}
-                      </p>
-                      <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full',
-                        trip.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                        trip.status === 'in-progress' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                        'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                      )}>
-                        {trip.status === 'completed' ? '✓ Done' : trip.status === 'in-progress' ? '🛒 Shopping' : '📋 Planned'}
-                      </span>
+                      <p className={cn('text-sm font-bold font-mono tabular-nums', a.amountCls)}>{formatPrice(a.amount)}</p>
+                      <p className="text-[10px] text-gray-600">{formatRelativeDate(a.date)}</p>
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  </motion.div>
+                ))
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
 
-        {/* Side Panel */}
-        <div className="space-y-6">
-          {/* Top Categories */}
-          <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
-              <h2 className="font-semibold text-gray-800 dark:text-gray-200">Top Spending</h2>
-            </div>
-            <div className="p-4 space-y-3">
-              {topCategories.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">Complete a trip to see spending</p>
-              ) : (
-                topCategories.map((cat) => {
+        {/* Right widgets */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          {/* Top categories */}
+          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <h2 className="text-sm font-bold text-white mb-4">Top Grocery Categories</h2>
+            {topCategories.length === 0 ? (
+              <p className="text-[11px] text-gray-600 text-center py-3">Complete a trip to see breakdown</p>
+            ) : (
+              <div className="space-y-3">
+                {topCategories.map((cat) => {
                   const pct = monthlySpent > 0 ? calcPercentage(cat.amount, monthlySpent) : 0;
                   return (
-                    <div key={cat.id} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {cat.icon} {cat.name}
+                    <div key={cat.id}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
+                          <span>{cat.icon}</span>{cat.name}
                         </span>
-                        <span className="text-xs font-medium text-gray-500">{formatPrice(cat.amount)}</span>
+                        <span className="text-[11px] font-mono text-gray-300 tabular-nums">{formatPrice(cat.amount)}</span>
                       </div>
-                      <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.6, delay: 0.2 }}
-                          className="h-full rounded-full"
-                          style={{ backgroundColor: cat.color }}
-                        />
+                      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.7, delay: 0.1, ease: 'easeOut' }}
+                          className="h-full rounded-full" style={{ backgroundColor: cat.color }} />
                       </div>
                     </div>
                   );
-                })
-              )}
+                })}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Quick actions */}
+          <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+            <h2 className="text-sm font-bold text-white mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { to: '/trips',         icon: ShoppingCart, label: 'New Trip',   cls: 'text-violet-400' },
+                { to: '/finance',       icon: DollarSign,   label: 'Add Tx',     cls: 'text-emerald-400' },
+                { to: '/fuel',          icon: Fuel,         label: 'Log Fuel',   cls: 'text-amber-400' },
+                { to: '/budget',        icon: Wallet,       label: 'Budget',     cls: 'text-blue-400' },
+                { to: '/shopping-list', icon: ListChecks,   label: 'Lists',      cls: 'text-violet-400' },
+                { to: '/analytics',     icon: BarChart3,    label: 'Analytics',  cls: 'text-fuchsia-400' },
+              ].map(({ to, icon: Icon, label, cls }) => (
+                <Link key={to} to={to}
+                  className="flex flex-col items-center justify-center gap-1.5 h-16 bg-gray-800/40 hover:bg-gray-700/60 border border-white/[0.05] hover:border-violet-500/30 rounded-xl transition-all">
+                  <Icon size={15} className={cls} />
+                  <span className="text-[10px] font-medium text-gray-600 text-center leading-tight">{label}</span>
+                </Link>
+              ))}
             </div>
           </motion.div>
 
-          {/* Restock Alerts */}
-          <motion.div variants={item} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
-              <h2 className="font-semibold text-gray-800 dark:text-gray-200">Restock Alerts</h2>
-              {restockAlerts.length > 0 && (
-                <span className="w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {restockAlerts.length}
-                </span>
-              )}
-            </div>
-            <div className="p-4">
-              {restockAlerts.length === 0 ? (
-                <div className="text-center py-4">
-                  <CheckCircle2 className="mx-auto text-green-400 mb-2" size={28} />
-                  <p className="text-sm text-gray-400">All stocked up!</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {restockAlerts.map((r) => (
-                    <div key={r.id} className="flex items-center gap-3 p-2 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl">
-                      <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{r.itemName}</p>
-                        <p className="text-[10px] text-gray-400">
-                          {daysUntilRestock(r.lastPurchased, r.frequency) <= 0
-                            ? 'Overdue!'
-                            : `In ${daysUntilRestock(r.lastPurchased, r.frequency)} days`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </motion.div>
+          {/* Restock alerts */}
+          {restockAlerts.length > 0 && (
+            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-bold text-white">Restock Alerts</h2>
+                <span className="w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{restockAlerts.length}</span>
+              </div>
+              <div className="space-y-1.5">
+                {restockAlerts.map((a) => (
+                  <div key={a.id} className="flex items-center gap-2.5 bg-gray-800/40 rounded-xl px-3 py-2">
+                    <Package size={12} className="text-amber-400 flex-shrink-0" />
+                    <p className="text-[11px] text-gray-300 flex-1 truncate">{a.itemName}</p>
+                    <span className={cn('text-[10px] font-semibold', a.daysUntil <= 0 ? 'text-rose-400' : 'text-amber-400')}>
+                      {a.daysUntil <= 0 ? 'Overdue' : `${a.daysUntil}d`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
-          {/* Quick Actions */}
-          <motion.div variants={item} className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-2xl p-5 text-white shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles size={18} />
-              <h3 className="font-semibold">Quick Actions</h3>
-            </div>
-            <div className="space-y-2">
-              <Link
-                to="/trips"
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
-              >
-                <ShoppingCart size={14} /> New Shopping Trip
-              </Link>
-              <Link
-                to="/fuel"
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
-              >
-                <Fuel size={14} /> Log Fuel Fill-up
-              </Link>
-              <Link
-                to="/optimizer"
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
-              >
-                <Sparkles size={14} /> Optimize My Cart
-              </Link>
-              <Link
-                to="/compare"
-                className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-sm"
-              >
-                <TrendingDown size={14} /> Compare Prices
-              </Link>
-            </div>
-          </motion.div>
+          {/* Next appointment */}
+          {nextAppt && (
+            <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 p-5">
+              <h2 className="text-sm font-bold text-white mb-3">Next Appointment</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-violet-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <HeartPulse size={15} className="text-violet-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-200 truncate">{nextAppt.type}</p>
+                  <p className="text-[11px] text-gray-500">
+                    {new Date(nextAppt.date).toLocaleDateString('en-NA', { weekday: 'short', day: 'numeric', month: 'short' })}
+                  </p>
+                </div>
+                <Link to="/medical" className="text-[11px] text-violet-400 hover:text-violet-300 transition-colors flex-shrink-0">View</Link>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
+
+      {/* ══ MEDICAL AID STRIP ════════════════════════════════ */}
+      {activePlan && (
+        <motion.div variants={card} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 px-5 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-rose-500/10 rounded-xl flex items-center justify-center">
+                <HeartPulse size={15} className="text-rose-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{activePlan.planName}</p>
+                <p className="text-[11px] text-gray-600">{activePlan.members.length} {activePlan.members.length === 1 ? 'member' : 'members'}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div>
+                <p className="text-[10px] text-gray-600 uppercase tracking-wider">Monthly</p>
+                <p className="text-base font-bold text-white font-mono tabular-nums">{formatPrice(activePlan.monthlyContribution)}</p>
+              </div>
+              <Link to="/medical" className="text-[11px] text-violet-400 hover:text-violet-300 transition-colors">Details →</Link>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
     </motion.div>
   );
 };

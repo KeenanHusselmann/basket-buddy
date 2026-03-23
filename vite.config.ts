@@ -25,10 +25,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache JS/CSS/assets but NOT index.html — navigation requests must
-        // always hit the network so a new deploy is picked up immediately.
-        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
-        // Serve index.html from network; fall back to cache only when offline.
+        // Cache the full app shell including HTML for offline support.
+        globPatterns: ['**/*.{html,js,css,ico,png,svg,woff2}'],
+        // Serve index.html from cache for all navigation requests when offline.
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         // Claim all open tabs and activate the new SW immediately on update.

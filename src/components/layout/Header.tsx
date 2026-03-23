@@ -3,7 +3,7 @@
 // ==========================================
 
 import React, { useState, useRef } from 'react';
-import { Search, Bell, Moon, Sun, Menu, CloudUpload, Loader, CheckCircle, XCircle, Cloud, AlertCircle, Clock, Download, UploadCloud, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Search, Bell, Moon, Sun, CloudUpload, Loader, CheckCircle, XCircle, Cloud, AlertCircle, Clock, Download, UploadCloud, RotateCcw, ShieldCheck } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useApp } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -12,11 +12,9 @@ import { CURRENCY } from '../../config/constants';
 import { isFirebaseConfigured } from '../../config/firebase';
 import { verifyCloudCounts, type CloudCounts } from '../../services/firestore';
 
-interface HeaderProps {
-  onMenuClick?: () => void;
-}
+interface HeaderProps {}
 
-const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
+const Header: React.FC<HeaderProps> = () => {
   const { theme, toggleTheme, isDark } = useTheme();
   const { user } = useAuth();
   const { reminders, trips, items, prices, stores, transactions,
@@ -134,38 +132,31 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   const monthlySpent = grocerySpent + financeSpent + fuelSpent;
 
   return (
-    <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 flex items-center px-6 gap-4 sticky top-0 z-30">
-      {/* Mobile menu button */}
-      <button
-        onClick={onMenuClick}
-        className="lg:hidden p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded-lg"
-      >
-        <Menu size={20} />
-      </button>
+    <header className="h-14 bg-gray-950/80 backdrop-blur-xl border-b border-violet-500/20 flex items-center px-4 gap-3 sticky top-0 z-30">
 
       {/* Search */}
       <div className="relative flex-1 max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
         <input
           type="text"
           placeholder="Search items, stores, trips..."
           className={cn(
-            'w-full pl-10 pr-4 py-2 rounded-xl text-sm',
-            'bg-gray-100 dark:bg-gray-800 border border-transparent',
-            'focus:border-brand-500 focus:bg-white dark:focus:bg-gray-900',
-            'text-gray-800 dark:text-gray-200 placeholder-gray-400',
+            'w-full pl-9 pr-10 py-2 rounded-xl text-sm',
+            'bg-gray-800/60 border border-violet-500/25',
+            'focus:border-violet-500/50 focus:bg-gray-800',
+            'text-gray-200 placeholder-gray-600',
             'outline-none transition-all duration-200'
           )}
         />
-        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-gray-200 dark:bg-gray-700 rounded">
+        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-gray-600 bg-gray-700/60 rounded">
           ⌘K
         </kbd>
       </div>
 
       {/* Quick Stat */}
-      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-xl">
+      <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-gray-800/60 border border-violet-500/20 rounded-xl">
         <span className="text-xs text-gray-500">{periodLabel}</span>
-        <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+        <span className="text-sm font-semibold text-gray-200">
           {formatPrice(monthlySpent)}
         </span>
       </div>
@@ -174,7 +165,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       <div className="relative">
         <button
           onClick={() => setNotifOpen(!notifOpen)}
-          className="relative p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-brand-500 transition-colors"
+          className="relative p-2.5 rounded-xl bg-gray-800/60 border border-violet-500/20 text-gray-500 hover:text-violet-400 hover:border-violet-500/30 transition-all duration-150"
         >
           <Bell size={18} />
           {totalNotifs > 0 && (
@@ -188,17 +179,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
         {notifOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-            <div className="fixed top-[4.5rem] left-2 right-2 sm:left-auto sm:right-4 sm:w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-200">Notifications</h3>
+            <div className="fixed top-[3.75rem] left-2 right-2 sm:left-auto sm:right-4 sm:w-80 bg-gray-900 border border-violet-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="p-4 border-b border-violet-500/20">
+                <h3 className="font-semibold text-gray-200">Notifications</h3>
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {activeReminders.map((r) => (
-                  <div key={r.id} className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <p className="text-sm text-gray-800 dark:text-gray-200">
+                  <div key={r.id} className="px-4 py-3 border-b border-white/5 hover:bg-white/5">
+                    <p className="text-sm text-gray-200">
                       🔔 Time to restock <strong>{r.itemName}</strong>
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       {daysUntilRestock(r.lastPurchased, r.frequency) <= 0
                         ? 'Overdue!'
                         : `Due in ${daysUntilRestock(r.lastPurchased, r.frequency)} days`}
@@ -206,11 +197,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   </div>
                 ))}
                 {plannedTrips.map((t) => (
-                  <div key={t.id} className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <p className="text-sm text-gray-800 dark:text-gray-200">
+                  <div key={t.id} className="px-4 py-3 border-b border-white/5 hover:bg-white/5">
+                    <p className="text-sm text-gray-200">
                       🛒 Planned trip: <strong>{t.name}</strong>
                     </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-gray-500 mt-0.5">
                       Budget: {formatPrice(t.budget)} · {t.items.length} items
                     </p>
                   </div>
@@ -235,11 +226,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
             disabled={syncStatus === 'saving'}
             title="Cloud sync status"
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200',
-              syncStatus === 'saving' && 'bg-blue-50 dark:bg-blue-900/20 text-blue-500 cursor-wait',
-              syncStatus === 'saved'  && 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400',
-              syncStatus === 'error'  && 'bg-red-50 dark:bg-red-900/20 text-red-500',
-              syncStatus === 'idle'   && 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20',
+            'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-200 border',
+            syncStatus === 'saving' && 'bg-blue-500/10 border-blue-500/20 text-violet-400 cursor-wait',
+            syncStatus === 'saved'  && 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+            syncStatus === 'error'  && 'bg-rose-500/10 border-rose-500/20 text-rose-400',
+            syncStatus === 'idle'   && 'bg-gray-800/60 border-violet-500/20 text-gray-500 hover:text-violet-400 hover:border-violet-500/30',
             )}
           >
             {syncStatus === 'saving' && <Loader size={14} className="animate-spin" />}
@@ -254,19 +245,19 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           {syncOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setSyncOpen(false)} />
-              <div className="fixed top-[4.5rem] right-2 sm:right-4 sm:w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div className="fixed top-[3.75rem] right-2 sm:right-4 sm:w-72 bg-gray-900 border border-violet-500/25 rounded-2xl shadow-2xl z-50 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <div className="p-4 border-b border-violet-500/20 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Cloud size={15} className="text-brand-500" />
-                    <span className="font-semibold text-sm text-gray-800 dark:text-gray-200">Cloud Sync Status</span>
+                    <Cloud size={15} className="text-violet-400" />
+                    <span className="font-semibold text-sm text-gray-200">Cloud Sync Status</span>
                   </div>
                   <span className={cn(
                     'text-[10px] px-2 py-0.5 rounded-full font-semibold',
-                    syncStatus === 'saving' && 'bg-blue-100 dark:bg-blue-900/30 text-blue-600',
-                    syncStatus === 'saved'  && 'bg-green-100 dark:bg-green-900/30 text-green-600',
-                    syncStatus === 'error'  && 'bg-red-100 dark:bg-red-900/30 text-red-600',
-                    syncStatus === 'idle'   && 'bg-gray-100 dark:bg-gray-800 text-gray-500',
+                    syncStatus === 'saving' && 'bg-blue-500/15 text-violet-400',
+                    syncStatus === 'saved'  && 'bg-emerald-500/15 text-emerald-400',
+                    syncStatus === 'error'  && 'bg-rose-500/15 text-rose-400',
+                    syncStatus === 'idle'   && 'bg-gray-700/60 text-gray-500',
                   )}>
                     {syncStatus === 'saving' ? 'SAVING' : syncStatus === 'saved' ? 'SYNCED' : syncStatus === 'error' ? 'ERROR' : 'IDLE'}
                   </span>
@@ -277,14 +268,14 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     <Clock size={12} />
                     <span>Last synced:</span>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-gray-300">
                       {lastSyncedAt
                         ? new Date(lastSyncedAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
                         : 'Never'}
                     </span>
                   </div>
                   {localStorage.getItem('bb-pending-save') === '1' && (
-                    <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 mt-1.5">
+                    <div className="flex items-center gap-1.5 text-xs text-amber-400 mt-1.5">
                       <AlertCircle size={11} />
                       <span>Unsaved local changes — will upload automatically</span>
                     </div>
@@ -292,8 +283,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                 </div>
 
                 {/* Record counts */}
-                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Data on this device</p>
+                <div className="px-4 py-3 border-b border-violet-500/20">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">Data on this device</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { label: 'Items',    count: items.length },
@@ -303,9 +294,9 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       { label: 'Finance',  count: transactions.length },
                       { label: 'Reminders', count: reminders.length },
                     ].map(({ label, count }) => (
-                      <div key={label} className="text-center bg-gray-50 dark:bg-gray-800/60 rounded-lg py-2">
-                        <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{count}</p>
-                        <p className="text-[10px] text-gray-400">{label}</p>
+                      <div key={label} className="text-center bg-gray-800/60 border border-white/5 rounded-lg py-2">
+                        <p className="text-sm font-bold text-gray-200">{count}</p>
+                        <p className="text-[10px] text-gray-500">{label}</p>
                       </div>
                     ))}
                   </div>
@@ -313,8 +304,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
 
                 {/* Verify results */}
                 {verifyResult && (
-                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-2">Cloud vs. Local verification</p>
+                  <div className="px-4 py-3 border-b border-violet-500/20">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-2">Cloud vs. Local verification</p>
                     <div className="space-y-1">
                       {([
                         ['stores',       'Stores'],
@@ -331,13 +322,13 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                         const match = cloudVal === localVal;
                         return (
                           <div key={key} className="flex items-center justify-between text-xs">
-                            <span className="text-gray-500 dark:text-gray-400">{label}</span>
+                            <span className="text-gray-500">{label}</span>
                             <div className="flex items-center gap-2">
-                              <span className="text-gray-400">local: <span className="font-semibold text-gray-700 dark:text-gray-300">{localVal}</span></span>
-                              <span className="text-gray-400">cloud: <span className="font-semibold text-gray-700 dark:text-gray-300">{cloudVal}</span></span>
+                              <span className="text-gray-500">local: <span className="font-semibold text-gray-300">{localVal}</span></span>
+                              <span className="text-gray-500">cloud: <span className="font-semibold text-gray-300">{cloudVal}</span></span>
                               {match
-                                ? <CheckCircle size={11} className="text-green-500" />
-                                : <AlertCircle size={11} className="text-amber-500" />}
+                                ? <CheckCircle size={11} className="text-emerald-400" />
+                                : <AlertCircle size={11} className="text-amber-400" />}
                             </div>
                           </div>
                         );
@@ -347,17 +338,17 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       const allMatch = Object.entries(verifyResult.cloud).every(([k, v]) => v === (verifyResult.local[k] ?? 0));
                       const cloudHasMore = Object.entries(verifyResult.cloud).some(([k, v]) => v > (verifyResult.local[k] ?? 0));
                       if (allMatch) return (
-                        <p className="mt-2 text-[11px] text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                        <p className="mt-2 text-[11px] text-emerald-400 font-medium flex items-center gap-1">
                           <ShieldCheck size={12} /> All data confirmed in Firestore
                         </p>
                       );
                       if (cloudHasMore) return (
-                        <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                        <p className="mt-2 text-[11px] text-amber-400 font-medium flex items-center gap-1">
                           <AlertCircle size={12} /> Cloud has records not in local — use Merge &amp; Sync
                         </p>
                       );
                       return (
-                        <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                        <p className="mt-2 text-[11px] text-amber-400 font-medium flex items-center gap-1">
                           <AlertCircle size={12} /> Local has unsaved changes — click Force Sync
                         </p>
                       );
@@ -372,7 +363,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       <button
                         onClick={() => { mergeSync(); setSyncOpen(false); }}
                         disabled={syncStatus === 'saving'}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
                       >
                         {syncStatus === 'saving' ? <Loader size={12} className="animate-spin" /> : <CloudUpload size={12} />}
                         {syncStatus === 'saving' ? 'Merging…' : 'Merge & Sync'}
@@ -381,7 +372,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                       <button
                         onClick={() => { syncNow(); setSyncOpen(false); }}
                         disabled={syncStatus === 'saving'}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-wait text-white rounded-xl text-xs font-medium transition-colors"
                       >
                         {syncStatus === 'saving' ? <Loader size={12} className="animate-spin" /> : <CloudUpload size={12} />}
                         {syncStatus === 'saving' ? 'Saving…' : 'Force Sync'}
@@ -390,7 +381,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     <button
                       onClick={handleVerify}
                       disabled={verifying || !user}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
                     >
                       {verifying ? <Loader size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
                       {verifying ? 'Checking…' : 'Verify'}
@@ -412,7 +403,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     {/* Export current data as JSON file */}
                     <button
                       onClick={handleExport}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
                     >
                       <Download size={12} />
                       Export Backup
@@ -421,7 +412,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
                     {/* Import from a previously exported JSON file */}
                     <button
                       onClick={() => importRef.current?.click()}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-medium transition-colors border border-violet-500/20"
                     >
                       <UploadCloud size={12} />
                       Import Backup
@@ -438,10 +429,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
       {/* Theme Toggle */}
       <button
         onClick={toggleTheme}
-        className="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-brand-500 transition-all duration-300"
+        className="p-2.5 rounded-xl bg-gray-800/60 border border-violet-500/20 text-gray-500 hover:text-amber-400 hover:border-amber-500/30 transition-all duration-150"
         title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        {isDark ? <Sun size={17} /> : <Moon size={17} />}
       </button>
     </header>
   );

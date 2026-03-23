@@ -87,14 +87,14 @@ const Stores: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Stores</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+          <h1 className="text-2xl font-bold text-white">Stores</h1>
+          <p className="text-gray-400 text-sm mt-0.5">
             Manage your Namibian grocery stores
           </p>
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
+          className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
         >
           <Plus size={16} /> Add Store
         </button>
@@ -117,7 +117,7 @@ const Stores: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden hover:shadow-md transition-shadow group"
+              className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden hover:shadow-md transition-shadow group"
             >
               {/* Color Bar */}
               <div className="h-2" style={{ backgroundColor: store.color }} />
@@ -132,9 +132,9 @@ const Stores: React.FC = () => {
                       {store.icon}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-800 dark:text-gray-200">{store.name}</h3>
+                      <h3 className="font-semibold text-gray-200">{store.name}</h3>
                       {store.isCustom && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 rounded-full font-medium">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-violet-500/10 text-violet-500 rounded-full font-medium">
                           Custom
                         </span>
                       )}
@@ -143,14 +143,14 @@ const Stores: React.FC = () => {
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => openEdit(store)}
-                      className="p-1.5 text-gray-400 hover:text-brand-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className="p-1.5 text-gray-400 hover:text-violet-400 rounded-lg hover:bg-white/5"
                     >
                       <Edit3 size={14} />
                     </button>
                     {store.isCustom && (
                       <button
                         onClick={() => handleDelete(store.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-white/5"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -160,27 +160,27 @@ const Stores: React.FC = () => {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <div className="text-center p-2 bg-gray-800/40/50 rounded-xl">
                     <Package size={14} className="mx-auto text-gray-400 mb-1" />
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{storePrices.length}</p>
+                    <p className="text-sm font-semibold text-gray-200">{storePrices.length}</p>
                     <p className="text-[10px] text-gray-400">Prices</p>
                   </div>
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <div className="text-center p-2 bg-gray-800/40/50 rounded-xl">
                     <Tag size={14} className="mx-auto text-amber-400 mb-1" />
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{specials.length}</p>
+                    <p className="text-sm font-semibold text-gray-200">{specials.length}</p>
                     <p className="text-[10px] text-gray-400">Specials</p>
                   </div>
-                  <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                  <div className="text-center p-2 bg-gray-800/40/50 rounded-xl">
                     <StoreIcon size={14} className="mx-auto text-green-400 mb-1" />
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{completedTrips.length}</p>
+                    <p className="text-sm font-semibold text-gray-200">{completedTrips.length}</p>
                     <p className="text-[10px] text-gray-400">Trips</p>
                   </div>
                 </div>
 
                 {totalSpent > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <div className="mt-3 pt-3 border-t border-violet-500/20">
                     <p className="text-xs text-gray-400">Total spent</p>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{formatPrice(totalSpent)}</p>
+                    <p className="text-sm font-semibold text-gray-200">{formatPrice(totalSpent)}</p>
                   </div>
                 )}
 
@@ -188,7 +188,7 @@ const Stores: React.FC = () => {
                 {hasDetails && (
                   <button
                     onClick={() => setExpandedStore(isExpanded ? null : store.id)}
-                    className="mt-3 w-full flex items-center justify-between text-xs text-gray-400 hover:text-brand-500 transition-colors pt-3 border-t border-gray-100 dark:border-gray-800"
+                    className="mt-3 w-full flex items-center justify-between text-xs text-gray-400 hover:text-violet-400 transition-colors pt-3 border-t border-violet-500/20"
                   >
                     <span className="font-medium">Shopping Details</span>
                     {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -199,7 +199,7 @@ const Stores: React.FC = () => {
                 {!hasDetails && (
                   <button
                     onClick={() => openEdit(store)}
-                    className="mt-3 w-full text-xs text-gray-300 dark:text-gray-600 hover:text-brand-400 transition-colors pt-3 border-t border-gray-100 dark:border-gray-800 text-left flex items-center gap-1.5"
+                    className="mt-3 w-full text-xs text-gray-600 hover:text-violet-400 transition-colors pt-3 border-t border-violet-500/20 text-left flex items-center gap-1.5"
                   >
                     <Plus size={11} /> Add shopping details
                   </button>
@@ -217,31 +217,31 @@ const Stores: React.FC = () => {
                     >
                       <div className="mt-3 space-y-2">
                         {store.address && (
-                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
-                            <MapPin size={12} className="flex-shrink-0 mt-0.5 text-brand-400" />
+                          <div className="flex items-start gap-2 text-xs text-gray-400">
+                            <MapPin size={12} className="flex-shrink-0 mt-0.5 text-violet-400" />
                             <span>{store.address}</span>
                           </div>
                         )}
                         {store.phone && (
-                          <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
                             <Phone size={12} className="flex-shrink-0 text-green-400" />
-                            <a href={`tel:${store.phone}`} className="hover:text-brand-500 transition-colors">{store.phone}</a>
+                            <a href={`tel:${store.phone}`} className="hover:text-violet-400 transition-colors">{store.phone}</a>
                           </div>
                         )}
                         {store.openingHours && (
-                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex items-start gap-2 text-xs text-gray-400">
                             <Clock size={12} className="flex-shrink-0 mt-0.5 text-amber-400" />
                             <span className="whitespace-pre-line">{store.openingHours}</span>
                           </div>
                         )}
                         {store.website && (
                           <div className="flex items-center gap-2 text-xs">
-                            <Globe size={12} className="flex-shrink-0 text-blue-400" />
+                            <Globe size={12} className="flex-shrink-0 text-violet-400" />
                             <a
                               href={store.website.startsWith('http') ? store.website : `https://${store.website}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-brand-500 hover:text-brand-600 transition-colors flex items-center gap-1 truncate"
+                              className="text-violet-400 hover:text-violet-500 transition-colors flex items-center gap-1 truncate"
                             >
                               {store.website.replace(/^https?:\/\//, '')}
                               <ExternalLink size={10} />
@@ -249,13 +249,13 @@ const Stores: React.FC = () => {
                           </div>
                         )}
                         {store.loyaltyCard && (
-                          <div className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex items-start gap-2 text-xs text-gray-400">
                             <CreditCard size={12} className="flex-shrink-0 mt-0.5 text-purple-400" />
                             <span>{store.loyaltyCard}</span>
                           </div>
                         )}
                         {store.notes && (
-                          <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+                          <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-800/40/50 rounded-lg p-2">
                             <StickyNote size={12} className="flex-shrink-0 mt-0.5 text-gray-400" />
                             <span className="italic">{store.notes}</span>
                           </div>
@@ -274,26 +274,26 @@ const Stores: React.FC = () => {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editId ? 'Edit Store' : 'Add New Store'}
         footer={
           <div className="flex gap-3">
-            <button type="button" form="store-form" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" form="store-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">{editId ? 'Save Changes' : 'Add Store'}</button>
+            <button type="button" form="store-form" onClick={() => setModalOpen(false)} className="flex-1 py-2.5 border border-violet-500/20 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+            <button type="submit" form="store-form" className="flex-1 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-600 transition-colors">{editId ? 'Save Changes' : 'Add Store'}</button>
           </div>
         }
       >
         <form id="store-form" onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Store Name</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Store Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g., Pick n Pay"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-violet-500/20 rounded-xl text-gray-200 outline-none focus:border-violet-500 transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Icon</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Icon</label>
             <div className="grid grid-cols-10 gap-2">
               {storeIcons.map((icon) => (
                 <button
@@ -303,8 +303,8 @@ const Stores: React.FC = () => {
                   className={cn(
                     'w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all',
                     form.icon === icon
-                      ? 'bg-brand-100 dark:bg-brand-900/50 ring-2 ring-brand-500 scale-110'
-                      : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      ? 'bg-violet-500/10 ring-2 ring-violet-500 scale-110'
+                      : 'bg-gray-800/40 hover:bg-white/8'
                   )}
                 >
                   {icon}
@@ -314,7 +314,7 @@ const Stores: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Color</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Color</label>
             <div className="grid grid-cols-8 gap-2">
               {STORE_COLORS.map((color) => (
                 <button
@@ -323,7 +323,7 @@ const Stores: React.FC = () => {
                   onClick={() => setForm({ ...form, color })}
                   className={cn(
                     'w-9 h-9 rounded-lg transition-all',
-                    form.color === color && 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-gray-900 scale-110'
+                    form.color === color && 'ring-2 ring-offset-2 ring-gray-400 scale-110'
                   )}
                   style={{ backgroundColor: color }}
                 />
@@ -332,21 +332,21 @@ const Stores: React.FC = () => {
           </div>
 
           {/* Shopping Details */}
-          <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <div className="border-t border-violet-500/20 pt-4">
+            <p className="text-sm font-medium text-gray-300 mb-3">
               Shopping Details{' '}
               <span className="text-xs text-gray-400 font-normal">(optional)</span>
             </p>
             <div className="space-y-3">
               {/* Address */}
               <div className="flex items-start gap-2">
-                <MapPin size={15} className="flex-shrink-0 mt-2.5 text-brand-400" />
+                <MapPin size={15} className="flex-shrink-0 mt-2.5 text-violet-400" />
                 <input
                   type="text"
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                   placeholder="Store address"
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
                 />
               </div>
               {/* Phone */}
@@ -357,18 +357,18 @@ const Stores: React.FC = () => {
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="Phone number"
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
                 />
               </div>
               {/* Website */}
               <div className="flex items-start gap-2">
-                <Globe size={15} className="flex-shrink-0 mt-2.5 text-blue-400" />
+                <Globe size={15} className="flex-shrink-0 mt-2.5 text-violet-400" />
                 <input
                   type="text"
                   value={form.website}
                   onChange={(e) => setForm({ ...form, website: e.target.value })}
                   placeholder="Website (e.g. www.store.co.za)"
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
                 />
               </div>
               {/* Opening Hours */}
@@ -379,7 +379,7 @@ const Stores: React.FC = () => {
                   onChange={(e) => setForm({ ...form, openingHours: e.target.value })}
                   placeholder="Opening hours (e.g. Mon–Fri 8am–8pm)"
                   rows={2}
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors resize-none"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors resize-none"
                 />
               </div>
               {/* Loyalty Card */}
@@ -390,7 +390,7 @@ const Stores: React.FC = () => {
                   value={form.loyaltyCard}
                   onChange={(e) => setForm({ ...form, loyaltyCard: e.target.value })}
                   placeholder="Loyalty card / rewards info"
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors"
                 />
               </div>
               {/* Notes */}
@@ -401,7 +401,7 @@ const Stores: React.FC = () => {
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   placeholder="Notes or tips about this store"
                   rows={2}
-                  className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors resize-none"
+                  className="flex-1 px-3 py-2 bg-gray-800/40 border border-violet-500/20 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500 transition-colors resize-none"
                 />
               </div>
             </div>

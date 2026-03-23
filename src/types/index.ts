@@ -260,3 +260,109 @@ export interface SavingsGoal {
   deadline?: string;
   createdAt: number;
 }
+
+// ── Medical Aid Types ────────────────────────────────────────
+
+export type MedicalAidClaimCategory =
+  | 'gp'
+  | 'specialist'
+  | 'hospital'
+  | 'pharmacy'
+  | 'dental'
+  | 'optical'
+  | 'therapy'
+  | 'emergency'
+  | 'maternity'
+  | 'other';
+
+export interface MedicalAidMember {
+  id: string;
+  name: string;
+  relation: 'self' | 'spouse' | 'child' | 'parent' | 'other';
+  dateOfBirth?: string;
+}
+
+export interface MedicalAidPlan {
+  id: string;
+  planName: string;          // e.g. "Standard Plan"
+  provider: string;          // e.g. "Namibia Health Mutual"
+  monthlyContribution: number;
+  members: MedicalAidMember[];
+  // Annual benefit limits per category (0 = unlimited / not tracked)
+  gpLimit: number;
+  specialistLimit: number;
+  hospitalLimit: number;
+  pharmacyLimit: number;
+  dentalLimit: number;
+  opticalLimit: number;
+  therapyLimit: number;
+  active: boolean;
+  notes?: string;
+  createdAt: number;
+}
+
+export interface MedicalAidClaim {
+  id: string;
+  date: number;                        // epoch ms
+  category: MedicalAidClaimCategory;
+  provider: string;                    // e.g. "Dr. Smith", "Dis-Chem"
+  description: string;
+  totalBill: number;                   // Total amount billed
+  medicalAidPaid: number;              // Amount the medical aid covered
+  selfPaid: number;                    // Gap / co-payment paid out of pocket
+  memberName: string;                  // Which family member
+  claimStatus: 'pending' | 'approved' | 'rejected';
+  notes?: string;
+  createdAt: number;
+}
+// ── Medical Appointments ─────────────────────────────────────
+export type MedicalAppointmentStatus = 'upcoming' | 'completed' | 'cancelled' | 'no-show';
+export type MedicalAppointmentType =
+  | 'gp' | 'specialist' | 'dentist' | 'optometrist' | 'physiotherapy'
+  | 'psychology' | 'gynecology' | 'pathology' | 'radiology'
+  | 'pharmacy_consult' | 'hospital_consult' | 'chronic_review' | 'aesthetic' | 'other';
+
+export interface MedicalAppointment {
+  id: string;
+  memberName: string;
+  type: MedicalAppointmentType;
+  benefitPool: string;              // e.g. 'gp', 'specialist', 'dental'
+  practitioner: string;
+  practice: string;
+  phone?: string;
+  address?: string;
+  date: number;                     // epoch ms — midnight of appointment day
+  time: string;                     // 'HH:mm' 24-hour format, e.g. '14:30'
+  durationMinutes: number;
+  status: MedicalAppointmentStatus;
+  notes?: string;
+  reminderEnabled: boolean;
+  reminderMinutesBefore: number;    // e.g. 60, 1440
+  linkedClaimId?: string;
+  createdAt: number;
+}
+
+// ── Shopping Lists ────────────────────────────────────────────
+
+export interface ShoppingListItem {
+  id: string;
+  itemId?: string;         // optional ref to GroceryItem in item library
+  itemName: string;
+  categoryId?: string;
+  quantity: number;
+  unit: string;
+  estimatedPrice: number;  // per unit
+  notes?: string;
+  checked: boolean;
+}
+
+export interface ShoppingList {
+  id: string;
+  name: string;            // e.g. "January Bulk Buy"
+  month: number;           // 1–12
+  year: number;
+  items: ShoppingListItem[];
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}

@@ -9,7 +9,8 @@ import {
   Store, Category, GroceryItem, PriceEntry,
   ShoppingTrip, ShoppingTripItem, MonthlyBudget, RestockReminder,
   FinanceTransaction, FinancePlan, SavingsGoal, SavingsContribution,
-  FuelFillup,
+  FuelFillup, MedicalAidPlan, MedicalAidClaim, MedicalAppointment,
+  ShoppingList, ShoppingListItem,
 } from '../types';
 
 import { generateId } from '../utils/helpers';
@@ -29,6 +30,10 @@ interface AppState {
   financePlans: FinancePlan[];
   savingsGoals: SavingsGoal[];
   fuelFillups: FuelFillup[];
+  medicalAidPlans: MedicalAidPlan[];
+  medicalAidClaims: MedicalAidClaim[];
+  medicalAppointments: MedicalAppointment[];
+  shoppingLists: ShoppingList[];
 }
 
 // ── Context Interface ────────────────────────────────────────
@@ -81,6 +86,25 @@ interface AppContextType extends AppState {
   addFuelFillup: (fillup: Omit<FuelFillup, 'id' | 'createdAt'>) => void;
   updateFuelFillup: (id: string, updates: Partial<FuelFillup>) => void;
   deleteFuelFillup: (id: string) => void;
+  // Medical Aid Plans
+  addMedicalAidPlan: (plan: Omit<MedicalAidPlan, 'id' | 'createdAt'>) => void;
+  updateMedicalAidPlan: (id: string, updates: Partial<MedicalAidPlan>) => void;
+  deleteMedicalAidPlan: (id: string) => void;
+  // Medical Aid Claims
+  addMedicalAidClaim: (claim: Omit<MedicalAidClaim, 'id' | 'createdAt'>) => void;
+  updateMedicalAidClaim: (id: string, updates: Partial<MedicalAidClaim>) => void;
+  deleteMedicalAidClaim: (id: string) => void;
+  // Medical Appointments
+  addMedicalAppointment: (appt: Omit<MedicalAppointment, 'id' | 'createdAt'>) => void;
+  updateMedicalAppointment: (id: string, updates: Partial<MedicalAppointment>) => void;
+  deleteMedicalAppointment: (id: string) => void;
+  // Shopping Lists
+  addShoppingList: (list: Omit<ShoppingList, 'id' | 'createdAt' | 'updatedAt'>) => string;
+  updateShoppingList: (id: string, updates: Partial<Omit<ShoppingList, 'items'>>) => void;
+  deleteShoppingList: (id: string) => void;
+  addShoppingListItem: (listId: string, item: Omit<ShoppingListItem, 'id'>) => void;
+  updateShoppingListItem: (listId: string, itemId: string, updates: Partial<ShoppingListItem>) => void;
+  removeShoppingListItem: (listId: string, itemId: string) => void;
   // Helpers
   getStore: (id: string) => Store | undefined;
   getCategory: (id: string) => Category | undefined;
@@ -164,6 +188,10 @@ function loadState(): AppState {
         financePlans: parsed.financePlans || [],
         savingsGoals: parsed.savingsGoals || [],
         fuelFillups:  parsed.fuelFillups || [],
+        medicalAidPlans:  parsed.medicalAidPlans || [],
+        medicalAidClaims: parsed.medicalAidClaims || [],
+        medicalAppointments: parsed.medicalAppointments || [],
+        shoppingLists: parsed.shoppingLists || [],
       };
     }
   } catch (e) {
@@ -181,6 +209,10 @@ function loadState(): AppState {
     financePlans: [],
     savingsGoals: [],
     fuelFillups: [],
+    medicalAidPlans: [],
+    medicalAidClaims: [],
+    medicalAppointments: [],
+    shoppingLists: [],
   };
 }
 
@@ -286,16 +318,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         // This prevents stale PENDING_KEY on other devices from overwriting fresh Firestore data.
         const lastLocalModified = parseInt(localStorage.getItem(LAST_LOCAL_MODIFIED_KEY) || '0');
         const lastCloudSync     = parseInt(localStorage.getItem(LAST_CLOUD_SYNC_KEY)     || '0');
-        // Migration for pre-timestamp sessions: if PENDING_KEY is set but LAST_LOCAL_MODIFIED
-        // was never stamped (old session before this key existed), stamp it now so all future
-        // checks treat this device's local data as newer than the cloud.
-        if (localStorage.getItem(PENDING_KEY) === '1' && lastLocalModified === 0) {
-          localStorage.setItem(LAST_LOCAL_MODIFIED_KEY, (lastCloudSync + 1).toString());
-        }
-        const effectiveLocalModified = parseInt(localStorage.getItem(LAST_LOCAL_MODIFIED_KEY) || '0');
-        // PENDING_KEY alone (without a timestamp) also wins — trusts the flag for old sessions.
+        const effectiveLocalModified = lastLocalModified;
+        // Local wins ONLY when it has a real modification timestamp that post-dates the last cloud sync.
+        // Requiring effectiveLocalModified > 0 prevents stale PENDING_KEY on old devices from
+        // re-uploading already-deleted items (zombie data resurrection bug).
         const hasPendingLocalSave = localStorage.getItem(PENDING_KEY) === '1'
-          && (effectiveLocalModified === 0 || effectiveLocalModified > lastCloudSync);
+          && effectiveLocalModified > 0
+          && effectiveLocalModified > lastCloudSync;
 
         if (cloudData && !hasPendingLocalSave) {
           // Normal case: Firestore has the latest data — load it.
@@ -311,6 +340,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             financePlans: cloudData.financePlans || [],
             savingsGoals: cloudData.savingsGoals || [],
             fuelFillups:  cloudData.fuelFillups || [],
+            medicalAidPlans:  cloudData.medicalAidPlans  || [],
+            medicalAidClaims: cloudData.medicalAidClaims || [],
+            medicalAppointments: cloudData.medicalAppointments || [],
+            shoppingLists: cloudData.shoppingLists || [],
           };
           setState(loaded);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
@@ -519,6 +552,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         financePlans: mergeById(state.financePlans, cloudData.financePlans || []),
         savingsGoals: mergeById(state.savingsGoals, cloudData.savingsGoals || []),
         fuelFillups:  mergeById(state.fuelFillups,  cloudData.fuelFillups  || []),
+        medicalAidPlans:  mergeById(state.medicalAidPlans,  cloudData.medicalAidPlans  || []),
+        medicalAidClaims: mergeById(state.medicalAidClaims, cloudData.medicalAidClaims || []),
+        medicalAppointments: mergeById(state.medicalAppointments, cloudData.medicalAppointments || []),
+        shoppingLists: mergeById(state.shoppingLists, cloudData.shoppingLists || []),
       };
 
       // Build a set of locally-deleted IDs so we don't pull them back from the cloud.
@@ -546,6 +583,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         financePlans: filterDeleted(merged.financePlans,  'financePlans'),
         savingsGoals: filterDeleted(merged.savingsGoals,  'savingsGoals'),
         fuelFillups:  filterDeleted(merged.fuelFillups,   'fuelFillups'),
+        medicalAidPlans:  filterDeleted(merged.medicalAidPlans,  'medicalAidPlans'),
+        medicalAidClaims: filterDeleted(merged.medicalAidClaims, 'medicalAidClaims'),
+        medicalAppointments: filterDeleted(merged.medicalAppointments, 'medicalAppointments'),
+        shoppingLists: filterDeleted(merged.shoppingLists, 'shoppingLists'),
       };
 
       setState(mergedFiltered);
@@ -683,11 +724,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   financePlans: cloudData.financePlans || [],
                   savingsGoals: cloudData.savingsGoals || [],
                   fuelFillups:  cloudData.fuelFillups  || [],
+                  medicalAidPlans:  cloudData.medicalAidPlans  || [],
+                  medicalAidClaims: cloudData.medicalAidClaims || [],
+                  medicalAppointments: cloudData.medicalAppointments || [],
+                  shoppingLists: cloudData.shoppingLists || [],
+                };
+                // Filter out items that are pending-deletion in this session (queued but not yet
+                // saved to Firestore). Without this, a pull arriving within the 3 s auto-save
+                // debounce window could resurrect items the user just deleted.
+                const fpd = <T extends { id: string }>(arr: T[], col: string): T[] => {
+                  const ids = pendingDeletesRef.current
+                    .filter((d) => d.col === col)
+                    .map((d) => d.id);
+                  return ids.length > 0 ? arr.filter((i) => !ids.includes(i.id)) : arr;
+                };
+                const safeLoaded: AppState = {
+                  stores:       fpd(loaded.stores,       'stores'),
+                  categories:   fpd(loaded.categories,   'categories'),
+                  items:        fpd(loaded.items,         'items'),
+                  prices:       fpd(loaded.prices,        'prices'),
+                  trips:        fpd(loaded.trips,         'trips'),
+                  budgets:      fpd(loaded.budgets,       'budgets'),
+                  reminders:    fpd(loaded.reminders,     'reminders'),
+                  transactions: fpd(loaded.transactions,  'transactions'),
+                  financePlans: fpd(loaded.financePlans,  'financePlans'),
+                  savingsGoals: fpd(loaded.savingsGoals,  'savingsGoals'),
+                  fuelFillups:  fpd(loaded.fuelFillups,   'fuelFillups'),
+                  medicalAidPlans:     fpd(loaded.medicalAidPlans,     'medicalAidPlans'),
+                  medicalAidClaims:    fpd(loaded.medicalAidClaims,    'medicalAidClaims'),
+                  medicalAppointments: fpd(loaded.medicalAppointments, 'medicalAppointments'),
+                  shoppingLists:       fpd(loaded.shoppingLists,       'shoppingLists'),
                 };
                 // Save pre-pull backup so the user can undo if needed.
                 if (prePullSnapshot) localStorage.setItem(PRE_PULL_BACKUP_KEY, prePullSnapshot);
-                setState(loaded);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
+                setState(safeLoaded);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(safeLoaded));
                 markSynced();
                 localStorage.removeItem(PENDING_KEY);
                 console.log('[AppContext] Refreshed from Firestore on focus ✓');
@@ -697,7 +768,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     <span className="flex items-center gap-2 text-sm">
                       Synced latest data from cloud.
                       <button
-                        className="underline font-semibold text-brand-500 ml-1"
+                        className="underline font-semibold text-violet-500 ml-1"
                         onClick={() => {
                           const backup = localStorage.getItem(PRE_PULL_BACKUP_KEY);
                           if (backup) {
@@ -1115,6 +1186,136 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     trackDeletes({ col: 'fuelFillups', id });
     setDirtyState((s) => ({ ...s, fuelFillups: s.fuelFillups.filter((f) => f.id !== id) }));
   }, [setDirtyState]);
+
+  // ── Medical Aid Plan CRUD ───────────────────
+  const addMedicalAidPlan = useCallback((plan: Omit<MedicalAidPlan, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('medicalAidPlans', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAidPlans: [...s.medicalAidPlans, { ...plan, id, createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
+
+  const updateMedicalAidPlan = useCallback((id: string, updates: Partial<MedicalAidPlan>) => {
+    markDirty('medicalAidPlans', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAidPlans: s.medicalAidPlans.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteMedicalAidPlan = useCallback((id: string) => {
+    trackDeletes({ col: 'medicalAidPlans', id });
+    setDirtyState((s) => ({ ...s, medicalAidPlans: s.medicalAidPlans.filter((p) => p.id !== id) }));
+  }, [setDirtyState]);
+
+  // ── Medical Aid Claim CRUD ─────────────────
+  const addMedicalAidClaim = useCallback((claim: Omit<MedicalAidClaim, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('medicalAidClaims', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAidClaims: [...s.medicalAidClaims, { ...claim, id, createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
+
+  const updateMedicalAidClaim = useCallback((id: string, updates: Partial<MedicalAidClaim>) => {
+    markDirty('medicalAidClaims', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAidClaims: s.medicalAidClaims.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteMedicalAidClaim = useCallback((id: string) => {
+    trackDeletes({ col: 'medicalAidClaims', id });
+    setDirtyState((s) => ({ ...s, medicalAidClaims: s.medicalAidClaims.filter((c) => c.id !== id) }));
+  }, [setDirtyState]);
+
+  // ── Medical Appointment CRUD ──────────────────────────────
+  const addMedicalAppointment = useCallback((appt: Omit<MedicalAppointment, 'id' | 'createdAt'>) => {
+    const id = generateId();
+    markDirty('medicalAppointments', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAppointments: [...s.medicalAppointments, { ...appt, id, createdAt: Date.now() }],
+    }));
+  }, [setDirtyState]);
+
+  const updateMedicalAppointment = useCallback((id: string, updates: Partial<MedicalAppointment>) => {
+    markDirty('medicalAppointments', id);
+    setDirtyState((s) => ({
+      ...s,
+      medicalAppointments: s.medicalAppointments.map((a) => (a.id === id ? { ...a, ...updates } : a)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteMedicalAppointment = useCallback((id: string) => {
+    trackDeletes({ col: 'medicalAppointments', id });
+    setDirtyState((s) => ({ ...s, medicalAppointments: s.medicalAppointments.filter((a) => a.id !== id) }));
+  }, [setDirtyState]);
+
+  // ── Shopping List CRUD ───────────────────────────────────
+  const addShoppingList = useCallback((list: Omit<ShoppingList, 'id' | 'createdAt' | 'updatedAt'>): string => {
+    const id = generateId();
+    markDirty('shoppingLists', id);
+    setDirtyState((s) => ({
+      ...s,
+      shoppingLists: [...s.shoppingLists, { ...list, id, items: list.items ?? [], createdAt: Date.now(), updatedAt: Date.now() }],
+    }));
+    return id;
+  }, [setDirtyState]);
+
+  const updateShoppingList = useCallback((id: string, updates: Partial<Omit<ShoppingList, 'items'>>) => {
+    markDirty('shoppingLists', id);
+    setDirtyState((s) => ({
+      ...s,
+      shoppingLists: s.shoppingLists.map((l) => (l.id === id ? { ...l, ...updates, updatedAt: Date.now() } : l)),
+    }));
+  }, [setDirtyState]);
+
+  const deleteShoppingList = useCallback((id: string) => {
+    trackDeletes({ col: 'shoppingLists', id });
+    setDirtyState((s) => ({ ...s, shoppingLists: s.shoppingLists.filter((l) => l.id !== id) }));
+  }, [setDirtyState]);
+
+  const addShoppingListItem = useCallback((listId: string, item: Omit<ShoppingListItem, 'id'>) => {
+    markDirty('shoppingLists', listId);
+    setDirtyState((s) => ({
+      ...s,
+      shoppingLists: s.shoppingLists.map((l) =>
+        l.id === listId
+          ? { ...l, items: [...l.items, { ...item, id: generateId() }], updatedAt: Date.now() }
+          : l
+      ),
+    }));
+  }, [setDirtyState]);
+
+  const updateShoppingListItem = useCallback((listId: string, itemId: string, updates: Partial<ShoppingListItem>) => {
+    markDirty('shoppingLists', listId);
+    setDirtyState((s) => ({
+      ...s,
+      shoppingLists: s.shoppingLists.map((l) =>
+        l.id === listId
+          ? { ...l, items: l.items.map((i) => (i.id === itemId ? { ...i, ...updates } : i)), updatedAt: Date.now() }
+          : l
+      ),
+    }));
+  }, [setDirtyState]);
+
+  const removeShoppingListItem = useCallback((listId: string, itemId: string) => {
+    markDirty('shoppingLists', listId);
+    setDirtyState((s) => ({
+      ...s,
+      shoppingLists: s.shoppingLists.map((l) =>
+        l.id === listId
+          ? { ...l, items: l.items.filter((i) => i.id !== itemId), updatedAt: Date.now() }
+          : l
+      ),
+    }));
+  }, [setDirtyState]);
+
   // ── Lookup Helpers ─────────────────────────────────────────
   const getStore = useCallback((id: string) => state.stores.find((s) => s.id === id), [state.stores]);
   const getCategory = useCallback((id: string) => state.categories.find((c) => c.id === id), [state.categories]);
@@ -1136,6 +1337,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addSavingsGoal, updateSavingsGoal, deleteSavingsGoal,
         addSavingsContribution, deleteSavingsContribution,
         addFuelFillup, updateFuelFillup, deleteFuelFillup,
+        addMedicalAidPlan, updateMedicalAidPlan, deleteMedicalAidPlan,
+        addMedicalAidClaim, updateMedicalAidClaim, deleteMedicalAidClaim,
+        addMedicalAppointment, updateMedicalAppointment, deleteMedicalAppointment,
+        addShoppingList, updateShoppingList, deleteShoppingList,
+        addShoppingListItem, updateShoppingListItem, removeShoppingListItem,
         getStore, getCategory, getItem,
         syncNow, mergeSync, syncStatus, lastSyncedAt, ready,
       }}

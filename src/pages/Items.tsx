@@ -36,7 +36,7 @@ function DroppableCategory({ id, color, children }: { id: string; color: string;
       ref={setNodeRef}
       className={cn(
         'rounded-2xl transition-all duration-150',
-        isOver && 'ring-2 ring-offset-1 ring-brand-400 scale-[1.005]',
+        isOver && 'ring-2 ring-offset-1 ring-violet-400 scale-[1.005]',
       )}
       style={isOver ? { backgroundColor: `${color}18` } : undefined}
     >
@@ -54,7 +54,7 @@ function DragHandle({ itemId }: { itemId: string }) {
       {...listeners}
       className={cn(
         'p-1 mt-0.5 cursor-grab active:cursor-grabbing touch-none flex-shrink-0',
-        'text-gray-300 hover:text-gray-500 dark:text-gray-600 dark:hover:text-gray-400 transition-colors',
+        'text-gray-300 hover:text-gray-500 transition-colors',
         isDragging && 'opacity-40',
       )}
       title="Drag to move to another category"
@@ -134,7 +134,7 @@ const Items: React.FC = () => {
     return Array.from(map.entries())
       .map(([catId, catItems]) => ({
         category: categories.find((c) => c.id === catId),
-        items: catItems,
+        items: catItems.sort((a, b) => a.name.localeCompare(b.name)),
       }))
       .sort((a, b) => (a.category?.name || '').localeCompare(b.category?.name || ''));
   }, [filteredItems, categories, filterCat, filterStore, search]);
@@ -308,46 +308,63 @@ const Items: React.FC = () => {
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Items & Prices</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
-            {items.length} items · {prices.length} prices tracked
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCatModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-          >
-            <FolderPlus size={16} /> Add Category
-          </button>
-          <button
-            onClick={openAddItem}
-            className="flex items-center gap-2 px-4 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/20"
-          >
-            <Plus size={16} /> Add Item
-          </button>
+      {/* ── HEADER ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-violet-950/30 to-purple-950/20 border border-violet-500/20 p-5 sm:p-6">
+        <div className="absolute top-0 right-0 w-56 h-56 rounded-full bg-violet-500/6 blur-3xl pointer-events-none" />
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-violet-400/50 to-transparent" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+                <Package size={17} className="text-violet-400" />
+              </div>
+              <h1 className="text-xl font-bold text-white">Item Library</h1>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-violet-500/10 border border-violet-500/20 rounded-full text-xs text-violet-400">
+                <Package size={10} /> {items.length} items
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs text-emerald-400">
+                <DollarSign size={10} /> {prices.length} prices tracked
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/50 border border-gray-700/40 rounded-full text-xs text-gray-400">
+                <Tag size={10} /> {categories.length} categories
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setCatModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-800/60 border border-gray-700/50 text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-800/80 hover:border-gray-600/70 transition-all"
+            >
+              <FolderPlus size={15} /> Category
+            </button>
+            <button
+              onClick={openAddItem}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-violet-500/25"
+            >
+              <Plus size={15} /> Add Item
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* ── FILTERS ── */}
+      <div className="flex flex-col sm:flex-row gap-2.5 bg-gray-900/50 border border-gray-700/40 rounded-2xl p-3">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder="Search items or brands..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-gray-800/40 border border-gray-700/60 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500/50 transition-colors placeholder:text-gray-600"
           />
         </div>
         <select
           value={filterCat}
           onChange={(e) => setFilterCat(e.target.value)}
-          className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-brand-500"
+          className="px-3 py-2 bg-gray-800/40 border border-gray-700/60 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500/50"
         >
           <option value="all">All Categories</option>
           {categories.map((c) => (
@@ -357,25 +374,33 @@ const Items: React.FC = () => {
         <select
           value={filterStore}
           onChange={(e) => setFilterStore(e.target.value)}
-          className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-brand-500"
+          className="px-3 py-2 bg-gray-800/40 border border-gray-700/60 rounded-xl text-sm text-gray-300 outline-none focus:border-violet-500/50"
         >
           <option value="all">All Stores</option>
           {stores.map((s) => (
             <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
           ))}
         </select>
+        {(search || filterCat !== 'all' || filterStore !== 'all') && (
+          <button
+            onClick={() => { setSearch(''); setFilterCat('all'); setFilterStore('all'); }}
+            className="px-3 py-2 bg-gray-800/40 border border-gray-700/60 rounded-xl text-xs text-gray-400 hover:text-gray-200 hover:border-gray-600/60 transition-all whitespace-nowrap"
+          >
+            ✕ Clear
+          </button>
+        )}
       </div>
 
       {/* Items Grouped by Category */}
       <div className="space-y-4">
         {filteredItems.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-12 text-center">
-            <Package className="mx-auto text-gray-300 dark:text-gray-700 mb-3" size={48} />
-            <p className="text-gray-500 font-medium mb-1">No items yet</p>
-            <p className="text-gray-400 text-sm mb-4">Start by adding grocery items you buy regularly</p>
+          <div className="bg-gray-900/60 border border-dashed border-violet-500/20 rounded-2xl p-12 text-center">
+            <Package className="mx-auto text-gray-600 mb-3" size={40} />
+            <p className="text-gray-400 font-medium mb-1">No items yet</p>
+            <p className="text-gray-500 text-sm mb-4">Start by adding grocery items you buy regularly</p>
             <button
               onClick={openAddItem}
-              className="px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
+              className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
             >
               Add First Item
             </button>
@@ -384,12 +409,13 @@ const Items: React.FC = () => {
           <>
             {/* Expand / Collapse controls */}
             <div className="flex items-center gap-2 text-xs">
-              <button onClick={expandAll} className="text-brand-500 hover:text-brand-600 font-medium">Expand All</button>
-              <span className="text-gray-300 dark:text-gray-600">|</span>
-              <button onClick={collapseAll} className="text-brand-500 hover:text-brand-600 font-medium">Collapse All</button>
+              <button onClick={expandAll} className="text-violet-400 hover:text-violet-300 font-medium transition-colors">Expand All</button>
+              <span className="text-gray-600">|</span>
+              <button onClick={collapseAll} className="text-violet-400 hover:text-violet-300 font-medium transition-colors">Collapse All</button>
               <span className="ml-auto text-gray-400">{groupedItems.length} categories</span>
             </div>
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {groupedItems.map((group) => {
               const cat = group.category;
               const catId = cat?.id || 'uncategorized';
@@ -400,11 +426,11 @@ const Items: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+                  className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/15 overflow-hidden hover:border-violet-500/30 transition-all"
                 >
                   {/* Category Header */}
                   <div
-                    className="flex items-center gap-3 px-5 py-3.5 select-none"
+                    className="flex items-center gap-3 px-4 py-3 select-none"
                     style={{ backgroundColor: `${cat?.color || '#999'}10` }}
                   >
                     {/* Expand toggle — takes up most of the row */}
@@ -420,7 +446,7 @@ const Items: React.FC = () => {
                         {cat?.icon || '📦'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h2 className="font-semibold text-gray-800 dark:text-gray-200">{cat?.name || 'Uncategorized'}</h2>
+                        <h2 className="font-semibold text-gray-200">{cat?.name || 'Uncategorized'}</h2>
                         <p className="text-xs text-gray-400">{group.items.length} item{group.items.length !== 1 ? 's' : ''}</p>
                       </div>
                       <motion.div
@@ -436,7 +462,7 @@ const Items: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openAddItemInCategory(cat.id)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-violet-400 hover:bg-violet-500/10 transition-colors flex-shrink-0"
                         title={`Add item to ${cat.name}`}
                       >
                         <Plus size={15} />
@@ -452,7 +478,7 @@ const Items: React.FC = () => {
                             : `Delete category "${cat.name}"?`;
                           if (confirm(msg)) { deleteCategory(cat.id); toast.success(`Category "${cat.name}" deleted`); }
                         }}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors flex-shrink-0"
                         title="Delete category"
                       >
                         <Trash2 size={15} />
@@ -468,11 +494,11 @@ const Items: React.FC = () => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        className="overflow-hidden border-t border-gray-100 dark:border-gray-800"
+                        className="overflow-hidden border-t border-gray-700/40"
                       >
-                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                        <div className="divide-y divide-gray-800/60">
                           {group.items.length === 0 && (
-                            <p className="px-5 py-4 text-sm text-gray-400 dark:text-gray-500 text-center italic">
+                            <p className="px-5 py-4 text-sm text-gray-500 text-center italic">
                               No items yet — tap &ldquo;Add Item&rdquo; to get started.
                             </p>
                           )}
@@ -486,7 +512,7 @@ const Items: React.FC = () => {
                     return (
                       <div
                         key={item.id}
-                        className="px-3 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                        className="px-3 py-3 hover:bg-white/4 transition-colors group/item"
                         style={activeDragItem?.id === item.id ? { opacity: 0.4 } : undefined}
                       >
                         <div className="flex items-start gap-2">
@@ -494,12 +520,12 @@ const Items: React.FC = () => {
                           {/* Item Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-medium text-gray-800 dark:text-gray-200">{item.name}</h3>
+                              <h3 className="font-medium text-gray-200">{item.name}</h3>
                               {item.brand && (
-                                <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full">{item.brand}</span>
+                                <span className="text-xs px-2 py-0.5 bg-gray-800/60 text-gray-500 rounded-full">{item.brand}</span>
                               )}
                               {hasSpecial && (
-                                <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full font-medium flex items-center gap-1">
+                                <span className="text-xs px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded-full font-medium flex items-center gap-1">
                                   <Star size={10} /> On Special
                                 </span>
                               )}
@@ -518,19 +544,19 @@ const Items: React.FC = () => {
                                       className={cn(
                                         'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
                                         active
-                                          ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30'
-                                          : 'bg-gray-50 dark:bg-gray-800'
+                                          ? 'bg-amber-500/10 border border-amber-500/25'
+                                          : 'bg-gray-800/40'
                                       )}
                                     >
                                       <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: store?.color }} />
-                                      <span className="text-gray-500 dark:text-gray-400">{store?.name}:</span>
+                                      <span className="text-gray-400">{store?.name}:</span>
                                       {active ? (
                                         <>
                                           <span className="line-through text-gray-400">{formatPrice(p.normalPrice)}</span>
-                                          <span className="font-semibold text-amber-600 dark:text-amber-400">{formatPrice(p.specialPrice!)}</span>
+                                          <span className="font-semibold text-amber-400">{formatPrice(p.specialPrice!)}</span>
                                         </>
                                       ) : (
-                                        <span className="font-medium text-gray-700 dark:text-gray-300">{formatPrice(p.normalPrice)}</span>
+                                        <span className="font-medium text-gray-300">{formatPrice(p.normalPrice)}</span>
                                       )}
                                       {/* Combo deal badge */}
                                       {p.comboDeal && (() => {
@@ -550,11 +576,11 @@ const Items: React.FC = () => {
                                         }
                                         return (
                                           <span className="ml-1 flex items-center gap-1 flex-wrap">
-                                            <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap">
+                                            <span className="px-1.5 py-0.5 bg-violet-500/10 text-violet-400 rounded text-[10px] font-semibold flex items-center gap-0.5 whitespace-nowrap">
                                               <Gift size={9} />{label}
                                             </span>
                                             {unitLabel && isCheaperThanNormal && (
-                                              <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded text-[10px] font-bold whitespace-nowrap">
+                                              <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 rounded text-[10px] font-bold whitespace-nowrap">
                                                 = {unitLabel}
                                               </span>
                                             )}
@@ -566,7 +592,7 @@ const Items: React.FC = () => {
                                         <button
                                           type="button"
                                           onClick={() => openEditPrice(p)}
-                                          className="p-0.5 rounded hover:bg-brand-100 dark:hover:bg-brand-900/30 text-gray-400 hover:text-brand-500 transition-colors"
+                                          className="p-0.5 rounded-md hover:bg-violet-500/10 text-gray-500 hover:text-violet-400 transition-colors"
                                           title="Edit price"
                                         >
                                           <Edit3 size={10} />
@@ -574,7 +600,7 @@ const Items: React.FC = () => {
                                         <button
                                           type="button"
                                           onClick={() => { deletePrice(p.id); toast.success('Price removed'); }}
-                                          className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
+                                          className="p-0.5 rounded-md hover:bg-rose-500/10 text-gray-500 hover:text-rose-400 transition-colors"
                                           title="Remove price"
                                         >
                                           <Trash2 size={10} />
@@ -592,28 +618,28 @@ const Items: React.FC = () => {
                             {cheapest !== null && (
                               <div className="text-right">
                                 <p className="text-xs text-gray-400">Best price</p>
-                                <p className="text-lg font-bold text-green-600 dark:text-green-400">{formatPrice(cheapest)}</p>
+                                <p className="text-lg font-bold text-emerald-400">{formatPrice(cheapest)}</p>
                               </div>
                             )}
                             <div className="flex gap-1">
                               <button
                                 onClick={() => openSetPrice(item.id)}
-                                className="p-1.5 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                                className="p-1.5 text-gray-400 hover:text-emerald-400 rounded-lg hover:bg-emerald-500/10 transition-colors"
                                 title="Set price"
                               >
                                 <DollarSign size={14} />
                               </button>
                               <button
                                 onClick={() => openEditItem(item)}
-                                className="p-1.5 text-gray-400 hover:text-brand-500 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
-                                title="Edit"
+                                className="p-1.5 text-gray-400 hover:text-violet-400 rounded-lg hover:bg-violet-500/10 transition-colors"
+                                title="Edit item"
                               >
                                 <Edit3 size={14} />
                               </button>
                               <button
                                 onClick={() => { if (confirm('Delete this item?')) { deleteItem(item.id); toast.success(`"${item.name}" deleted`); } }}
-                                className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                title="Delete"
+                                className="p-1.5 text-gray-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors"
+                                title="Delete item"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -631,14 +657,15 @@ const Items: React.FC = () => {
                 </DroppableCategory>
               );
             })}
+            </div>
           </>
         )}
       </div>
       {/* Drag overlay — floating ghost while dragging */}
       <DragOverlay dropAnimation={null}>
         {activeDragItem && (
-          <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-brand-300 dark:border-brand-600 text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2 opacity-95">
-            <GripVertical size={14} className="text-brand-400" />
+          <div className="px-4 py-2.5 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-violet-500/40 text-sm font-medium text-gray-200 flex items-center gap-2 opacity-95 ring-1 ring-violet-500/20">
+            <GripVertical size={14} className="text-violet-400" />
             {activeDragItem.name}
             {activeDragItem.brand && <span className="text-xs text-gray-400">{activeDragItem.brand}</span>}
           </div>
@@ -649,31 +676,31 @@ const Items: React.FC = () => {
       <Modal isOpen={itemModal} onClose={() => setItemModal(false)} title={editItemId ? 'Edit Item' : 'Add New Item'}
         footer={
           <div className="flex gap-3">
-            <button type="button" form="item-form" onClick={() => setItemModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" form="item-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">{editItemId ? 'Save' : 'Add Item'}</button>
+            <button type="button" form="item-form" onClick={() => setItemModal(false)} className="flex-1 py-2.5 border border-gray-700/60 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+            <button type="submit" form="item-form" className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white rounded-xl text-sm font-semibold transition-all">{editItemId ? 'Save Changes' : 'Add Item'}</button>
           </div>
         }
       >
         <form id="item-form" onSubmit={submitItem} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Item Name *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Item Name *</label>
             <input
               type="text"
               value={itemForm.name}
               onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
               placeholder="e.g., Full Cream Milk"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60 transition-colors"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category *</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Category *</label>
               <select
                 value={itemForm.categoryId}
                 onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
+                className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60"
                 required
               >
                 <option value="">Select...</option>
@@ -683,14 +710,14 @@ const Items: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Unit</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">Unit</label>
               <input
                 type="text"
                 list="units-list"
                 value={itemForm.unit}
                 onChange={(e) => setItemForm({ ...itemForm, unit: e.target.value })}
                 placeholder="e.g. 5kg, 2L, each…"
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                className="w-full px-4 py-2.5 bg-gray-800/40 border border-violet-500/20 rounded-xl text-gray-200 outline-none focus:border-violet-500 transition-colors"
               />
               <datalist id="units-list">
                 {UNITS.map((u) => <option key={u} value={u} />)}
@@ -700,24 +727,24 @@ const Items: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Brand (optional)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Brand (optional)</label>
             <input
               type="text"
               value={itemForm.brand}
               onChange={(e) => setItemForm({ ...itemForm, brand: e.target.value })}
               placeholder="e.g., Parmalat"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Notes (optional)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Notes (optional)</label>
             <textarea
               value={itemForm.notes}
               onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })}
               placeholder="Any notes about this item..."
               rows={2}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors resize-none"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60 transition-colors resize-none"
             />
           </div>
 
@@ -728,29 +755,29 @@ const Items: React.FC = () => {
       <Modal isOpen={priceModal} onClose={() => setPriceModal(false)} title={editPriceId ? 'Edit Price' : 'Add Price'}
         footer={
           <div className="flex gap-3">
-            <button type="button" form="price-form" onClick={() => setPriceModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" form="price-form" className="flex-1 py-2.5 bg-green-500 text-white rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">{editPriceId ? 'Update Price' : 'Set Price'}</button>
+            <button type="button" form="price-form" onClick={() => setPriceModal(false)} className="flex-1 py-2.5 border border-gray-700/60 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+            <button type="submit" form="price-form" className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl text-sm font-semibold transition-all shadow-sm shadow-emerald-500/20">{editPriceId ? 'Update Price' : 'Set Price'}</button>
           </div>
         }
       >
         <form id="price-form" onSubmit={submitPrice} className="space-y-4">
           {selectedItem && (
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+            <div className="p-3 bg-gray-800/40 rounded-xl">
+              <p className="text-sm font-medium text-gray-200">
                 {items.find((i) => i.id === selectedItem)?.name}
               </p>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Store *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Store *</label>
             <select
               value={priceForm.storeId}
               onChange={(e) => {
                 lastUsedStoreId.current = e.target.value;
                 setPriceForm({ ...priceForm, storeId: e.target.value });
               }}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-violet-500/20 rounded-xl text-gray-200 outline-none focus:border-violet-500"
               required
             >
               {stores.map((s) => (
@@ -760,7 +787,7 @@ const Items: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Normal Price ({CURRENCY}) *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Normal Price ({CURRENCY}) *</label>
             <input
               type="number"
               step="0.01"
@@ -768,7 +795,7 @@ const Items: React.FC = () => {
               value={priceForm.normalPrice}
               onChange={(e) => setPriceForm({ ...priceForm, normalPrice: e.target.value })}
               placeholder="0.00"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60 transition-colors"
               required
             />
           </div>
@@ -779,18 +806,18 @@ const Items: React.FC = () => {
                 type="checkbox"
                 checked={priceForm.isOnSpecial}
                 onChange={(e) => setPriceForm({ ...priceForm, isOnSpecial: e.target.checked })}
-                className="w-4 h-4 rounded text-brand-500 focus:ring-brand-500"
+                className="w-4 h-4 rounded text-violet-400 focus:ring-violet-500"
               />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
+              <span className="text-sm font-medium text-gray-300 flex items-center gap-1">
                 <Tag size={14} className="text-amber-500" /> Item is on special
               </span>
             </label>
           </div>
 
           {priceForm.isOnSpecial && (
-            <div className="space-y-4 pl-6 border-l-2 border-amber-300 dark:border-amber-700">
+            <div className="space-y-4 pl-6 border-l-2 border-amber-500/40">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Special Price ({CURRENCY}) *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Special Price ({CURRENCY}) *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -798,14 +825,14 @@ const Items: React.FC = () => {
                   value={priceForm.specialPrice}
                   onChange={(e) => setPriceForm({ ...priceForm, specialPrice: e.target.value })}
                   placeholder="0.00"
-                  className="w-full px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500 transition-colors"
+                  className="w-full px-4 py-2.5 bg-amber-500/8 border border-amber-500/25 rounded-xl text-gray-200 outline-none focus:border-amber-500/60 transition-colors"
                   required={priceForm.isOnSpecial && priceForm.comboDealType === 'none'}
                 />
               </div>
 
               {/* Combo Deal */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1.5 flex items-center gap-1">
                   <Gift size={14} className="text-purple-500" /> Combo Deal (optional)
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -817,8 +844,8 @@ const Items: React.FC = () => {
                       className={cn(
                         'py-2 px-3 rounded-xl text-xs font-medium border transition-colors',
                         priceForm.comboDealType === t
-                          ? 'bg-purple-500 border-purple-500 text-white'
-                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                          ? 'bg-violet-600 border-violet-600 text-white'
+                          : 'bg-gray-800/40 border-gray-700/60 text-gray-400 hover:border-gray-600'
                       )}
                     >
                       {t === 'none' ? 'None' : t === 'multi-buy' ? 'Multi-buy' : t === 'bogo' ? 'Buy 1 Get 1' : 'Custom'}
@@ -835,7 +862,7 @@ const Items: React.FC = () => {
                         value={priceForm.comboDealQty}
                         onChange={(e) => setPriceForm({ ...priceForm, comboDealQty: e.target.value })}
                         placeholder="2"
-                        className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                        className="w-full px-3 py-2 bg-violet-500/8 border border-violet-500/25 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500/60"
                       />
                     </div>
                     <span className="text-gray-400 text-sm mt-4">for</span>
@@ -846,14 +873,14 @@ const Items: React.FC = () => {
                         value={priceForm.comboDealForPrice}
                         onChange={(e) => setPriceForm({ ...priceForm, comboDealForPrice: e.target.value })}
                         placeholder="30.00"
-                        className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                        className="w-full px-3 py-2 bg-violet-500/8 border border-violet-500/25 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500/60"
                       />
                     </div>
                   </div>
                 )}
 
                 {priceForm.comboDealType === 'bogo' && (
-                  <p className="mt-2 text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-lg">
+                  <p className="mt-2 text-xs text-violet-300 bg-violet-500/8 border border-violet-500/20 px-3 py-2 rounded-lg">
                     Buy 1 Get 1 Free will be shown as a badge on this item.
                   </p>
                 )}
@@ -865,19 +892,19 @@ const Items: React.FC = () => {
                       value={priceForm.comboDealDesc}
                       onChange={(e) => setPriceForm({ ...priceForm, comboDealDesc: e.target.value })}
                       placeholder="e.g. 3 for 2, Free gift with purchase…"
-                      className="w-full px-3 py-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800/30 rounded-xl text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2 bg-violet-500/8 border border-violet-500/25 rounded-xl text-sm text-gray-200 outline-none focus:border-violet-500/60"
                     />
                   </div>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Special Ends (optional)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">Special Ends (optional)</label>
                 <input
                   type="date"
                   value={priceForm.specialEndDate}
                   onChange={(e) => setPriceForm({ ...priceForm, specialEndDate: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+                  className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-amber-500/50 transition-colors"
                 />
               </div>
             </div>
@@ -890,38 +917,38 @@ const Items: React.FC = () => {
       <Modal isOpen={catModal} onClose={() => setCatModal(false)} title="Add New Category"
         footer={
           <div className="flex gap-3">
-            <button type="button" form="cat-form" onClick={() => setCatModal(false)} className="flex-1 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-            <button type="submit" form="cat-form" className="flex-1 py-2.5 bg-brand-500 text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors">Add Category</button>
+            <button type="button" form="cat-form" onClick={() => setCatModal(false)} className="flex-1 py-2.5 border border-gray-700/60 rounded-xl text-sm text-gray-400 hover:bg-white/5 transition-colors">Cancel</button>
+            <button type="submit" form="cat-form" className="flex-1 py-2.5 bg-gradient-to-r from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600 text-white rounded-xl text-sm font-semibold transition-all">Add Category</button>
           </div>
         }
       >
         <form id="cat-form" onSubmit={submitCategory} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category Name *</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Category Name *</label>
             <input
               type="text"
               value={catForm.name}
               onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
               placeholder="e.g., Baby Products"
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-200 outline-none focus:border-brand-500 transition-colors"
+              className="w-full px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-gray-200 outline-none focus:border-violet-500/60 transition-colors"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Icon (emoji)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Icon (emoji)</label>
             <input
               type="text"
               value={catForm.icon}
               onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })}
               placeholder="📦"
               maxLength={4}
-              className="w-20 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-2xl text-center outline-none focus:border-brand-500 transition-colors"
+              className="w-20 px-4 py-2.5 bg-gray-800/40 border border-gray-700/60 rounded-xl text-2xl text-center outline-none focus:border-violet-500/60 transition-colors"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Color</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Color</label>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_COLORS.map((c) => (
                 <button
@@ -930,7 +957,7 @@ const Items: React.FC = () => {
                   onClick={() => setCatForm({ ...catForm, color: c })}
                   className={cn(
                     'w-8 h-8 rounded-full transition-all',
-                    catForm.color === c ? 'ring-2 ring-offset-2 ring-brand-500 dark:ring-offset-gray-900 scale-110' : 'hover:scale-105'
+                    catForm.color === c ? 'ring-2 ring-offset-2 ring-offset-gray-900 ring-violet-500 scale-110' : 'hover:scale-105'
                   )}
                   style={{ backgroundColor: c }}
                 />
@@ -939,14 +966,14 @@ const Items: React.FC = () => {
           </div>
 
           {/* Preview */}
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center gap-3">
+          <div className="p-3 bg-gray-800/40 rounded-xl flex items-center gap-3">
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
               style={{ backgroundColor: `${catForm.color}20` }}
             >
               {catForm.icon}
             </div>
-            <span className="font-medium text-gray-700 dark:text-gray-300">{catForm.name || 'Category Preview'}</span>
+            <span className="font-medium text-gray-300">{catForm.name || 'Category Preview'}</span>
           </div>
 
         </form>

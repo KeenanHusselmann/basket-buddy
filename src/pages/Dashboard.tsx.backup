@@ -1,0 +1,730 @@
+// ==========================================
+// BasketBuddy - Dashboard Page v3 (Magical Redesign)
+// ==========================================
+
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import {
+  ShoppingCart, Wallet, Receipt, Fuel, TrendingUp,
+  ChevronLeft, ChevronRight, Calendar, Sparkles,
+  HeartPulse, Activity, Clock, MapPin, Tag, Package,
+  ArrowUpCircle, ArrowDownCircle, DollarSign, Zap,
+  AlertCircle, CheckCircle,
+} from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
+import {
+  formatPrice, formatRelativeDate, calcPercentage, cn,
+} from '../utils/helpers';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
+};
+
+type ActivityFeedItem = {
+  id: string;
+  type: 'trip' | 'transaction' | 'fuel';
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+  amount: number;
+  amountColor: string;
+  date: number;
+};
+
+const Dashboard: React.FC = () => {
+  const { user } = useAuth();
+  const {
+    trips, stores, categories, budgets,
+    transactions, fuelFillups, reminders,
+    medicalAidPlans, medicalAppointments,
+  } = useApp();
+  const now = new Date();
+
+  // ── Billing Period State ──────────────────────────────────
+  const _currentBillingPeriod = (() => {
+    const d = now.getDate();
+    const m = now.getMonth() + 1;
+    const y = now.getFullYear();
+    if (d <= 24) return m === 1 ? { month: 12, year: y - 1 } : { month: m - 1, year: y };
+    return { month: m, year: y };
+  })();
+
+  const [viewMonth, setViewMonth] = useState(_currentBillingPeriod.month);
+  const [viewYear, setViewYear] = useState(_currentBillingPeriod.year);
+
+  const isOnCurrentPeriod =
+    viewMonth === _currentBillingPeriod.month && viewYear === _currentBillingPeriod.year;
+
+  const prevMonth = () => {
+    if (viewMonth === 1) {
+      setViewMonth(12);
+      setViewYear((y) => y - 1);
+    } else {
+      setViewMonth((m) => m - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (isOnCurrentPeriod) return;
+    if (viewMonth === 12) {
+      setViewMonth(1);
+      setViewYear((y) => y + 1);
+    } else {
+      setViewMonth((m) => m + 1);
+    }
+  };
+
+  const periodStart = useMemo(
+    () => new Date(viewYear, viewMonth - 1, 25, 0, 0, 0, 0).getTime(),
+    [viewMonth, viewYear]
+  );
+ const periodEnd = useMemo(
+    () => new Date(viewYear, viewMonth, 24, 23, 59, 59, 999).getTime(),
+    [viewMonth, viewYear]
+  );
+
+  const MONTH_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+
+  const billingPeriodLabel = (() => {
+    const startDate = new Date(viewYear, viewMonth - 1, 25);
+    const endDate = new Date(viewYear, viewMonth, 24);
+    const fmt = (d: Date) =>
+      d.toLocaleDateString('en-NA', { day: 'numeric', month: 'short' });
+    const endYear = endDate.getFullYear();
+    return `${fmt(startDate)} – ${fmt(endDate)}${
+      endYear !== viewYear ? ` ${endYear}` : `, ${viewYear}`
+    }`;
+  })();
+
+  // ── Grocery / Trip Stats ──────────────────────────────────
+  const monthTrips = useMemo(
+    () => trips.filter((t) => t.date >= periodStart && t.date <= periodEnd),
+    [trips, periodStart, periodEnd]
+  );
+  const completedTrips = monthTrips.filter((t) => t.status === 'completed');
+  const monthlySpent = completedTrips.reduce((s, t) => s + t.totalSpent, 0);
+
+  const currentBudget = budgets.find((b) => b.month === viewMonth && b.year === viewYear);
+  const budgetTotal = currentBudget?.totalBudget || 0;
+  const budgetPct = budgetTotal > 0 ? calcPercentage(monthlySpent, budgetTotal) : 0;
+
+  // ── Finance Stats ─────────────────────────────────────────
+  const monthTransactions = useMemo(
+    () => transactions.filter((t) => t.date >= periodStart && t.date <= periodEnd),
+    [transactions, periodStart, periodEnd]
+  );
+
+  const totalIncome = monthTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((s, t) => s + t.amount, 0);
+  const totalFixed = monthTransactions
+    .filter((t) => t.type === 'fixed')
+    .reduce((s, t) => s + t.amount, 0);
+  const totalVariable = monthTransactions
+    .filter((t) => t.type === 'variable')
+    .reduce((s, t) => s + t.amount, 0);
+
+  // ── Fuel Stats ────────────────────────────────────────────
+  const monthFillups = useMemo(
+    () => fuelFillups.filter((f) => f.date >= periodStart && f.date <= periodEnd),
+    [fuelFillups, periodStart, periodEnd]
+  );
+  const totalFuel = monthFillups.reduce((s, f) => s + f.totalCost, 0);
+  const avgPricePerLitre =
+    monthFillups.length > 0
+      ? monthFillups.reduce((s, f) => s + f.pricePerLitre, 0) / monthFillups.length
+      : 0;
+
+  // ── Medical Stats ─────────────────────────────────────────
+  const activePlan = medicalAidPlans?.find((p) => p.active) ?? null;
+  const monthlyContribution = activePlan?.monthlyContribution ?? 0;
+
+  // ── Total Expenses ────────────────────────────────────────
+  const totalExpenses = totalFixed + totalVariable + monthlySpent + totalFuel + monthlyContribution;
+  const netSavings = totalIncome - totalExpenses;
+
+  // ── Financial Breakdown Segments ──────────────────────────
+  const segments = useMemo(() => {
+    const data = [
+      { label: 'Fixed', val: totalFixed, color: 'bg-blue-500' },
+      { label: 'Variable', val: totalVariable, color: 'bg-orange-500' },
+      { label: 'Groceries', val: monthlySpent, color: 'bg-emerald-500' },
+      { label: 'Fuel', val: totalFuel, color: 'bg-amber-500' },
+      { label: 'Medical Aid', val: monthlyContribution, color: 'bg-rose-500' },
+    ].filter((s) => s.val > 0);
+    const total = data.reduce((s, seg) => s + seg.val, 0);
+    return data.map((seg) => ({
+      ...seg,
+      pct: total > 0 ? (seg.val / total) * 100 : 0,
+    }));
+  }, [totalFixed, totalVariable, monthlySpent, totalFuel, monthlyContribution]);
+
+  // ── Activity Feed ─────────────────────────────────────────
+  const [activityFilter, setActivityFilter] = useState<'all' | 'trips' | 'transactions' | 'fuel'>('all');
+
+  const activityFeed = useMemo(() => {
+    const items: ActivityFeedItem[] = [];
+
+    // Add trips (both completed and planned in this period)
+    monthTrips.forEach((trip) => {
+      const store = stores.find((s) => s.id === trip.storeId);
+      items.push({
+        id: `trip-${trip.id}`,
+        type: 'trip',
+        icon: <ShoppingCart size={16} />,
+        iconBg: store?.color ? `${store.color}20` : 'rgb(139 92 246 / 0.2)',
+        iconColor: store?.color || '#8b5cf6',
+        title: trip.name,
+        subtitle: `${store?.name || 'Unknown'} • ${trip.items.length} items`,
+        amount: trip.status === 'completed' ? trip.totalSpent : trip.items.reduce((s, i) => s + i.estimatedPrice * i.quantity, 0),
+        amountColor: 'text-rose-400',
+        date: trip.date,
+      });
+    });
+
+    // Add transactions from this period
+    monthTransactions.forEach((tx) => {
+      items.push({
+        id: `tx-${tx.id}`,
+        type: 'transaction',
+        icon: tx.type === 'income' ? <ArrowUpCircle size={16} /> : <Receipt size={16} />,
+        iconBg: tx.type === 'income' ? 'rgb(16 185 129 / 0.2)' : 'rgb(244 63 94 / 0.2)',
+        iconColor: tx.type === 'income' ? '#10b981' : '#f43f5e',
+        title: tx.description,
+        subtitle: tx.category,
+        amount: tx.amount,
+        amountColor: tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400',
+        date: tx.date,
+      });
+    });
+
+    // Add fuel fillups from this period
+    monthFillups.forEach((fillup) => {
+      items.push({
+        id: `fuel-${fillup.id}`,
+        type: 'fuel',
+        icon: <Fuel size={16} />,
+        iconBg: 'rgb(245 158 11 / 0.2)',
+        iconColor: '#f59e0b',
+        title: `${fillup.litres}L @ ${formatPrice(fillup.pricePerLitre)}`,
+        subtitle: fillup.stationName,
+        amount: fillup.totalCost,
+        amountColor: 'text-amber-400',
+        date: fillup.date,
+      });
+    });
+
+    // Sort by date descending
+    items.sort((a, b) => b.date - a.date);
+
+    // Filter
+    if (activityFilter === 'trips') return items.filter(i => i.type === 'trip').slice(0, 8);
+    if (activityFilter === 'transactions') return items.filter(i => i.type === 'transaction').slice(0, 8);
+    if (activityFilter === 'fuel') return items.filter(i => i.type === 'fuel').slice(0, 8);
+    return items.slice(0, 8);
+  }, [monthTrips, monthTransactions, monthFillups, stores, activityFilter]);
+
+  // ── Top Spending Categories ───────────────────────────────
+  const topCategories = useMemo(() => {
+    const catSpending = new Map<string, number>();
+    completedTrips.forEach((trip) => {
+      trip.items.forEach((ti) => {
+        const prev = catSpending.get(ti.categoryId) || 0;
+        catSpending.set(ti.categoryId, prev + (ti.actualPrice || ti.estimatedPrice) * ti.quantity);
+      });
+    });
+    return Array.from(catSpending.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([catId, amount]) => {
+        const cat = categories.find((c) => c.id === catId);
+        return {
+          id: catId,
+          name: cat?.name || catId,
+          icon: cat?.icon || '📦',
+          color: cat?.color || '#666',
+          amount,
+        };
+      });
+  }, [completedTrips, categories]);
+
+  // ── Restock Alerts ────────────────────────────────────────
+  const restockAlerts = reminders
+    .filter((r) => r.enabled)
+    .map((r) => {
+      const daysSince = Math.floor((Date.now() - r.lastPurchased) / (1000 * 60 * 60 * 24));
+      const daysUntil = r.frequency - daysSince;
+      return { ...r, daysUntil };
+    })
+    .filter((r) => r.daysUntil <= 3)
+    .slice(0, 5);
+
+  // ── Upcoming Appointments (Next 1) ────────────────────────
+  const nowMs = Date.now();
+  const upcomingAppts = useMemo(
+    () =>
+      (medicalAppointments ?? [])
+        .filter((a) => a.status === 'upcoming' && a.date >= nowMs)
+        .sort((a, b) => a.date - b.date),
+    [medicalAppointments, nowMs]
+  );
+  const nextAppt = upcomingAppts[0] ?? null;
+
+  // ── Greeting ──────────────────────────────────────────────
+  const greeting = () => {
+    const hour = now.getHours();
+    if (hour < 12) return '🌅 Good morning';
+    if (hour < 17) return '☀️ Good afternoon';
+    return '🌙 Good evening';
+  };
+
+  const firstName = user?.displayName?.split(' ')[0] || 'there';
+
+  // ── Financial Health Badge ────────────────────────────────
+  const isOnTrack = budgetTotal > 0 ? budgetPct < 100 : totalExpenses <= totalIncome;
+
+  return (
+    <motion.div variants={container} initial="hidden" animate="show" className="space-y-5 max-w-7xl mx-auto">
+
+      {/* Welcome / Period Navigator */}
+      <motion.div variants={item} className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-white tracking-tight">
+            {greeting()}, {user?.displayName?.split(' ')[0] || 'there'} ??
+          </h1>
+          <p className="text-gray-500 text-sm mt-0.5">
+            {billingPeriodLabel}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-900/70 backdrop-blur-xl border border-violet-500/20 rounded-xl px-1 py-1">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-white/8 transition-colors text-gray-400 hover:text-gray-200">
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-sm font-semibold text-gray-300 min-w-[120px] text-center">
+            {MONTH_NAMES[viewMonth - 1]} {viewYear}
+          </span>
+          <button onClick={nextMonth} disabled={isOnCurrentPeriod} className="p-1.5 rounded-lg hover:bg-white/8 transition-colors text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Top Stat Cards */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+
+        {/* Monthly Groceries */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-emerald-500/10 rounded-xl">
+              <Wallet size={18} className="text-emerald-400" />
+            </div>
+            {budgetTotal > 0 && (
+              <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full',
+                budgetPct >= 100 ? 'bg-rose-500/10 text-rose-400' :
+                budgetPct >= 80  ? 'bg-amber-500/10 text-amber-400' :
+                'bg-emerald-500/10 text-emerald-400'
+              )}>
+                {budgetPct}%
+              </span>
+            )}
+          </div>
+          <p className="text-xl font-bold text-white font-mono tabular-nums">{formatPrice(monthlySpent)}</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {budgetTotal > 0 ? `of ${formatPrice(budgetTotal)} budget` : `${completedTrips.length} trips`}
+          </p>
+          {budgetTotal > 0 && (
+            <div className="mt-3 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(budgetPct, 100)}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="h-full rounded-full"
+                style={{ backgroundColor: getBudgetColor(monthlySpent, budgetTotal) }}
+              />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Medical Aid Contribution */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-rose-500/10 rounded-xl">
+              <HeartPulse size={18} className="text-rose-400" />
+            </div>
+            <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full',
+              activePlan ? 'bg-rose-500/10 text-rose-400' : 'bg-gray-700/60 text-gray-500'
+            )}>
+              {activePlan ? 'Active' : 'No Plan'}
+            </span>
+          </div>
+          <p className="text-xl font-bold text-white font-mono tabular-nums">
+            {formatPrice(activePlan?.monthlyContribution ?? 4000)}
+          </p>
+          <p className="text-xs text-gray-500 mt-1 truncate">{activePlan?.planName ?? 'RMA Esteem Care'}</p>
+          <Link to="/medical" className="inline-flex items-center gap-1 text-xs text-violet-400 font-medium mt-3 hover:text-violet-300 transition-colors">
+            View benefits <ArrowRight size={11} />
+          </Link>
+        </motion.div>
+
+        {/* Benefits Used This Year */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-violet-500/10 rounded-xl">
+              <Activity size={18} className="text-violet-400" />
+            </div>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400">
+              {currentYear}
+            </span>
+          </div>
+          <p className="text-xl font-bold text-white font-mono tabular-nums">{formatPrice(totalBenefitsUsed)}</p>
+          <p className="text-xs text-gray-500 mt-1">{yearApprovedClaims.length} approved claim{yearApprovedClaims.length !== 1 ? 's' : ''}</p>
+          <Link to="/medical" className="inline-flex items-center gap-1 text-xs text-violet-400 font-medium mt-3 hover:text-violet-300 transition-colors">
+            View claims <ArrowRight size={11} />
+          </Link>
+        </motion.div>
+
+        {/* Upcoming Appointments */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl p-4 border border-violet-500/20">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-2 bg-cyan-500/10 rounded-xl">
+              <CalendarHeart size={18} className="text-cyan-400" />
+            </div>
+            {upcomingAppts.length > 0 && (
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500" />
+              </span>
+            )}
+          </div>
+          <p className="text-xl font-bold text-white font-mono tabular-nums">{upcomingAppts.length}</p>
+          <p className="text-xs text-gray-500 mt-1 truncate">
+            {nextAppt ? `Next: ${fmtApptDate(nextAppt.date)}` : 'No upcoming'}
+          </p>
+          <Link to="/medical" className="inline-flex items-center gap-1 text-xs text-violet-400 font-medium mt-3 hover:text-violet-300 transition-colors">
+            Book appointment <ArrowRight size={11} />
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* Medical Aid + Appointments row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Medical Aid Benefit Pool Summary */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="px-5 py-4 border-b border-violet-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HeartPulse size={15} className="text-rose-400" />
+              <h2 className="font-semibold text-gray-200 text-sm">Medical Aid Benefits</h2>
+            </div>
+            <Link to="/medical" className="text-xs text-violet-400 font-medium hover:text-violet-300 flex items-center gap-1 transition-colors">
+              Details <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="p-5 space-y-3">
+            {Object.entries(POOL_MAP).filter(([k]) => k !== 'hospital').map(([poolKey, poolInfo]) => {
+              const limit = POOL_LIMITS[poolKey] ?? 0;
+              const used  = poolUsage[poolKey] ?? 0;
+              const pct   = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+              return (
+                <div key={poolKey} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-300">{poolInfo.label}</span>
+                    <span className="text-xs text-gray-500 font-mono">
+                      {formatPrice(used)}{limit > 0 ? ` / ${formatPrice(limit)}` : ''}
+                    </span>
+                  </div>
+                  {limit > 0 && (
+                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.7, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: poolInfo.color }}
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <div className="pt-1 flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-300 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full inline-block bg-rose-500" />
+                Hospital / Maternity
+              </span>
+              <span className="text-xs text-gray-500 font-mono">{formatPrice(poolUsage['hospital'] ?? 0)} used</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Upcoming Appointments */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="px-5 py-4 border-b border-violet-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarHeart size={15} className="text-cyan-400" />
+              <h2 className="font-semibold text-gray-200 text-sm">Upcoming Appointments</h2>
+            </div>
+            <Link to="/medical" className="text-xs text-violet-400 font-medium hover:text-violet-300 flex items-center gap-1 transition-colors">
+              All <ArrowRight size={11} />
+            </Link>
+          </div>
+          <div className="divide-y divide-white/5">
+            {upcomingAppts.length === 0 ? (
+              <div className="p-8 text-center">
+                <CalendarDays className="mx-auto text-gray-700 mb-3" size={32} />
+                <p className="text-sm text-gray-500">No upcoming appointments</p>
+                <Link to="/medical" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-sm font-medium transition-colors">
+                  <BadgePlus size={14} /> Book Now
+                </Link>
+              </div>
+            ) : (
+              upcomingAppts.slice(0, 4).map((appt) => {
+                const typeInfo = APPT_TYPE_MAP[appt.type] ?? APPT_TYPE_MAP.other;
+                return (
+                  <div key={appt.id} className="px-5 py-3 flex items-center gap-3 hover:bg-white/4 transition-colors">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                      style={{ backgroundColor: `${typeInfo.color}20` }}
+                    >
+                      {typeInfo.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-200 truncate">{typeInfo.label}</p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {appt.memberName} � {appt.practitioner || 'TBC'} � {fmtApptDate(appt.date)} {appt.time}
+                      </p>
+                    </div>
+                    <div className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: `${typeInfo.color}20`, color: typeInfo.color }}>
+                      {appt.benefitPool?.replace(/_/g, ' ')}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {upcomingAppts.length > 4 && (
+            <div className="px-5 py-3 border-t border-violet-500/20">
+              <Link to="/medical" className="text-xs text-violet-400 font-medium hover:text-violet-300 flex items-center gap-1 transition-colors">
+                +{upcomingAppts.length - 4} more appointments <ArrowRight size={11} />
+              </Link>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Total Expenses Card */}
+      <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+        <div className="px-5 py-4 border-b border-violet-500/20 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-200 text-sm flex items-center gap-2">
+            <Receipt size={15} className="text-rose-400" />
+            Monthly Expenses
+          </h2>
+          <Link to="/finance" className="text-xs text-violet-400 font-medium hover:text-violet-300 flex items-center gap-1 transition-colors">
+            Finance <ArrowRight size={11} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-6 divide-x divide-y sm:divide-y-0 divide-white/5">
+          {[
+            { dot: 'bg-blue-500',    label: 'Fixed',      val: totalFixed,    sub: 'Rent, insurance' },
+            { dot: 'bg-orange-500',  label: 'Variable',   val: totalVariable, sub: 'Utilities�' },
+            { dot: 'bg-emerald-500', label: 'Groceries',  val: monthlySpent,  sub: `${completedTrips.length} trips` },
+            { dot: 'bg-amber-500',   label: 'Fuel',       val: totalFuel,     sub: `${monthFillups.length} fill-ups` },
+            { dot: 'bg-rose-500',    label: 'Medical Aid',val: activePlan?.monthlyContribution ?? 4000, sub: 'Monthly premium' },
+          ].map(({ dot, label, val, sub }) => (
+            <div key={label} className="p-4">
+              <div className="flex items-center gap-1.5 mb-1"><span className={`w-2 h-2 rounded-full ${dot}`} /><span className="text-xs text-gray-500 font-medium">{label}</span></div>
+              <p className="text-base font-bold text-white font-mono tabular-nums">{formatPrice(val)}</p>
+              <p className="text-xs text-gray-600 mt-0.5">{sub}</p>
+            </div>
+          ))}
+          <div className="p-4 bg-rose-500/5">
+            <div className="flex items-center gap-1.5 mb-1"><ArrowDownCircle size={12} className="text-rose-400" /><span className="text-xs text-rose-400 font-medium">Total Out</span></div>
+            <p className="text-base font-bold text-rose-400 font-mono tabular-nums">{formatPrice(totalExpenses + (activePlan?.monthlyContribution ?? 4000))}</p>
+            <p className="text-xs text-gray-600 mt-0.5">All categories</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Bottom Grid: Claims, Trips, Side Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+        {/* Recent Claims */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="px-5 py-4 border-b border-violet-500/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Stethoscope size={15} className="text-violet-400" />
+              <h2 className="font-semibold text-gray-200 text-sm">Recent Claims</h2>
+            </div>
+            <Link to="/medical" className="text-xs text-violet-400 font-medium hover:text-violet-300 transition-colors">View All</Link>
+          </div>
+          <div className="divide-y divide-white/5">
+            {recentClaims.length === 0 ? (
+              <div className="p-6 text-center">
+                <Activity className="mx-auto text-gray-700 mb-2" size={28} />
+                <p className="text-sm text-gray-500">No claims yet</p>
+              </div>
+            ) : (
+              recentClaims.map((claim) => (
+                <div key={claim.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/4 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-200 truncate">{claim.description || claim.category}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {claim.memberName} � {new Date(claim.date).toLocaleDateString('en-NA', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-gray-200 font-mono">{formatPrice(claim.totalBill)}</p>
+                    <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full',
+                      claim.claimStatus === 'approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                      claim.claimStatus === 'pending'  ? 'bg-amber-500/10 text-amber-400' :
+                      'bg-rose-500/10 text-rose-400'
+                    )}>
+                      {claim.claimStatus}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </motion.div>
+
+        {/* Recent Shopping Trips */}
+        <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+          <div className="px-5 py-4 border-b border-violet-500/20 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-200 text-sm">Recent Trips</h2>
+            <Link to="/trips" className="text-xs text-violet-400 font-medium hover:text-violet-300 transition-colors">View All</Link>
+          </div>
+          <div className="divide-y divide-white/5">
+            {recentTrips.length === 0 ? (
+              <div className="p-6 text-center">
+                <ShoppingCart className="mx-auto text-gray-700 mb-2" size={28} />
+                <p className="text-gray-500 text-sm">No trips yet</p>
+                <Link to="/trips" className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-sm font-medium transition-colors">
+                  <ShoppingCart size={14} /> New Trip
+                </Link>
+              </div>
+            ) : (
+              recentTrips.map((trip) => {
+                const store = stores.find((s) => s.id === trip.storeId);
+                return (
+                  <div key={trip.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/4 transition-colors">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm flex-shrink-0" style={{ backgroundColor: `${store?.color}20`, color: store?.color }}>
+                      {store?.icon || '??'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-200 truncate">{trip.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{store?.name} � {trip.items.length} items � {formatRelativeDate(trip.createdAt)}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-semibold text-gray-200 font-mono">
+                        {formatPrice(trip.status === 'completed' ? trip.totalSpent : trip.items.reduce((s, i) => s + i.estimatedPrice * i.quantity, 0))}
+                      </p>
+                      <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full',
+                        trip.status === 'completed'   ? 'bg-emerald-500/10 text-emerald-400' :
+                        trip.status === 'in-progress' ? 'bg-blue-500/10 text-violet-400' :
+                        'bg-gray-700/60 text-gray-400'
+                      )}>
+                        {trip.status === 'completed' ? '? Done' : trip.status === 'in-progress' ? '?? Shopping' : '?? Planned'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </motion.div>
+
+        {/* Side Panel */}
+        <div className="space-y-4">
+          {/* Top Spending Categories */}
+          <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+            <div className="px-5 py-4 border-b border-violet-500/20">
+              <h2 className="font-semibold text-gray-200 text-sm">Top Spending</h2>
+            </div>
+            <div className="p-4 space-y-3">
+              {topCategories.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-3">Complete a trip to see spending</p>
+              ) : (
+                topCategories.map((cat) => {
+                  const pct = monthlySpent > 0 ? calcPercentage(cat.amount, monthlySpent) : 0;
+                  return (
+                    <div key={cat.id} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-300">{cat.icon} {cat.name}</span>
+                        <span className="text-xs font-medium text-gray-500 font-mono">{formatPrice(cat.amount)}</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-800 rounded-full">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.6, delay: 0.2 }} className="h-full rounded-full" style={{ backgroundColor: cat.color }} />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+
+          {/* Restock Alerts */}
+          <motion.div variants={item} className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-violet-500/20 overflow-hidden">
+            <div className="px-5 py-4 border-b border-violet-500/20 flex items-center gap-2">
+              <h2 className="font-semibold text-gray-200 text-sm">Restock Alerts</h2>
+              {restockAlerts.length > 0 && (
+                <span className="w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{restockAlerts.length}</span>
+              )}
+            </div>
+            <div className="p-4">
+              {restockAlerts.length === 0 ? (
+                <div className="text-center py-3">
+                  <CheckCircle2 className="mx-auto text-emerald-500 mb-2" size={24} />
+                  <p className="text-sm text-gray-500">All stocked up!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {restockAlerts.map((r) => (
+                    <div key={r.id} className="flex items-center gap-3 p-2.5 bg-amber-500/8 border border-amber-500/20 rounded-xl">
+                      <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-200 truncate">{r.itemName}</p>
+                        <p className="text-[10px] text-gray-500">
+                          {daysUntilRestock(r.lastPurchased, r.frequency) <= 0 ? 'Overdue!' : `In ${daysUntilRestock(r.lastPurchased, r.frequency)} days`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div variants={item} className="bg-gradient-to-br from-violet-600/30 to-violet-900/40 rounded-2xl p-5 border border-violet-500/20 shadow-lg shadow-violet-500/10">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles size={16} className="text-violet-400" />
+              <h3 className="font-semibold text-gray-200 text-sm">Quick Actions</h3>
+            </div>
+            <div className="space-y-1.5">
+              <Link to="/trips" className="flex items-center gap-2 px-3 py-2 bg-white/8 rounded-xl hover:bg-white/12 transition-colors text-xs text-gray-300 hover:text-white"><ShoppingCart size={13} /> New Shopping Trip</Link>
+              <Link to="/medical" className="flex items-center gap-2 px-3 py-2 bg-white/8 rounded-xl hover:bg-white/12 transition-colors text-xs text-gray-300 hover:text-white"><CalendarHeart size={13} /> Book Appointment</Link>
+              <Link to="/fuel" className="flex items-center gap-2 px-3 py-2 bg-white/8 rounded-xl hover:bg-white/12 transition-colors text-xs text-gray-300 hover:text-white"><Fuel size={13} /> Log Fuel Fill-up</Link>
+              <Link to="/medical" className="flex items-center gap-2 px-3 py-2 bg-white/8 rounded-xl hover:bg-white/12 transition-colors text-xs text-gray-300 hover:text-white"><HeartPulse size={13} /> Medical Aid</Link>
+              <Link to="/analytics" className="flex items-center gap-2 px-3 py-2 bg-white/8 rounded-xl hover:bg-white/12 transition-colors text-xs text-gray-300 hover:text-white"><Activity size={13} /> View Analytics</Link>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+export default Dashboard;
