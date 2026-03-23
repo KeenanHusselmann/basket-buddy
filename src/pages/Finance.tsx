@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   PiggyBank, ChevronLeft, ChevronRight, Plus, Edit3, Trash2,
   TrendingUp, TrendingDown, ArrowUpCircle, ArrowDownCircle,
-  Target, Receipt, ShoppingCart, Repeat,
+  Receipt, ShoppingCart, Repeat,
   LayoutGrid, BarChart2, ClipboardList,
   CheckCircle2, Calendar, ChevronDown, ChevronUp, X, Check,
   Wallet, Fuel, Zap, CreditCard,
@@ -48,7 +48,6 @@ const TABS = [
   { id: 'income',    label: 'Income',      icon: ArrowUpCircle },
   { id: 'fixed',     label: 'Fixed',       icon: Receipt },
   { id: 'variable',  label: 'Variable',    icon: ArrowDownCircle },
-  { id: 'plan',      label: 'Plan',        icon: Target },
   { id: 'savings',   label: 'Savings',     icon: PiggyBank },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
@@ -58,7 +57,6 @@ const TAB_ACCENT: Record<TabId, string> = {
   income:    'bg-emerald-600 text-white shadow-lg shadow-emerald-500/25',
   fixed:     'bg-blue-600 text-white shadow-lg shadow-blue-500/25',
   variable:  'bg-orange-600 text-white shadow-lg shadow-orange-500/25',
-  plan:      'bg-cyan-600 text-white shadow-lg shadow-cyan-500/25',
   savings:   'bg-green-600 text-white shadow-lg shadow-green-500/25',
 };
 
@@ -241,35 +239,12 @@ const Finance: React.FC = () => {
     return [...FINANCE_VARIABLE_CATEGORIES, ...allCustomCats.filter(c => c.type === 'variable')];
   }, [txModal.data.type, allCustomCats]);
 
-  const [planModal, setPlanModal]     = useState(false);
-  const [planIncome, setPlanIncome]   = useState('');
-  const [planSavings, setPlanSavings] = useState('');
-  const [planFixed, setPlanFixed]     = useState('');
-  const [planVar, setPlanVar]         = useState('');
-  const [planTargets, setPlanTargets] = useState<Record<string, string>>({});
-  const [planCustomFixed, setPlanCustomFixed]   = useState<{id:string;label:string;icon:string}[]>([]);
-  const [planCustomVar,   setPlanCustomVar]     = useState<{id:string;label:string;icon:string}[]>([]);
-
   // ── Handlers ─────────────────────────────────────────────────
   const openAdd = (type: FinanceTransactionType) =>
     setTxModal({ open: true, mode: 'add', data: blankTx(type, viewMonth, viewYear) });
 
   const openEdit = (tx: FinanceTransaction) =>
     setTxModal({ open: true, mode: 'edit', data: { ...tx } });
-
-  const openPlan = () => {
-    setPlanIncome(currentPlan?.incomeGoal?.toString() || '');
-    setPlanSavings(currentPlan?.savingsGoal?.toString() || '');
-    setPlanFixed(currentPlan?.fixedBudget?.toString() || '');
-    setPlanVar(currentPlan?.variableBudget?.toString() || '');
-    const ex: Record<string, string> = {};
-    currentPlan?.categoryTargets.forEach(ct => { ex[ct.category] = ct.targetAmount.toString(); });
-    setPlanTargets(ex);
-    const saved = currentPlan?.customCategories || [];
-    setPlanCustomFixed(saved.filter(c => c.type === 'fixed').map(({ id, label, icon }) => ({ id, label, icon })));
-    setPlanCustomVar(saved.filter(c => c.type === 'variable').map(({ id, label, icon }) => ({ id, label, icon })));
-    setPlanModal(true);
-  };
 
   const updatePlanCustomCats = (type: 'fixed' | 'variable', newCats: CustomFinanceCategory[]) => {
     const others = (currentPlan?.customCategories || []).filter(c => c.type !== type);
@@ -282,24 +257,6 @@ const Finance: React.FC = () => {
     if (txModal.mode === 'edit' && id) updateTransaction(id, rest);
     else addTransaction(rest);
     setTxModal(s => ({ ...s, open: false }));
-  };
-
-  const handlePlanSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const customAll: CustomFinanceCategory[] = [
-      ...planCustomFixed.map(c => ({ ...c, type: 'fixed' as const })),
-      ...planCustomVar.map(c => ({ ...c, type: 'variable' as const })),
-    ];
-    const allCats = [...FINANCE_FIXED_CATEGORIES, ...FINANCE_VARIABLE_CATEGORIES, ...customAll];
-    const targets: FinanceCategoryTarget[] = allCats
-      .filter(c => parseFloat(planTargets[c.id] || '0') > 0)
-      .map(c => ({
-        category: c.id,
-        type: (FINANCE_FIXED_CATEGORIES.some(fc => fc.id === c.id) || planCustomFixed.some(cf => cf.id === c.id)) ? 'fixed' : 'variable',
-        targetAmount: parseFloat(planTargets[c.id]),
-      }));
-    setFinancePlan({ month: viewMonth, year: viewYear, incomeGoal: parseFloat(planIncome) || 0, savingsGoal: parseFloat(planSavings) || 0, fixedBudget: parseFloat(planFixed) || 0, variableBudget: parseFloat(planVar) || 0, categoryTargets: targets, customCategories: customAll });
-    setPlanModal(false);
   };
 
   // ── Render ───────────────────────────────────────────────────
@@ -318,9 +275,6 @@ const Finance: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={openPlan} className="flex items-center gap-1.5 px-3 py-2 border border-green-500/30 text-green-400 rounded-xl text-xs font-semibold hover:bg-green-500/10 transition-colors cursor-pointer">
-            <Target size={13} />{currentPlan ? 'Edit Plan' : 'Set Plan'}
-          </button>
           <button onClick={() => openAdd('income')} className="flex items-center gap-1.5 px-3.5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-lg shadow-green-500/20 cursor-pointer">
             <Plus size={13} />Add Entry
           </button>
@@ -414,15 +368,6 @@ const Finance: React.FC = () => {
             />
           )}
 
-          {activeTab === 'plan' && (
-            <PlanTab
-              currentPlan={currentPlan} totalIncome={totalIncome} totalFixed={totalFixed}
-              totalAllVariable={totalAllVariable} netSavings={netSavings}
-              fixedTx={fixedTx} varTx={varTx} grocerySpent={grocerySpent} groceryBudget={groceryBudget}
-              fuelSpent={fuelSpent} onOpenPlan={openPlan} month={viewMonth} year={viewYear}
-            />
-          )}
-
           {activeTab === 'savings' && (
             <SavingsTab
               goals={savingsGoals} onAdd={addSavingsGoal} onUpdate={updateSavingsGoal}
@@ -505,128 +450,7 @@ const Finance: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Budget Plan Modal */}
-      <Modal isOpen={planModal} onClose={() => setPlanModal(false)} title={`Budget Plan — ${MONTHS[viewMonth - 1]} ${viewYear}`} size="lg">
-        <form onSubmit={handlePlanSubmit} className="space-y-5">
 
-          {/* Goals */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Goals</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><ArrowUpCircle size={13} className="text-emerald-400" /><span className="text-xs font-semibold text-emerald-400">Income Goal</span></div>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">{CURRENCY}</span>
-                  <input type="number" step="0.01" min="0" value={planIncome} onChange={e => setPlanIncome(e.target.value)} placeholder="0.00" className="w-full pl-10 pr-3 py-2 bg-gray-900/70 border border-emerald-500/20 rounded-xl text-sm font-medium outline-none focus:border-emerald-500 transition-colors" /></div>
-              </div>
-              <div className="bg-green-500/8 border border-green-500/20 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2"><PiggyBank size={13} className="text-green-400" /><span className="text-xs font-semibold text-green-400">Savings Goal</span></div>
-                <div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">{CURRENCY}</span>
-                  <input type="number" step="0.01" min="0" value={planSavings} onChange={e => setPlanSavings(e.target.value)} placeholder="0.00" className="w-full pl-10 pr-3 py-2 bg-gray-900/70 border border-green-500/20 rounded-xl text-sm font-medium outline-none focus:border-green-500 transition-colors" /></div>
-              </div>
-            </div>
-            {parseFloat(planIncome) > 0 && (
-              <div className="mt-3 flex items-center justify-between bg-gray-800/40 rounded-xl px-4 py-2.5 border border-green-500/10">
-                <span className="text-xs text-gray-500">Spendable Budget</span>
-                <span className="text-sm font-bold text-gray-200 font-mono">{formatPrice(Math.max(0, parseFloat(planIncome) - (parseFloat(planSavings) || 0)))}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Fixed Expenses */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5"><Receipt size={10} className="text-blue-400" />Fixed Expenses</p>
-            <div className="bg-gray-800/30 border border-green-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-              {FINANCE_FIXED_CATEGORIES.map(cat => (
-                <div key={cat.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-sm w-6 text-center shrink-0">{cat.icon}</span>
-                  <span className="flex-1 text-sm text-gray-300 truncate">{cat.label}</span>
-                  <div className="relative w-36 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
-                </div>
-              ))}
-              {planCustomFixed.map(cat => (
-                <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5">
-                  <input type="text" value={cat.icon} onChange={e => setPlanCustomFixed(p => p.map(c => c.id === cat.id ? { ...c, icon: e.target.value } : c))} maxLength={4} className="w-8 text-center text-sm bg-transparent outline-none shrink-0" />
-                  <input type="text" value={cat.label} onChange={e => setPlanCustomFixed(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-green-500/20 outline-none py-0.5" />
-                  <div className="relative w-32 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-blue-500 transition-colors" /></div>
-                  <button type="button" onClick={() => { setPlanCustomFixed(p => p.filter(c => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-gray-600 hover:text-rose-400 shrink-0 cursor-pointer"><X size={13} /></button>
-                </div>
-              ))}
-              <button type="button" onClick={() => setPlanCustomFixed(p => [...p, { id: `cf-${Date.now()}`, label: '', icon: '📌' }])} className="w-full px-4 py-2.5 flex items-center gap-1.5 text-xs text-blue-400 hover:bg-blue-500/5 transition-colors cursor-pointer"><Plus size={11} />Add custom fixed category</button>
-            </div>
-          </div>
-
-          {/* Variable Expenses */}
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3 flex items-center gap-1.5"><ArrowDownCircle size={10} className="text-orange-400" />Variable Expenses</p>
-            <div className="bg-gray-800/30 border border-green-500/20 rounded-2xl overflow-hidden divide-y divide-white/[0.05]">
-              {/* Groceries locked row */}
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-green-500/5">
-                <span className="text-sm w-6 text-center shrink-0">🛒</span>
-                <span className="flex-1 text-sm text-gray-400 truncate">Groceries</span>
-                <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">{groceryBudget > 0 ? `Auto · ${formatPrice(groceryBudget)}` : 'Set in Shopping Budget'}</span>
-              </div>
-              {/* Fuel locked row */}
-              <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-500/5">
-                <span className="text-sm w-6 text-center shrink-0"><Fuel size={14} className="text-amber-400 mx-auto" /></span>
-                <span className="flex-1 text-sm text-gray-400 truncate">Fuel</span>
-                <span className="text-xs text-amber-400 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">Auto from Fuel page</span>
-              </div>
-              {FINANCE_VARIABLE_CATEGORIES.filter(c => c.id !== 'groceries').map(cat => (
-                <div key={cat.id} className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-sm w-6 text-center shrink-0">{cat.icon}</span>
-                  <span className="flex-1 text-sm text-gray-300 truncate">{cat.label}</span>
-                  <div className="relative w-36 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
-                </div>
-              ))}
-              {planCustomVar.map(cat => (
-                <div key={cat.id} className="flex items-center gap-2 px-4 py-2.5">
-                  <input type="text" value={cat.icon} onChange={e => setPlanCustomVar(p => p.map(c => c.id === cat.id ? { ...c, icon: e.target.value } : c))} maxLength={4} className="w-8 text-center text-sm bg-transparent outline-none shrink-0" />
-                  <input type="text" value={cat.label} onChange={e => setPlanCustomVar(p => p.map(c => c.id === cat.id ? { ...c, label: e.target.value } : c))} className="flex-1 text-sm text-gray-200 bg-transparent border-b border-green-500/20 outline-none py-0.5" />
-                  <div className="relative w-32 shrink-0"><span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-500">{CURRENCY}</span>
-                    <input type="number" step="0.01" min="0" value={planTargets[cat.id] || ''} onChange={e => setPlanTargets({ ...planTargets, [cat.id]: e.target.value })} placeholder="0.00" className="w-full pl-8 pr-2 py-1.5 bg-gray-800/60 border border-green-500/15 rounded-lg text-sm text-right outline-none focus:border-orange-500 transition-colors" /></div>
-                  <button type="button" onClick={() => { setPlanCustomVar(p => p.filter(c => c.id !== cat.id)); const { [cat.id]: _, ...rest } = planTargets; setPlanTargets(rest); }} className="text-gray-600 hover:text-rose-400 shrink-0 cursor-pointer"><X size={13} /></button>
-                </div>
-              ))}
-              <button type="button" onClick={() => setPlanCustomVar(p => [...p, { id: `cv-${Date.now()}`, label: '', icon: '📋' }])} className="w-full px-4 py-2.5 flex items-center gap-1.5 text-xs text-orange-400 hover:bg-orange-500/5 transition-colors cursor-pointer"><Plus size={11} />Add custom variable category</button>
-            </div>
-          </div>
-
-          {/* Live budget summary */}
-          {(() => {
-            const income  = parseFloat(planIncome) || 0;
-            const savings = parseFloat(planSavings) || 0;
-            const fxd = FINANCE_FIXED_CATEGORIES.reduce((s, c) => s + (parseFloat(planTargets[c.id] || '0') || 0), 0);
-            const vrbl = FINANCE_VARIABLE_CATEGORIES.filter(c => c.id !== 'groceries').reduce((s, c) => s + (parseFloat(planTargets[c.id] || '0') || 0), 0);
-            const allocated = fxd + vrbl + savings + groceryBudget;
-            const remaining = income - allocated;
-            const over = income > 0 && remaining < 0;
-            return (
-              <div className="bg-gray-800/40 rounded-2xl p-4 border border-green-500/10 space-y-2.5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Budget Summary</p>
-                <div className="space-y-1.5 text-sm">
-                  {[['Fixed', formatPrice(fxd), 'text-blue-400'], ['Variable', formatPrice(vrbl), 'text-orange-400'], ['Groceries (auto)', formatPrice(groceryBudget), 'text-amber-400'], ['Savings Target', formatPrice(savings), 'text-green-400']].map(([l, v, c]) => (
-                    <div key={l} className="flex justify-between"><span className="text-gray-500">{l}</span><span className={cn('font-semibold font-mono', c)}>{v}</span></div>
-                  ))}
-                  <div className="border-t border-green-500/10 pt-2 flex justify-between font-semibold">
-                    <span className="text-gray-400">Total Allocated</span>
-                    <span className={cn('font-mono', over ? 'text-rose-400' : 'text-gray-200')}>{formatPrice(allocated)}</span>
-                  </div>
-                  {income > 0 && <div className="flex justify-between text-xs"><span className="text-gray-500">Remaining</span><span className={cn('font-semibold font-mono', over ? 'text-rose-400' : remaining === 0 ? 'text-emerald-400' : 'text-gray-400')}>{over ? `Over by ${formatPrice(Math.abs(remaining))}` : formatPrice(remaining)}</span></div>}
-                </div>
-                {income > 0 && <div className="h-1.5 bg-gray-700/60 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(Math.round((allocated / income) * 100), 100)}%`, backgroundColor: over ? '#f43f5e' : allocated / income > 0.9 ? '#f97316' : '#10b981' }} /></div>}
-              </div>
-            );
-          })()}
-
-          <div className="flex gap-3">
-            <button type="button" onClick={() => setPlanModal(false)} className="flex-1 py-2.5 border border-green-500/20 rounded-xl text-sm text-gray-400 hover:bg-gray-800/40 transition-colors cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Save Plan</button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 };
@@ -705,7 +529,7 @@ const OverviewTab: React.FC<OverviewProps> = ({
       {currentPlan && (totalIncome > 0 || totalExpenses > 0) && (
         <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-5 space-y-3">
           <h2 className="text-sm font-semibold text-gray-200 flex items-center gap-2">
-            <Target size={14} className="text-cyan-400" />Budget Plan Progress
+            <TrendingUp size={14} className="text-cyan-400" />Budget Plan Progress
           </h2>
           {[
             { label: 'Income', actual: totalIncome, goal: currentPlan.incomeGoal, color: '#10b981', isExpense: false },
@@ -1067,144 +891,6 @@ const VariableTab: React.FC<VariableTabProps> = ({
               <button onClick={() => { setAddingCat(false); setNewLabel(''); setNewIcon('📋'); }} className="p-1 text-gray-500 hover:text-rose-400 cursor-pointer"><X size={14} /></button>
             </div>
           )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ══════════════════════════════════════════════════════════════
-// PLAN TAB
-// ══════════════════════════════════════════════════════════════
-interface PlanTabProps {
-  currentPlan: any; totalIncome: number; totalFixed: number; totalAllVariable: number; netSavings: number;
-  fixedTx: FinanceTransaction[]; varTx: FinanceTransaction[]; grocerySpent: number; groceryBudget: number;
-  fuelSpent: number; onOpenPlan: () => void; month: number; year: number;
-}
-
-const PlanTab: React.FC<PlanTabProps> = ({
-  currentPlan, totalIncome, totalFixed, totalAllVariable, netSavings,
-  fixedTx, varTx, grocerySpent, groceryBudget, fuelSpent, onOpenPlan, month, year,
-}) => {
-  if (!currentPlan) return (
-    <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-14 text-center">
-      <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-cyan-500/10 flex items-center justify-center"><Target size={24} className="text-cyan-400" /></div>
-      <p className="text-base font-semibold text-gray-300">No budget plan set for {MONTHS[month - 1]}</p>
-      <p className="text-sm text-gray-500 mt-1 mb-5">Set income goals, expense targets and savings goals</p>
-      <button onClick={onOpenPlan} className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer">Set Budget Plan</button>
-    </div>
-  );
-
-  const allCats = [...FINANCE_FIXED_CATEGORIES, ...FINANCE_VARIABLE_CATEGORIES];
-  const actualByCat = new Map<string, number>();
-  fixedTx.forEach(tx => actualByCat.set(tx.category, (actualByCat.get(tx.category) || 0) + tx.amount));
-  varTx.forEach(tx => actualByCat.set(tx.category, (actualByCat.get(tx.category) || 0) + tx.amount));
-
-  return (
-    <div className="space-y-5">
-      {/* Plan summary strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-emerald-500/20 p-4 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Income Goal</p>
-          <p className="text-xl font-bold text-emerald-400 font-mono">{formatPrice(currentPlan.incomeGoal || 0)}</p>
-          <p className="text-xs text-gray-500 mt-1">Actual: <span className="text-gray-300 font-mono">{formatPrice(totalIncome)}</span></p>
-        </div>
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Savings Goal</p>
-          <p className="text-xl font-bold text-green-400 font-mono">{formatPrice(currentPlan.savingsGoal || 0)}</p>
-          {currentPlan.savingsGoal > 0 && (() => {
-            const actual = Math.max(0, netSavings);
-            const goal = currentPlan.savingsGoal;
-            const p = goal > 0 ? Math.min(pct(actual, goal), 100) : 0;
-            const onTrack = actual >= goal;
-            return (
-              <div className="mt-1.5 space-y-1">
-                <div className="h-1.5 bg-gray-800/60 rounded-full overflow-hidden"><div className="h-full rounded-full transition-all duration-500" style={{ width: `${p}%`, backgroundColor: onTrack ? '#10b981' : '#a855f7' }} /></div>
-                <p className={cn('text-xs', onTrack ? 'text-emerald-400' : 'text-amber-400')}>{formatPrice(actual)} saved {onTrack ? '✓' : `— ${formatPrice(goal - actual)} short`}</p>
-              </div>
-            );
-          })()}
-        </div>
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 p-4 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">This Period</p>
-            <p className="text-sm font-semibold text-gray-300">{MONTHS[month - 1]} {year}</p>
-          </div>
-          <button onClick={onOpenPlan} className="p-2 hover:bg-gray-800/60 rounded-xl text-gray-500 hover:text-green-400 transition-colors cursor-pointer"><Edit3 size={14} /></button>
-        </div>
-      </div>
-
-      {/* Category targets breakdown */}
-      {(currentPlan.categoryTargets?.length > 0 || groceryBudget > 0) && (
-        <div className="bg-gray-900/70 backdrop-blur-xl rounded-2xl border border-green-500/20 overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/[0.04]">
-            <h2 className="font-semibold text-gray-200 text-sm">Actual vs Budget</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Category-level spending vs your plan</p>
-          </div>
-          <div className="p-5 space-y-4">
-            {currentPlan.categoryTargets.map((ct: FinanceCategoryTarget) => {
-              const cat = allCats.find(c => c.id === ct.category);
-              const actual = actualByCat.get(ct.category) || 0;
-              const p = pct(actual, ct.targetAmount);
-              const over = actual > ct.targetAmount;
-              return (
-                <div key={ct.category} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{cat?.icon}</span>
-                      <span className="text-sm text-gray-300">{cat?.label || ct.category}</span>
-                      <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full text-xs font-semibold', ct.type === 'fixed' ? 'bg-blue-500/15 text-blue-400' : 'bg-orange-500/15 text-orange-400')}>{ct.type}</span>
-                    </div>
-                    <div className="text-right flex items-center gap-1.5">
-                      <span className={cn('text-sm font-bold font-mono tabular-nums', over ? 'text-rose-400' : 'text-gray-200')}>{formatPrice(actual)}</span>
-                      <span className="text-xs text-gray-600 font-mono">/ {formatPrice(ct.targetAmount)}</span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-800/60 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(p, 100)}%` }} transition={{ duration: 0.6 }} className="h-full rounded-full" style={{ backgroundColor: barColor(actual, ct.targetAmount) }} />
-                  </div>
-                  <p className="text-[10px] text-gray-600">{over ? `▲ Over by ${formatPrice(actual - ct.targetAmount)}` : `${100 - p}% remaining`}</p>
-                </div>
-              );
-            })}
-
-            {/* Groceries row */}
-            {groceryBudget > 0 && (() => {
-              const over = grocerySpent > groceryBudget;
-              const p = pct(grocerySpent, groceryBudget);
-              return (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🛒</span><span className="text-sm text-gray-300">Groceries</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-semibold">auto</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn('text-sm font-bold font-mono tabular-nums', over ? 'text-rose-400' : 'text-gray-200')}>{formatPrice(grocerySpent)}</span>
-                      <span className="text-xs text-gray-600 font-mono">/ {formatPrice(groceryBudget)}</span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-gray-800/60 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(p, 100)}%` }} transition={{ duration: 0.6 }} className="h-full rounded-full" style={{ backgroundColor: barColor(grocerySpent, groceryBudget) }} /></div>
-                </div>
-              );
-            })()}
-
-            {/* Fuel row if there's spend */}
-            {fuelSpent > 0 && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Fuel size={13} className="text-green-400" /><span className="text-sm text-gray-300">Fuel</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-500/15 text-green-400 font-semibold">auto</span>
-                  </div>
-                  <span className="text-sm font-bold font-mono tabular-nums text-gray-200">{formatPrice(fuelSpent)}</span>
-                </div>
-                <div className="h-2 bg-green-500/20 rounded-full"><div className="h-full rounded-full bg-green-500" style={{ width: '100%' }} /></div>
-              </div>
-            )}
-          </div>
         </div>
       )}
     </div>
