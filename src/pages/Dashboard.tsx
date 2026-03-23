@@ -273,9 +273,10 @@ const Dashboard: React.FC = () => {
                 <p className="text-[11px] font-medium text-gray-500 uppercase tracking-widest">{greeting}</p>
                 <h1 className="text-2xl font-bold text-white tracking-tight leading-tight">{firstName}</h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
+                  <ShoppingCart size={10} className={isOnTrack ? 'text-emerald-500' : 'text-rose-500'} />
                   {isOnTrack
-                    ? <><CheckCircle size={11} className="text-emerald-500" /><span className="text-[11px] text-emerald-400 font-medium">On track</span></>
-                    : <><AlertCircle size={11} className="text-rose-500" /><span className="text-[11px] text-rose-400 font-medium">Over budget</span></>}
+                    ? <><CheckCircle size={11} className="text-emerald-500" /><span className="text-[11px] text-emerald-400 font-medium">Grocery: on track</span></>
+                    : <><AlertCircle size={11} className="text-rose-500" /><span className="text-[11px] text-rose-400 font-medium">Grocery: over budget</span></>}
                 </div>
               </div>
             </div>
@@ -287,6 +288,8 @@ const Dashboard: React.FC = () => {
                 <p className="text-[11px] text-gray-500 mt-0.5">{dateStr}</p>
               </div>
               <div className="hidden md:block w-px h-10 bg-green-500/20" />
+              <div className="flex flex-col items-end gap-1">
+              <p className="text-[10px] text-gray-600 font-medium uppercase tracking-widest flex items-center gap-1"><ShoppingCart size={9} />Grocery period</p>
               <div className="flex items-center gap-0.5 bg-gray-800/70 border border-green-500/20 rounded-xl p-1">
                 <button onClick={prevMonth} aria-label="Previous month" className="p-2 rounded-lg hover:bg-white/8 text-gray-500 hover:text-gray-200 transition-colors cursor-pointer">
                   <ChevronLeft size={14} />
@@ -298,9 +301,13 @@ const Dashboard: React.FC = () => {
                   <ChevronRight size={14} />
                 </button>
               </div>
+              </div>
             </div>
           </div>
-          <p className="text-[11px] text-gray-600 mt-4 pl-16 sm:pl-0">{periodLabel}</p>
+          <div className="flex items-center gap-1.5 mt-4 pl-16 sm:pl-0">
+            <ShoppingCart size={10} className="text-gray-600" />
+            <p className="text-[11px] text-gray-600">Grocery period: {periodLabel}</p>
+          </div>
         </div>
       </motion.div>
 
