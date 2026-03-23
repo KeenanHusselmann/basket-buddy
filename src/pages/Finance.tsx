@@ -209,10 +209,14 @@ const Finance: React.FC = () => {
     [fuelFillups, periodStart, periodEnd],
   );
 
-  // Period grocery budget
+  // Period grocery budget — the billing period viewMonth/25→(viewMonth+1)/24
+  // has the majority of its days in viewMonth+1 (the main calendar month),
+  // so match the grocery budget to that calendar month.
+  const groceryBudgetMonth = viewMonth === 12 ? 1 : viewMonth + 1;
+  const groceryBudgetYear  = viewMonth === 12 ? viewYear + 1 : viewYear;
   const groceryBudget = useMemo(
-    () => budgets.find(b => b.month === viewMonth && b.year === viewYear)?.totalBudget || 0,
-    [budgets, viewMonth, viewYear],
+    () => budgets.find(b => b.month === groceryBudgetMonth && b.year === groceryBudgetYear)?.totalBudget || 0,
+    [budgets, groceryBudgetMonth, groceryBudgetYear],
   );
 
   const totalAllVariable = totalVariable + grocerySpent + fuelSpent;
